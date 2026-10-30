@@ -3188,6 +3188,32 @@ class Projects extends Security_Controller {
             $data["end_time"] = NULL;
         }
 
+        // start_date is required
+        if (empty($data["start_date"])) {
+            echo json_encode(array("success" => false, 'message' => app_lang('field_required') . " (" . app_lang('start_date') . ")"));
+            return false;
+        }
+
+        // deadline is required
+        if (empty($data["deadline"])) {
+            echo json_encode(array("success" => false, 'message' => app_lang('field_required') . " (" . app_lang('deadline') . ")"));
+            return false;
+        }
+
+        // end_time is required
+        $raw_end_time = trim((string) $this->request->getPost('end_time'));
+        if ($raw_end_time === "" || $raw_end_time === "00:00" || $raw_end_time === "00:00:00" || strtoupper($raw_end_time) === "12:00 AM") {
+            echo json_encode(array("success" => false, 'message' => app_lang('field_required') . " (" . app_lang('end_time') . ")"));
+            return false;
+        }
+
+        $formatted_end_time = convert_time_to_24hours_format($raw_end_time);
+        if (!$formatted_end_time || $formatted_end_time === "00:00:00") {
+            echo json_encode(array("success" => false, 'message' => app_lang('field_required') . " (" . app_lang('end_time') . ")"));
+            return false;
+        }
+        $data["end_time"] = $formatted_end_time;
+
         //deadline must be greater or equal to start date
         if ($data["start_date"] && $data["deadline"] && $data["deadline"] < $data["start_date"]) {
             echo json_encode(array("success" => false, 'message' => app_lang('deadline_must_be_equal_or_greater_than_start_date')));
@@ -3411,8 +3437,9 @@ class Projects extends Security_Controller {
             "parent_task_id" => $parent_task_id,
             "status_id" => 1,
             "created_date" => get_current_utc_time(),
-            "start_date" => $parent_task->start_date,
-            "deadline" => $parent_task->deadline,
+            "start_date" => $parent_task->start_date ? $parent_task->start_date : get_current_utc_time(),
+            "deadline" => $parent_task->deadline ? $parent_task->deadline : get_current_utc_time(),
+            "end_time" => ($parent_task->end_time && $parent_task->end_time !== "00:00:00") ? $parent_task->end_time : NULL,
             "priority_id" => $parent_task->priority_id ? $parent_task->priority_id : 0,
             "labels" => $parent_task->labels,
         );

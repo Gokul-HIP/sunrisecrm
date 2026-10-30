@@ -14,7 +14,7 @@
             <div class="form-group">
                 <div class="row">
                     <label for="title" class=" col-md-3"><?php echo app_lang('title'); ?></label>
-                    <div class=" col-md-9">
+                    <div class=" col-md-9 form-group">
                         <?php
                         echo form_input(array(
                             "id" => "title",
@@ -33,7 +33,7 @@
             <div class="form-group">
                 <div class="row">
                     <label for="description" class=" col-md-3"><?php echo app_lang('description'); ?></label>
-                    <div class=" col-md-9">
+                    <div class=" col-md-9 form-group">
                         <?php
                         echo form_textarea(array(
                             "id" => "description",
@@ -179,7 +179,7 @@
             <div class="form-group">
                 <div class="row">
                     <label for="start_date" class=" col-md-3"><?php echo app_lang('start_date'); ?></label>
-                    <div class=" col-md-9">
+                    <div class=" col-md-9 form-group">
                         <?php
                         echo form_input(array(
                             "id" => "start_date",
@@ -187,7 +187,9 @@
                             "autocomplete" => "off",
                             "value" => is_date_exists($model_info->start_date) ? $model_info->start_date : "",
                             "class" => "form-control",
-                            "placeholder" => "YYYY-MM-DD"
+                            "placeholder" => "YYYY-MM-DD",
+                            "data-rule-required" => true,
+                            "data-msg-required" => app_lang("field_required"),
                         ));
                         ?>
                     </div>
@@ -205,6 +207,8 @@
                             "value" => is_date_exists($model_info->deadline) ? $model_info->deadline : "",
                             "class" => "form-control",
                             "placeholder" => "YYYY-MM-DD",
+                            "data-rule-required" => true,
+                            "data-msg-required" => app_lang("field_required"),
                             "data-rule-greaterThanOrEqual" => "#start_date",
                             "data-msg-greaterThanOrEqual" => app_lang("deadline_must_be_equal_or_greater_than_start_date")
                         ));
@@ -213,10 +217,10 @@
                     <label for="end_time" class=" col-md-2 col-sm-2"><?php echo app_lang('end_time'); ?>
                         <span class="help" data-bs-toggle="tooltip" title="<?php echo app_lang('task_end_time_help_text'); ?>"><i data-feather="help-circle" class="icon-16"></i></span>
                     </label>
-                    <div class=" col-md-3 col-sm-3">
+                    <div class=" col-md-3 col-sm-3 form-group">
                         <?php
                         $time_format_24_hours = get_setting("time_format") == "24_hours" ? true : false;
-                        $end_time = isset($model_info->end_time) && $model_info->end_time ? $model_info->end_time : "";
+                        $end_time = isset($model_info->end_time) && $model_info->end_time && $model_info->end_time !== "00:00:00" ? $model_info->end_time : "";
                         if ($end_time) {
                             $end_time = $time_format_24_hours ? date("H:i", strtotime($end_time)) : convert_time_to_12hours_format(date("H:i:s", strtotime($end_time)));
                         }
@@ -225,7 +229,9 @@
                             "name" => "end_time",
                             "value" => $end_time,
                             "class" => "form-control",
-                            "placeholder" => app_lang('end_time')
+                            "placeholder" => app_lang('end_time'),
+                            "data-rule-required" => true,
+                            "data-msg-required" => app_lang("field_required"),
                         ));
                         ?>
                     </div>
@@ -237,7 +243,7 @@
                 <div class="form-group">
                     <div class="row">
                         <label for="recurring" class=" col-md-3"><?php echo app_lang('recurring'); ?>  <span class="help" data-bs-toggle="tooltip" title="<?php echo app_lang('cron_job_required'); ?>"><i data-feather="help-circle" class="icon-16"></i></span></label>
-                        <div class=" col-md-9">
+                        <div class=" col-md-9 form-group">
                             <?php
                             echo form_checkbox("recurring", "1", $model_info->recurring ? true : false, "id='recurring' class='form-check-input'");
                             ?>
@@ -304,7 +310,7 @@
                     <div class = "form-group hide" id = "next_recurring_date_container" >
                         <div class="row">
                             <label for = "next_recurring_date" class = " col-md-3"><?php echo app_lang('next_recurring_date'); ?>  </label>
-                            <div class=" col-md-9">
+                            <div class=" col-md-9 form-group">
                                 <?php
                                 echo form_input(array(
                                     "id" => "next_recurring_date",
@@ -392,7 +398,7 @@
 
         $("#save-and-show-button, #save-and-add-button").click(function () {
             window.showAddNewModal = true;
-            $(this).trigger("submit");
+            $("#task-form").trigger("submit");
         });
 
         var taskShowText = "<?php echo app_lang('task_info') ?>",
@@ -401,6 +407,24 @@
 
         window.taskForm = $("#task-form").appForm({
             closeModalOnSuccess: false,
+            onSubmit: function () {
+                var startDate = $("#start_date").val();
+                var deadline = $("#deadline").val();
+                var endTime = $("#end_time").val();
+
+                if (!startDate) {
+                    $("#start_date").focus();
+                    return false;
+                }
+                if (!deadline) {
+                    $("#deadline").focus();
+                    return false;
+                }
+                if (!endTime || endTime === "00:00" || endTime === "00:00:00" || endTime.toUpperCase() === "12:00 AM") {
+                    $("#end_time").val("").focus();
+                    return false;
+                }
+            },
             onSuccess: function (result) {
                 $("#task-table").appTable({newData: result.data, dataId: result.id});
                 $("#reload-kanban-button:visible").trigger("click");
@@ -468,7 +492,7 @@
             endDate: "<?php echo $project_deadline; ?>"
         });
 
-        setTimePicker("#end_time");
+        setTimePicker("#end_time", {defaultTime: false});
 
         $('[data-bs-toggle="tooltip"]').tooltip();
 

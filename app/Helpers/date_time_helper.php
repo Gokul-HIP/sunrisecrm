@@ -97,6 +97,8 @@ if (!function_exists('convert_time_to_24hours_format')) {
         if (!$time)
             $time = "00:00 AM";
 
+        $time = strtoupper(trim($time));
+
         if (strpos($time, "AM")) {
             $time = trim(str_replace("AM", "", $time));
             $check_time = explode(":", $time);
