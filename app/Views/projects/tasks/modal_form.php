@@ -219,17 +219,13 @@
                     </label>
                     <div class=" col-md-3 col-sm-3 form-group">
                         <?php
-                        $time_format_24_hours = get_setting("time_format") == "24_hours" ? true : false;
-                        $end_time = isset($model_info->end_time) && $model_info->end_time && $model_info->end_time !== "00:00:00" ? $model_info->end_time : "";
-                        if ($end_time) {
-                            $end_time = $time_format_24_hours ? date("H:i", strtotime($end_time)) : convert_time_to_12hours_format(date("H:i:s", strtotime($end_time)));
-                        }
+                        $end_time = isset($model_info->end_time) && $model_info->end_time && $model_info->end_time !== "00:00:00" ? date("h:i A", strtotime($model_info->end_time)) : "";
                         echo form_input(array(
                             "id" => "end_time",
                             "name" => "end_time",
                             "value" => $end_time,
                             "class" => "form-control",
-                            "placeholder" => app_lang('end_time'),
+                            "placeholder" => "hh:mm AM/PM",
                             "data-rule-required" => true,
                             "data-msg-required" => app_lang("field_required"),
                         ));
@@ -492,7 +488,7 @@
             endDate: "<?php echo $project_deadline; ?>"
         });
 
-        setTimePicker("#end_time", {defaultTime: false});
+        setTimePicker("#end_time", {defaultTime: false, showMeridian: true});
 
         $('[data-bs-toggle="tooltip"]').tooltip();
 

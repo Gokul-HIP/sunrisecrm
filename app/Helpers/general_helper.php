@@ -1651,7 +1651,7 @@ if (!function_exists("format_task_deadline_with_end_time")) {
 
         $text = format_to_date($deadline, false);
         if ($end_time && $end_time !== "00:00:00") {
-            $text .= " " . format_to_time($end_time, false);
+            $text .= " " . date("h:i A", strtotime($end_time));
         }
 
         return $text;

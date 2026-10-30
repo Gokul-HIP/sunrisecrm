@@ -81,7 +81,7 @@ $point_display = get_task_point_display($model_info);
                         ?>
                         <div class="col-md-12 mb15">
                             <strong><?php echo app_lang('end_time') . ": "; ?></strong>
-                            <?php echo format_to_time($task_end_time, false); ?>
+                            <?php echo date("h:i A", strtotime($task_end_time)); ?>
                             <div class="text-warning mt5">
                                 <i data-feather="alert-circle" class="icon-14 me-1"></i>
                                 <?php echo app_lang('please_complete_the_task_before_the_end_time'); ?>

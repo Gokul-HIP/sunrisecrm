@@ -99,16 +99,16 @@ if (!function_exists('convert_time_to_24hours_format')) {
 
         $time = strtoupper(trim($time));
 
-        if (strpos($time, "AM")) {
+        if (strpos($time, "AM") !== false) {
             $time = trim(str_replace("AM", "", $time));
             $check_time = explode(":", $time);
-            if ($check_time[0] == 12) {
+            if ((int) $check_time[0] == 12) {
                 $time = "00:" . get_array_value($check_time, 1);
             }
-        } else if (strpos($time, "PM")) {
+        } else if (strpos($time, "PM") !== false) {
             $time = trim(str_replace("PM", "", $time));
             $check_time = explode(":", $time);
-            if ($check_time[0] > 0 && $check_time[0] < 12) {
+            if ((int) $check_time[0] > 0 && (int) $check_time[0] < 12) {
                 $time = $check_time[0] + 12 . ":" . get_array_value($check_time, 1);
             }
         }
@@ -119,7 +119,7 @@ if (!function_exists('convert_time_to_24hours_format')) {
         $minute = get_array_value($array_time, 1) ? get_array_value($array_time, 1) : "00";
         $secound = get_array_value($array_time, 2) ? get_array_value($array_time, 2) : "00";
 
-        return $hour . ":" . $minute . ":" . $secound;
+        return sprintf("%02d:%02d:%02d", (int) $hour, (int) $minute, (int) $secound);
     }
 
 }
