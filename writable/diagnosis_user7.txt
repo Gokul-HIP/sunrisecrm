@@ -1,0 +1,396 @@
+﻿
+========================================================================
+ENVIRONMENT
+========================================================================
+MySQL/MariaDB version: 10.4.32-MariaDB
+Database: sunrisecrm @ localhost:3306
+user_id=7
+
+========================================================================
+TABLE ROW COUNTS
+========================================================================
+active_tasks:            22619 (query 5.63 ms)
+project_members_user:    536 (query 0.51 ms)
+notifications_all:       76644 (query 22.58 ms)
+matching_tasks_count:    7869 (query 19.44 ms)
+
+========================================================================
+SHOW INDEX
+========================================================================
+
+SHOW INDEX FROM rise_tasks
+Key_name               Column_name                    Seq   Cardinality        Index_type  
+PRIMARY                id                             1     24204              BTREE       
+idx_tasks_deleted_status deleted                        1     4                  BTREE       
+idx_tasks_deleted_status status_id                      2     22                 BTREE       
+idx_tasks_created_date created_date                   1     1861               BTREE       
+idx_tasks_parent_deleted parent_task_id                 1     3457               BTREE       
+idx_tasks_parent_deleted deleted                        2     3457               BTREE       
+idx_tasks_project_deleted project_id                     1     1152               BTREE       
+idx_tasks_project_deleted deleted                        2     1273               BTREE       
+idx_tasks_assigned_to  assigned_to                    1     98                 BTREE       
+idx_tasks_deadline     deadline                       1     2200               BTREE       
+idx_tasks_created_by   created_by                     1     2                  BTREE       
+
+SHOW INDEX FROM rise_project_members
+Key_name               Column_name                    Seq   Cardinality        Index_type  
+PRIMARY                id                             1     7166               BTREE       
+idx_project_members_user_project user_id                        1     108                BTREE       
+idx_project_members_user_project project_id                     2     7166               BTREE       
+idx_project_members_user_project deleted                        3     7166               BTREE       
+
+SHOW INDEX FROM rise_projects
+Key_name               Column_name                    Seq   Cardinality        Index_type  
+PRIMARY                id                             1     587                BTREE       
+
+SHOW INDEX FROM rise_notifications
+Key_name               Column_name                    Seq   Cardinality        Index_type  
+PRIMARY                id                             1     76414              BTREE       
+user_id                user_id                        1     92                 BTREE       
+idx_notifications_task_event task_id                        1     76414              BTREE       
+idx_notifications_task_event deleted                        2     76414              BTREE       
+idx_notifications_task_event event                          3     76414              BTREE       
+
+SHOW INDEX FROM rise_labels
+Key_name               Column_name                    Seq   Cardinality        Index_type  
+PRIMARY                id                             1     21                 BTREE       
+
+========================================================================
+EXPLAIN: CURRENT main paginated SELECT (post-hydration path)
+========================================================================
+
+--- current main ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "filesort": {
+            "sort_key": "rise_tasks.`id` desc",
+            "temporary_table": {
+                "table": {
+                    "table_name": "rise_tasks",
+                    "access_type": "ref",
+                    "possible_keys": [
+                        "idx_tasks_deleted_status",
+                        "idx_tasks_project_deleted"
+                    ],
+                    "key": "idx_tasks_project_deleted",
+                    "key_length": "5",
+                    "used_key_parts": [
+                        "project_id",
+                        "deleted"
+                    ],
+                    "ref": [
+                        "sunrisecrm.rise_project_members.project_id",
+                        "const"
+                    ],
+                    "rows": 19,
+                    "filtered": 100
+                },
+                "subqueries": [
+                    {
+                        "expression_cache": {
+                            "state": "uninitialized",
+                            "query_block": {
+                                "select_id": 2,
+                                "table": {
+                                    "table_name": "rise_labels",
+                                    "access_type": "ALL",
+                                    "rows": 21,
+                                    "filtered": 100,
+                                    "attached_condition": "find_in_set(rise_labels.`id`,rise_tasks.labels)"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: LEGACY main SELECT (with derived JOINs ΓÇö pre-hydration path)
+========================================================================
+
+--- legacy main ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "<derived4>",
+            "access_type": "ref",
+            "possible_keys": [
+                "key0"
+            ],
+            "key": "key0",
+            "key_length": "5",
+            "used_key_parts": [
+                "task_id"
+            ],
+            "ref": [
+                "sunrisecrm.rise_tasks.id"
+            ],
+            "rows": 2,
+            "filtered": 100,
+            "materialized": {
+                "lateral": 1,
+                "query_block": {
+                    "select_id": 4,
+                    "table": {
+                        "table_name": "rise_notifications",
+                        "access_type": "ref",
+                        "possible_keys": [
+                            "user_id",
+                            "idx_notifications_task_event"
+                        ],
+                        "key": "idx_notifications_task_event",
+                        "key_length": "4",
+                        "used_key_parts": [
+                            "task_id"
+                        ],
+                        "ref": [
+                            "sunrisecrm.rise_tasks.id"
+                        ],
+                        "rows": 1,
+                        "filtered": 77.84,
+                        "index_condition": "rise_notifications.`event` = 'project_task_commented' and rise_notifications.deleted = 0",
+                        "attached_condition": "!find_in_set('7',rise_notifications.read_by) and rise_notifications.user_id <> 7"
+                    }
+                }
+            }
+        },
+        "subqueries": [
+            {
+                "expression_cache": {
+                    "state": "uninitialized",
+                    "query_block": {
+                        "select_id": 2,
+                        "table": {
+                            "table_name": "rise_labels",
+                            "access_type": "ALL",
+                            "rows": 21,
+                            "filtered": 100,
+                            "attached_condition": "find_in_set(rise_labels.`id`,rise_tasks.labels)"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
+
+========================================================================
+EXPLAIN: COUNT query
+========================================================================
+
+--- count ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "rise_tasks",
+            "access_type": "ref",
+            "possible_keys": [
+                "idx_tasks_deleted_status",
+                "idx_tasks_project_deleted"
+            ],
+            "key": "idx_tasks_project_deleted",
+            "key_length": "5",
+            "used_key_parts": [
+                "project_id",
+                "deleted"
+            ],
+            "ref": [
+                "sunrisecrm.rise_project_members.project_id",
+                "const"
+            ],
+            "rows": 19,
+            "filtered": 100
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: batch sub_task_count hydration (10 ids sample)
+========================================================================
+
+--- batch subtask ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "rise_tasks",
+            "access_type": "range",
+            "possible_keys": [
+                "idx_tasks_deleted_status",
+                "idx_tasks_parent_deleted"
+            ],
+            "key": "idx_tasks_parent_deleted",
+            "key_length": "5",
+            "used_key_parts": [
+                "parent_task_id",
+                "deleted"
+            ],
+            "rows": 10,
+            "filtered": 100,
+            "attached_condition": "rise_tasks.deleted = 0 and rise_tasks.parent_task_id in (22848,22847,22844,22843,22842,22841,22840,22839,22838,22837)",
+            "using_index": true
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: batch unread hydration (10 ids sample)
+========================================================================
+
+--- batch unread ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "rise_notifications",
+            "access_type": "range",
+            "possible_keys": [
+                "user_id",
+                "idx_notifications_task_event"
+            ],
+            "key": "idx_notifications_task_event",
+            "key_length": "760",
+            "used_key_parts": [
+                "task_id",
+                "deleted",
+                "event"
+            ],
+            "rows": 10,
+            "filtered": 77.84,
+            "index_condition": "rise_notifications.deleted = 0 and rise_notifications.task_id in (22848,22847,22844,22843,22842,22841,22840,22839,22838,22837) and rise_notifications.`event` = 'project_task_commented'",
+            "attached_condition": "!find_in_set('7',rise_notifications.read_by) and rise_notifications.user_id <> 7"
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: LEGACY notification derived table (full build)
+========================================================================
+
+--- legacy notification derived ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "rise_notifications",
+            "access_type": "index",
+            "possible_keys": [
+                "user_id"
+            ],
+            "key": "idx_notifications_task_event",
+            "key_length": "760",
+            "used_key_parts": [
+                "task_id",
+                "deleted",
+                "event"
+            ],
+            "rows": 76414,
+            "filtered": 77.84,
+            "attached_condition": "rise_notifications.deleted = 0 and rise_notifications.`event` = 'project_task_commented' and !find_in_set('7',rise_notifications.read_by) and rise_notifications.user_id <> 7"
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: LEGACY sub_task_counts derived table (full build)
+========================================================================
+
+--- legacy sub_task derived ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "filesort": {
+            "sort_key": "rise_tasks.parent_task_id",
+            "temporary_table": {
+                "table": {
+                    "table_name": "rise_tasks",
+                    "access_type": "ref",
+                    "possible_keys": [
+                        "idx_tasks_deleted_status"
+                    ],
+                    "key": "idx_tasks_deleted_status",
+                    "key_length": "1",
+                    "used_key_parts": [
+                        "deleted"
+                    ],
+                    "ref": [
+                        "const"
+                    ],
+                    "rows": 12102,
+                    "filtered": 100,
+                    "attached_condition": "rise_tasks.deleted <=> 0"
+                }
+            }
+        }
+    }
+}
+
+========================================================================
+EXPLAIN: count_notifications SELECT (without UPDATE last_online)
+========================================================================
+
+--- count_notifications ---
+(EXPLAIN ANALYZE not supported, falling back)
+{
+    "query_block": {
+        "select_id": 1,
+        "table": {
+            "table_name": "rise_notifications",
+            "access_type": "ALL",
+            "rows": 76414,
+            "filtered": 100,
+            "attached_condition": "rise_notifications.deleted = 0 and find_in_set(7,rise_notifications.notify_to) <> 0 and find_in_set(7,rise_notifications.read_by) = 0 and rise_notifications.created_at > '0'"
+        }
+    }
+}
+
+========================================================================
+TIMING COMPARISON (5 runs each, SELECT only)
+========================================================================
+current_main:              median=   77.75 ms  min=   76.99  max=   82.28
+legacy_main:               median=   15.70 ms  min=   14.69  max=   36.21
+count:                     median=    5.63 ms  min=    5.41  max=    6.62
+batch_subtask:             median=    0.17 ms  min=    0.15  max=    0.24
+batch_unread:              median=    0.19 ms  min=    0.15  max=    0.34
+legacy_notif_derived:      median=  234.11 ms  min=  231.50  max=  236.67
+legacy_subtask_derived:    median=   13.50 ms  min=   12.97  max=   33.13
+count_notifications:       median=   58.58 ms  min=   58.06  max=   64.88
+
+========================================================================
+SHOW FULL PROCESSLIST (snapshot)
+========================================================================
+Id=1 User=system user Host= db= Time=s State=InnoDB purge coordinator Info=
+Id=2 User=system user Host= db= Time=s State=InnoDB purge worker Info=
+Id=3 User=system user Host= db= Time=s State=InnoDB purge worker Info=
+Id=4 User=system user Host= db= Time=s State=InnoDB purge worker Info=
+Id=5 User=system user Host= db= Time=s State=InnoDB shutdown handler Info=
+Id=23367 User=root Host=localhost:54243 db=sunrisecrm Time=0s State=Init Info=SHOW FULL PROCESSLIST
+Non-sleep connections shown: 6
+
+========================================================================
+SHOW ENGINE INNODB STATUS (excerpt: TRANSACTIONS + ROW OPERATIONS)
+========================================================================
+
+========================================================================
+PLAN DRIVER ANALYSIS NOTES
+========================================================================
+- If CURRENT main EXPLAIN starts from rise_project_members or rise_tasks with Using temporary; Using filesort,
+  the optimizer may be sorting a large candidate set before LIMIT 10.
+- If LEGACY main EXPLAIN starts from rise_tasks PRIMARY index scan, derived JOINs may have forced a faster plan.
+- Batch hydration queries should show type=range/ref on task_id/parent_task_id with <=10 rows examined.
+- count_notifications uses FIND_IN_SET on notify_to and read_by ΓÇö typically full/partial notification scan.
+
+Done.

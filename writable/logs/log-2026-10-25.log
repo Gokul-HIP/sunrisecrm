@@ -1,0 +1,16 @@
+CRITICAL - 2026-10-25 23:21:35 --> The action you requested is not allowed.
+in SYSTEMPATH/Security/Security.php on line 306.
+ 1 SYSTEMPATH/Security/Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH/Filters/CSRF.php(55): CodeIgniter\Security\Security->verify()
+ 3 SYSTEMPATH/Filters/Filters.php(173): CodeIgniter\Filters\CSRF->before()
+ 4 SYSTEMPATH/CodeIgniter.php(473): CodeIgniter\Filters\Filters->run()
+ 5 SYSTEMPATH/CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest()
+ 6 FCPATH/index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-10-25 23:53:38 --> App\Models\Crud_model::ci_save(): Argument #1 ($data) cannot be passed by reference
+in APPPATH/Models/Task_point_awards_model.php on line 49.
+ 1 APPPATH/Helpers/task_points_helper.php(298): App\Models\Task_point_awards_model->revoke_by_task_id()
+ 2 APPPATH/Controllers/Projects.php(3352): sync_task_point_award()
+ 3 SYSTEMPATH/CodeIgniter.php(934): App\Controllers\Projects->save_task()
+ 4 SYSTEMPATH/CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController()
+ 5 SYSTEMPATH/CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest()
+ 6 FCPATH/index.php(80): CodeIgniter\CodeIgniter->run()

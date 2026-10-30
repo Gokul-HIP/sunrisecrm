@@ -1,0 +1,4 @@
+=== start 2026-08-21T09:54:08+00:00 ===
+[21-Aug-2026 09:54:08 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in C:\xampp\htdocs\sunrisecrm\app\Config\App.php on line 19
+[21-Aug-2026 09:54:08 UTC] PHP Warning:  Undefined array key "HTTP_HOST" in C:\xampp\htdocs\sunrisecrm\app\Config\App.php on line 49
+[21-Aug-2026 09:54:08 UTC] PHP Fatal error:  Allowed memory size of 268435456 bytes exhausted (tried to allocate 20480 bytes) in C:\xampp\htdocs\sunrisecrm\system\HTTP\Exceptions\HTTPException.php on line 142

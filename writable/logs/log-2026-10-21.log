@@ -1,0 +1,16 @@
+CRITICAL - 2026-10-21 23:30:03 --> App\Models\Crud_model::ci_save(): Argument #1 ($data) cannot be passed by reference
+in APPPATH/Models/Task_point_awards_model.php on line 49.
+ 1 APPPATH/Helpers/task_points_helper.php(298): App\Models\Task_point_awards_model->revoke_by_task_id()
+ 2 APPPATH/Controllers/Projects.php(3580): sync_task_point_award()
+ 3 SYSTEMPATH/CodeIgniter.php(934): App\Controllers\Projects->update_task_info()
+ 4 SYSTEMPATH/CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController()
+ 5 SYSTEMPATH/CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest()
+ 6 FCPATH/index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-10-21 23:31:25 --> App\Models\Crud_model::ci_save(): Argument #1 ($data) cannot be passed by reference
+in APPPATH/Models/Task_point_awards_model.php on line 49.
+ 1 APPPATH/Helpers/task_points_helper.php(298): App\Models\Task_point_awards_model->revoke_by_task_id()
+ 2 APPPATH/Controllers/Projects.php(3580): sync_task_point_award()
+ 3 SYSTEMPATH/CodeIgniter.php(934): App\Controllers\Projects->update_task_info()
+ 4 SYSTEMPATH/CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController()
+ 5 SYSTEMPATH/CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest()
+ 6 FCPATH/index.php(80): CodeIgniter\CodeIgniter->run()

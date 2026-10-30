@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" >
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="fairsketch">
+<link rel="icon" href="http://localhost/sunrisecrm/files/system/_file648d8a3aafbb1-favicon.png" />
+
+<title>
+    Sign in | Sunrise CRM & Project Management</title>    
+
+<script type="text/javascript">
+    AppHelper = {};
+    AppHelper.baseUrl = "http://localhost/sunrisecrm/";
+    AppHelper.assetsDirectory = "http://localhost/sunrisecrm/assets/";
+    AppHelper.settings = {};
+    AppHelper.settings.firstDayOfWeek = "1" || 0;
+    AppHelper.settings.currencySymbol = "₹";
+    AppHelper.settings.currencyPosition = "left" || "left";
+    AppHelper.settings.decimalSeparator = ".";
+    AppHelper.settings.thousandSeparator = "";
+    AppHelper.settings.noOfDecimals = ("2" == "0") ? 0 : 2;
+    AppHelper.settings.displayLength = "10";
+    AppHelper.settings.dateFormat = "d-m-Y";
+    AppHelper.settings.timeFormat = "24_hours";
+    AppHelper.settings.scrollbar = "jquery";
+    AppHelper.settings.enableRichTextEditor = "0";
+    AppHelper.settings.notificationSoundVolume = "";
+    AppHelper.settings.disableKeyboardShortcuts = "";
+    AppHelper.userId = "";
+    AppHelper.notificationSoundSrc = "http://localhost/sunrisecrm/files/system/notification.mp3";
+
+    //push notification
+    AppHelper.settings.enablePushNotification = "";
+    AppHelper.settings.userEnableWebNotification = "0";
+    AppHelper.settings.userDisablePushNotification = "";
+    AppHelper.settings.pusherKey = "";
+    AppHelper.settings.pusherCluster = "";
+    AppHelper.settings.pushNotficationMarkAsReadUrl = "http://localhost/sunrisecrm/index.php/notifications/set_notification_status_as_read";
+    AppHelper.https = "0";
+
+    AppHelper.settings.disableResponsiveDataTableForMobile = "";
+    AppHelper.settings.disableResponsiveDataTable = "";
+
+    AppHelper.csrfTokenName = "rise_csrf_token";
+    AppHelper.csrfHash = "d1178dd1a974ae53c7e65a9f726318ac";
+
+    AppHelper.settings.defaultThemeColor = "d68910";
+
+    AppHelper.settings.timepickerMinutesInterval = 5;
+
+    AppHelper.settings.weekends = "0";
+
+    AppHelper.serviceWorkerUrl = "http://localhost/sunrisecrm/assets/js/sw/sw.js";
+
+    AppHelper.uploadPastedImageLink = "http://localhost/sunrisecrm/index.php/upload_pasted_image/save";
+
+    AppHelper.uploadMaxFileSize = "67108864";
+
+</script>    <script type="text/javascript">
+    AppLanugage = {};
+    AppLanugage.locale = "en";
+    AppLanugage.localeLong = "en-US";
+
+    AppLanugage.days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    AppLanugage.daysShort = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    AppLanugage.daysMin = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+    AppLanugage.months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    AppLanugage.monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    AppLanugage.today = "Today";
+    AppLanugage.yesterday = "Yesterday";
+    AppLanugage.tomorrow = "Tomorrow";
+
+    AppLanugage.search = "Search";
+    AppLanugage.noRecordFound = "No record found.";
+    AppLanugage.print = "Print";
+    AppLanugage.excel = "Excel";
+    AppLanugage.printButtonTooltip = "Press escape when finished.";
+
+    AppLanugage.fileUploadInstruction = "Drag-and-drop documents here <br /> (or click to browse...)";
+    AppLanugage.fileNameTooLong = "Filename is too long.";
+
+    AppLanugage.custom = "Custom";
+    AppLanugage.clear = "Clear";
+
+    AppLanugage.total = "Total";
+    AppLanugage.totalOfAllPages = "Total of all pages";
+
+    AppLanugage.all = "All";
+
+    AppLanugage.preview_next_key = "Next (Right arrow key)";
+    AppLanugage.preview_previous_key = "Previous (Left arrow key)";
+
+    AppLanugage.filters = "Filters";
+
+    AppLanugage.comment = "Comment";
+
+    AppLanugage.undo = "Undo";
+
+    AppLanugage.fileSizeTooLong = "File size is too large. Please increase the upload_max_filesize from server.";
+
+</script>
+    <link rel='stylesheet' type='text/css' href='http://localhost/sunrisecrm/assets/bootstrap/css/bootstrap.min.css?v=3.4.1' /><link rel='stylesheet' type='text/css' href='http://localhost/sunrisecrm/assets/js/select2/select2.css?v=3.4.1' /><link rel='stylesheet' type='text/css' href='http://localhost/sunrisecrm/assets/js/select2/select2-bootstrap.min.css?v=3.4.1' /><link rel='stylesheet' type='text/css' href='http://localhost/sunrisecrm/assets/css/app.all.css?v=3.4.1' /><link rel='stylesheet' type='text/css' href='http://localhost/sunrisecrm/assets/css/custom-style.css?v=3.4.1' /><script type='text/javascript'  src='http://localhost/sunrisecrm/assets/js/app.all.js?v=3.4.1'></script>
+        <script>
+
+        var data = {};
+        data[AppHelper.csrfTokenName] = AppHelper.csrfHash;
+        $.ajaxSetup({
+            data: data
+        });
+    </script>
+        
+        
+    
+</head>    </head>
+    <body>
+                    <style type="text/css">
+                html, body {
+                    background-image: url('http://localhost/sunrisecrm/files/system/sigin-background-image.jpg');
+                    background-size:cover;
+                }
+            </style>
+        
+                    <div class="scrollable-page">
+            
+            <div class="form-signin">
+                <div class="card bg-white mb15">
+    <div class="card-header text-center">
+                    <img class="p20 mw100p" src="http://localhost/sunrisecrm/files/system/_file67650be546629-site-logo.png" />
+            </div>
+    <div class="card-body p30 rounded-bottom">
+        <form action="http://localhost/sunrisecrm/index.php/signin/authenticate" id="signin-form" class="general-form" role="form" method="post" accept-charset="utf-8">
+<input type="hidden" name="rise_csrf_token" value="d1178dd1a974ae53c7e65a9f726318ac">
+                <div class="form-group">
+            <input type="text" name="email" value="" id="email" class="form-control p10" placeholder="Email" autofocus="1" data-rule-required="1" data-msg-required="This field is required." data-rule-email="1" data-msg-email="Please enter a valid email address." >
+        </div>
+        <div class="form-group">
+            <input type="password" name="password" value="" id="password" class="form-control p10" placeholder="Password" data-rule-required="1" data-msg-required="This field is required." >
+        </div>
+        <input type="hidden" name="redirect" value="" />
+
+
+        
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+
+        </form>        <div class="mt5"><a href="http://localhost/sunrisecrm/index.php/signin/request_reset_password">Forgot password?</a></div>
+
+                    <div class="mt20">You don't have an account? &nbsp; <a href="http://localhost/sunrisecrm/index.php/signup">Sign up</a></div>
+        
+            </div>
+</div>
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#signin-form").appForm({ajaxSubmit: false, isModal: false});
+    });
+</script>                </div>
+
+                        </div>
+        
+        
+    <div class="footer p15 hidden-xs">
+        
+            <div class="float-start">
+                Sunrise Digital            </div>
+
+        
+        <div class="float-end">
+                    </div>
+    </div>
+
+    </body>
+</html>
