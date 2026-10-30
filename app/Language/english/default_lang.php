@@ -1433,7 +1433,9 @@ $lang["project_task_deadline_pre_reminder"] = "Project task deadline pre reminde
 $lang["project_task_deadline_overdue_reminder"] = "Project task deadline overdue reminder";
 $lang["project_task_reminder_on_the_day_of_deadline"] = "Project task reminder on the day of deadline";
 
-$lang["notification_project_task_deadline_pre_reminder"] = "Reminder: Some tasks needs to be finished soon.";
+$lang["project_task_deadline_2_hours_pre_reminder"] = "Task deadline 2 hours pre reminder";
+$lang["notification_project_task_deadline_2_hours_pre_reminder"] = "Reminder: Task deadline is approaching in 2 hours.";
+$lang["notification_project_task_deadline_pre_reminder"] = "Reminder: Task deadline is approaching in 2 hours.";
 $lang["notification_project_task_deadline_overdue_reminder"] = "Reminder: Task's deadline overdue.";
 $lang["notification_project_task_reminder_on_the_day_of_deadline"] = "Reminder: Some tasks needs to be finished today.";
 

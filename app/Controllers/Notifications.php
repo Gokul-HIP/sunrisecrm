@@ -27,6 +27,10 @@ class Notifications extends Security_Controller {
             session_write_close();
         }
 
+        if (function_exists('check_and_send_task_deadline_2_hour_reminders')) {
+            check_and_send_task_deadline_2_hour_reminders();
+        }
+
         $user_id = $this->login_user->id;
         // Always read fresh checked_at from DB so polling stays accurate after dropdown opens
         $user_info = $this->Users_model->get_one($user_id);

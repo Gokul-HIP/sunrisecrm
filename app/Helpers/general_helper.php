@@ -1242,7 +1242,7 @@ if (!function_exists('log_notification')) {
 
         //send response to notification processor
         // Fall back to direct processing when curl extension is unavailable
-        if (get_setting("log_direct_notifications") || !function_exists("curl_init")) {
+        if (is_cli() || get_setting("log_direct_notifications") || !function_exists("curl_init")) {
             //send direct notification to the url
             $data = array(
                 "event" => encode_id($event, "notification")

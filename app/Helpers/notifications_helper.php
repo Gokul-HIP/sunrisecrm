@@ -402,6 +402,10 @@ if (!function_exists('get_notification_config')) {
                 "notify_to" => array("project_members", "client_primary_contact", "client_all_contacts", "task_assignee", "task_collaborators", "team_members", "team"),
                 "info" => $task_link
             ),
+            "project_task_deadline_2_hours_pre_reminder" => array(
+                "notify_to" => array("task_assignee"),
+                "info" => $task_link
+            ),
             "project_task_deadline_pre_reminder" => array(
                 "notify_to" => array("task_assignee", "project_members", "team_members", "team"),
                 "info" => $task_link
@@ -761,7 +765,7 @@ if (!function_exists('send_notification_emails')) {
             $parser_data["SUBSCRIPTION_ID"] = $notification->subscription_id;
             $parser_data["SUBSCRIPTION_TITLE"] = $notification->subscription_title;
             $parser_data["PROJECT_URL"] = $url;
-        } else if ($notification->event == "project_task_created" || $notification->event == "project_task_assigned" || $notification->event == "project_task_commented" || $notification->event == "project_task_updated" || $notification->event == "project_task_started" || $notification->event == "project_task_finished" || $notification->event == "project_task_reopened" || $notification->event == "project_task_deleted") {
+        } else if ($notification->event == "project_task_created" || $notification->event == "project_task_assigned" || $notification->event == "project_task_commented" || $notification->event == "project_task_updated" || $notification->event == "project_task_started" || $notification->event == "project_task_finished" || $notification->event == "project_task_reopened" || $notification->event == "project_task_deleted" || $notification->event == "project_task_deadline_2_hours_pre_reminder") {
             if ($notification->event == "project_task_commented") {
                 $template_name = "task_commented";
 
@@ -1159,6 +1163,122 @@ if (!function_exists('send_slack_notification')) {
                 return true;
             }
         }
+    }
+
+}
+
+
+if (!function_exists('ensure_deadline_2_hour_notification_settings')) {
+
+    function ensure_deadline_2_hour_notification_settings() {
+        static $ensured = false;
+        if ($ensured) {
+            return true;
+        }
+
+        try {
+            $db = db_connect('default');
+            $prefix = $db->getPrefix();
+            $table = "{$prefix}notification_settings";
+
+            $row = $db->query("SELECT id FROM `$table` WHERE event = 'project_task_deadline_2_hours_pre_reminder'")->getRow();
+            if (!$row) {
+                $db->query("INSERT INTO `$table` (`event`, `category`, `enable_email`, `enable_web`, `enable_slack`, `notify_to_team`, `notify_to_team_members`, `notify_to_terms`, `sort`, `deleted`)
+                            VALUES ('project_task_deadline_2_hours_pre_reminder', 'project', 0, 1, 0, '', '', 'task_assignee', 21, 0)");
+            }
+            $ensured = true;
+        } catch (\Throwable $e) {
+            // Fail gracefully if DB connection not ready
+        }
+        return true;
+    }
+
+}
+
+if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
+
+    function check_and_send_task_deadline_2_hour_reminders($force = false) {
+        static $last_checked_timestamp = 0;
+        $now_epoch = time();
+
+        // Throttle to at most once every 30 seconds unless $force is true
+        if (!$force && ($now_epoch - $last_checked_timestamp) < 30) {
+            return 0;
+        }
+        $last_checked_timestamp = $now_epoch;
+
+        ensure_deadline_2_hour_notification_settings();
+
+        $ci = new \App\Controllers\App_Controller();
+        $tasks_table = $ci->Tasks_model->db->prefixTable('tasks');
+        $notifications_table = $ci->Tasks_model->db->prefixTable('notifications');
+        $task_status_table = $ci->Tasks_model->db->prefixTable('task_status');
+
+        $today = get_today_date();
+        $now_local = get_my_local_time("Y-m-d H:i:s");
+        $now_ts = strtotime($now_local);
+
+        // Fetch done status id
+        $done_status = $ci->Tasks_model->db->query("SELECT id FROM $task_status_table WHERE key_name = 'done' AND deleted = 0 LIMIT 1")->getRow();
+        $done_status_id = $done_status ? (int) $done_status->id : 3;
+
+        // Fetch tasks matching:
+        // - active (deleted = 0)
+        // - not finished (status_id != done_status_id)
+        // - deadline is today
+        // - end_time is populated
+        $sql = "SELECT id, project_id, title, assigned_to, collaborators, created_by, deadline, end_time
+                FROM $tasks_table
+                WHERE deleted = 0
+                  AND status_id != $done_status_id
+                  AND deadline = '$today'
+                  AND end_time IS NOT NULL
+                  AND end_time != ''
+                  AND end_time != '00:00:00'";
+
+        $tasks = $ci->Tasks_model->db->query($sql)->getResult();
+        if (!$tasks) {
+            return 0;
+        }
+
+        $sent_count = 0;
+        foreach ($tasks as $task) {
+            $deadline_datetime = $task->deadline . " " . $task->end_time;
+            $deadline_ts = strtotime($deadline_datetime);
+            if (!$deadline_ts) {
+                continue;
+            }
+
+            // Target time: exactly 2 hours (7200s) before task end_time
+            $target_ts = $deadline_ts - 7200;
+
+            // Trigger when local time is at or after 2 hours before end_time AND before the deadline passes
+            if ($now_ts >= $target_ts && $now_ts < $deadline_ts) {
+                // Check if notification already logged for this task today
+                $already = $ci->Tasks_model->db->query("
+                    SELECT id FROM $notifications_table
+                    WHERE task_id = {$task->id}
+                      AND event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                      AND deleted = 0
+                      AND created_at >= '{$today} 00:00:00'
+                    LIMIT 1
+                ")->getRow();
+
+                if ($already) {
+                    continue;
+                }
+
+                // Dispatch notification for this task
+                log_notification("project_task_deadline_2_hours_pre_reminder", array(
+                    "task_id" => $task->id,
+                    "project_id" => $task->project_id
+                ), "0");
+
+                $sent_count++;
+            }
+        }
+
+        return $sent_count;
     }
 
 }

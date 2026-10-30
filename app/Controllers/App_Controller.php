@@ -89,9 +89,12 @@ class App_Controller extends Controller {
         $this->template = new Template();
 
         //load helpers
-        helper(array('url', 'file', 'form', 'language', 'general', 'date_time', 'app_files', 'widget', 'activity_logs', 'currency', 'task_points'));
+        helper(array('url', 'file', 'form', 'language', 'general', 'date_time', 'app_files', 'widget', 'activity_logs', 'currency', 'task_points', 'notifications'));
         if (function_exists('ensure_task_point_tables')) {
             ensure_task_point_tables();
+        }
+        if (function_exists('ensure_deadline_2_hour_notification_settings')) {
+            ensure_deadline_2_hour_notification_settings();
         }
 
         //models

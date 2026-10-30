@@ -66,6 +66,12 @@ class Cron_job {
 
         $this->cron_debug("Scheduled cron run started. today={$this->today} utc=" . get_current_utc_time(), "cron_run", "info");
 
+        try {
+            $this->send_task_deadline_2_hour_notifications();
+        } catch (\Exception $e) {
+            $this->cron_debug("Task deadline 2-hour notification failed: " . $e->getMessage(), "task_reminders", "error");
+        }
+
         $hourly = $this->call_hourly_jobs($options);
 
         try {
@@ -859,6 +865,19 @@ class Cron_job {
         log_notification("project_task_deadline_pre_reminder", $notification_option, "0");
         log_notification("project_task_deadline_overdue_reminder", $notification_option, "0");
         log_notification("project_task_reminder_on_the_day_of_deadline", $notification_option, "0");
+
+        $this->send_task_deadline_2_hour_notifications();
+    }
+
+    public function send_task_deadline_2_hour_notifications() {
+        if (function_exists('check_and_send_task_deadline_2_hour_reminders')) {
+            $sent = check_and_send_task_deadline_2_hour_reminders(true);
+            if ($sent) {
+                $this->cron_debug("Sent {$sent} task deadline 2-hour pre-reminders.", "task_reminders", "info");
+            }
+            return $sent;
+        }
+        return 0;
     }
 
     private function close_inactive_tickets() {

@@ -113,6 +113,15 @@ class Notifications_model extends Crud_model {
             $where .= " OR ($users_table.id=(SELECT $tasks_table.assigned_to FROM $tasks_table WHERE $tasks_table.id=$task_id)) ";
         }
 
+        //find task assigner / creator for 2-hour pre reminder
+        if ($task_id && in_array($event, array("project_task_deadline_2_hours_pre_reminder", "project_task_deadline_pre_reminder"))) {
+            $assigner_id = $this->_get_task_assigner_id($task_id);
+            if ($assigner_id) {
+                $where .= " OR $users_table.id=$assigner_id ";
+            }
+        }
+
+
         //find  task_collaborators
         if (in_array("task_collaborators", $notify_to_terms) && $task_id) {
             $where .= " OR (FIND_IN_SET($users_table.id, (SELECT $tasks_table.collaborators FROM $tasks_table WHERE $tasks_table.id=$task_id))) ";
@@ -580,6 +589,24 @@ class Notifications_model extends Crud_model {
                 $assigner_id = $this->_get_task_assigner_id($task_id);
                 $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, array($assigner_id), $user_id);
             }
+        } else if ($task_id && in_array($event, array("project_task_deadline_2_hours_pre_reminder", "project_task_deadline_pre_reminder"))) {
+            $recipient_ids = array();
+            if ($task_info && $task_info->assigned_to) {
+                $recipient_ids[] = (int) $task_info->assigned_to;
+            }
+            if ($task_info && $task_info->collaborators) {
+                foreach (explode(",", $task_info->collaborators) as $collaborator_id) {
+                    $collaborator_id = (int) trim($collaborator_id);
+                    if ($collaborator_id) {
+                        $recipient_ids[] = $collaborator_id;
+                    }
+                }
+            }
+            $assigner_id = $this->_get_task_assigner_id($task_id);
+            if ($assigner_id) {
+                $recipient_ids[] = (int) $assigner_id;
+            }
+            $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, $recipient_ids, $user_id);
         } else if ($project_id && in_array($event, array("project_member_added", "project_member_deleted"))) {
             $this->_limit_notification_recipients_to_project_members($web_notify_to, $email_notify_to, $project_id, $user_id);
         }
@@ -766,7 +793,8 @@ class Notifications_model extends Crud_model {
             if ($show_assigned_tasks_only) {
                 //the user has permission to access only assigned tasks
                 $collaborators_array = explode(',', $task_info->collaborators);
-                if ($task_info->assigned_to != $user->id && !in_array($user->id, $collaborators_array)) {
+                $is_creator_or_assigner = (isset($task_info->created_by) && $task_info->created_by == $user->id) || $this->_get_task_assigner_id($task_info->id) == $user->id;
+                if ($task_info->assigned_to != $user->id && !in_array($user->id, $collaborators_array) && !$is_creator_or_assigner) {
                     return false;
                 }
             }
@@ -1242,6 +1270,10 @@ class Notifications_model extends Crud_model {
         return $ids;
     }
 
+    public function get_task_assigner_id($task_id) {
+        return $this->_get_task_assigner_id($task_id);
+    }
+
     private function _get_task_assigner_id($task_id) {
         $task_id = (int) $task_id;
         if (!$task_id) {
@@ -1249,6 +1281,7 @@ class Notifications_model extends Crud_model {
         }
 
         $activity_logs_table = $this->db->prefixTable('activity_logs');
+        $tasks_table = $this->db->prefixTable('tasks');
 
         // Prefer the latest activity that set/changed assigned_to
         $row = $this->db->query("
@@ -1264,6 +1297,12 @@ class Notifications_model extends Crud_model {
 
         if ($row && $row->created_by) {
             return (int) $row->created_by;
+        }
+
+        // Check created_by directly on tasks table
+        $task_row = $this->db->query("SELECT created_by FROM $tasks_table WHERE id=$task_id")->getRow();
+        if ($task_row && !empty($task_row->created_by)) {
+            return (int) $task_row->created_by;
         }
 
         // Fallback: who created the task
@@ -1315,6 +1354,8 @@ class Notifications_model extends Crud_model {
                 'project_task_started', 'project_task_finished',
                 'project_task_reopened', 'project_task_commented',
                 'project_task_updated',
+                'project_task_deadline_2_hours_pre_reminder',
+                'project_task_deadline_pre_reminder',
                 'project_member_added', 'project_member_deleted'
             )
             OR (
@@ -1331,6 +1372,10 @@ class Notifications_model extends Crud_model {
                     'project_task_updated'
                 )
                 AND NULLIF($notifications_table.to_user_id, 0) = $user_id
+            )
+            OR (
+                $notifications_table.event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                AND FIND_IN_SET($user_id, $notifications_table.notify_to)
             )
             OR (
                 $notifications_table.event IN ('project_member_added', 'project_member_deleted')
