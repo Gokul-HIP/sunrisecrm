@@ -66,7 +66,21 @@ if (!function_exists('get_avatar')) {
 
     function get_avatar($image = "") {
         if ($image === "system_bot") {
-            return base_url("assets/images/avatar-bot.jpg");
+            static $system_bot_avatar_url = null;
+            if ($system_bot_avatar_url !== null) {
+                return $system_bot_avatar_url;
+            }
+
+            $robot_path = defined('ROOTPATH') ? ROOTPATH . "assets/images/reminder-robot.png" : "";
+            if (!$robot_path || !file_exists($robot_path)) {
+                $robot_path = defined('FCPATH') ? FCPATH . "assets/images/reminder-robot.png" : "";
+            }
+            if ($robot_path && file_exists($robot_path)) {
+                $system_bot_avatar_url = base_url("assets/images/reminder-robot.png") . "?v=" . filemtime($robot_path);
+            } else {
+                $system_bot_avatar_url = base_url("assets/images/avatar-bot.jpg");
+            }
+            return $system_bot_avatar_url;
         } else if ($image === "bitbucket") {
             return base_url("assets/images/bitbucket_logo.png");
         } else if ($image === "github") {
@@ -765,8 +779,12 @@ if (!function_exists('validate_numeric_value')) {
 if (!function_exists('get_team_member_profile_link')) {
 
     function get_team_member_profile_link($id = 0, $name = "", $attributes = array()) {
-        $ci = new Security_Controller(false);
-        if ($ci->login_user->user_type === "staff") {
+        static $user_type = null;
+        if ($user_type === null) {
+            $ci = new Security_Controller(false);
+            $user_type = isset($ci->login_user->user_type) ? $ci->login_user->user_type : "";
+        }
+        if ($user_type === "staff") {
             return anchor("team_members/view/" . $id, $name ? $name : "", $attributes);
         } else {
             return js_anchor($name, $attributes);
@@ -1776,14 +1794,22 @@ if (!function_exists('validate_invoice_verification_code')) {
 
 if (!function_exists('can_edit_this_task_status')) {
 
-    function can_edit_this_task_status($assigned_to = 0) {
-        $ci = new Security_Controller(false);
+    function can_edit_this_task_status($assigned_to = 0, $login_user = null) {
+        static $cached_user = null;
+        if ($login_user) {
+            $cached_user = $login_user;
+        } else if ($cached_user === null) {
+            $ci = new Security_Controller(false);
+            $cached_user = $ci->login_user;
+        }
 
-        if (get_array_value($ci->login_user->permissions, "can_update_only_assigned_tasks_status")) {
+        $user = $cached_user;
+        if ($user && get_array_value($user->permissions, "can_update_only_assigned_tasks_status")) {
             //user can change only assigned tasks
-            if ($assigned_to == $ci->login_user->id) {
+            if ($assigned_to == $user->id) {
                 return true;
             }
+            return false;
         } else {
             return true;
         }
@@ -2604,13 +2630,21 @@ if (!function_exists('append_server_side_filtering_commmon_params')) {
         $server_side = $request->getPost("server_side");
         if ($server_side == "1") {
             $options["server_side"] = 1;
-            $options["limit"] = $request->getPost("limit");
+            $limit = $request->getPost("limit");
+            if ($limit === null || $limit === '') {
+                $limit = $request->getPost("length");
+            }
+            $options["limit"] = $limit;
 
             if ($options["limit"] == -1) {
                 $options["limit"] = 100; //max limit is 100 for serverside. 
             }
 
-            $options["skip"] = $request->getPost("skip") ? $request->getPost("skip") : 0;
+            $skip = $request->getPost("skip");
+            if ($skip === null || $skip === '') {
+                $skip = $request->getPost("start");
+            }
+            $options["skip"] = $skip ? $skip : 0;
             $options["order_by"] = $request->getPost("order_by");
 
             $options["order_dir"] = $request->getPost("order_dir");

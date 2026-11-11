@@ -87,6 +87,18 @@ if (strtoupper($result[0]) == "M") {
     ?>
     AppHelper.notificationSoundSrc = "<?php echo get_file_uri($notification_mp3_path); ?>?v=<?php echo $notification_mp3_version; ?>";
 
+    <?php
+    $alert_sound_src = "";
+    if (is_file(FCPATH . "assets/sounds/alert.mp3")) {
+        $alert_ver = (string) filemtime(FCPATH . "assets/sounds/alert.mp3");
+        $alert_sound_src = base_url("assets/sounds/alert.mp3") . "?v=" . $alert_ver;
+    } else if (is_file(FCPATH . "assets/sounds/alert.wav")) {
+        $alert_ver = (string) filemtime(FCPATH . "assets/sounds/alert.wav");
+        $alert_sound_src = base_url("assets/sounds/alert.wav") . "?v=" . $alert_ver;
+    }
+    ?>
+    AppHelper.alertSoundSrc = "<?php echo $alert_sound_src; ?>";
+
     // true  = Windows/Chrome system notification sound
     // false = project sound (files/system/*.mp3 above)
     AppHelper.settings.useWindowsNotificationSound = false;

@@ -24,8 +24,32 @@ class Crud_model extends Model {
     function __construct($table = null, $db = null) {
         $this->Activity_logs_model = model("App\Models\Activity_logs_model");
         $this->db = $db ? $db : db_connect('default');
-        $this->db->query("SET sql_mode = ''");
+        self::ensure_connection_sql_mode($this->db);
         $this->use_table($table);
+    }
+
+    public static function ensure_connection_sql_mode($db) {
+        if (!$db) {
+            return;
+        }
+
+        static $initialized_connections = array();
+
+        if (empty($db->connID)) {
+            $db->initialize();
+        }
+
+        $conn_key = (!empty($db->connID) && is_object($db->connID) && isset($db->connID->thread_id))
+            ? (int) $db->connID->thread_id
+            : spl_object_id($db);
+
+        if (!isset($initialized_connections[$conn_key])) {
+            $db->query("SET sql_mode = ''");
+            if (!empty($db->connID) && is_object($db->connID) && isset($db->connID->thread_id)) {
+                $initialized_connections[(int) $db->connID->thread_id] = true;
+            }
+            $initialized_connections[$conn_key] = true;
+        }
     }
 
     protected function use_table($table) {
@@ -108,6 +132,7 @@ class Crud_model extends Model {
 
     function ci_save(&$data = array(), $id = 0) {
         //allowed fields should be assigned
+        self::ensure_connection_sql_mode($this->db);
         $db_fields = $this->db->getFieldNames($this->table);
         foreach ($db_fields as $field) {
             if ($field !== "id") {

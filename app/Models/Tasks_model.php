@@ -12,6 +12,82 @@ class Tasks_model extends Crud_model {
         parent::init_activity_log("task", "title", "project", "project_id");
     }
 
+    function ci_save(&$data = array(), $id = 0) {
+        $id = (int) $id;
+        $is_update = ($id > 0);
+
+        // Check if any fields relevant to points/awards are being modified
+        $point_relevant_fields = array("status_id", "deadline", "end_time", "points", "assigned_to", "collaborators", "deleted");
+        $has_relevant_changes = false;
+        if ($is_update) {
+            foreach ($point_relevant_fields as $f) {
+                if (array_key_exists($f, $data)) {
+                    $has_relevant_changes = true;
+                    break;
+                }
+            }
+        }
+
+        $existing = null;
+        if ($is_update && $has_relevant_changes) {
+            $existing = $this->get_one($id);
+        }
+
+        $save_id = parent::ci_save($data, $id);
+        if (!$save_id) {
+            return $save_id;
+        }
+
+        if (!$is_update) {
+            $task_after = $this->get_one($save_id);
+            if (is_task_status_done($task_after) && function_exists("recalculate_task_point_awards")) {
+                recalculate_task_point_awards($task_after, true);
+            }
+            return $save_id;
+        }
+
+        if (isset($data["deleted"]) && $data["deleted"] == 1) {
+            $awards_model = model("App\Models\Task_point_awards_model");
+            $revoked_list = $awards_model->revoke_all_by_task_id($save_id);
+            foreach ($revoked_list as $r) {
+                if ($r->user_id) {
+                    refresh_user_monthly_task_points($r->user_id, $r->year, $r->month);
+                }
+            }
+            return $save_id;
+        }
+
+        if ($has_relevant_changes && function_exists("recalculate_task_point_awards")) {
+            $task_after = $this->get_one($save_id);
+            $was_done = $existing ? is_task_status_done($existing) : false;
+            $is_done = is_task_status_done($task_after);
+
+            if ($was_done && !$is_done) {
+                $awards_model = model("App\Models\Task_point_awards_model");
+                $revoked_list = $awards_model->revoke_all_by_task_id($save_id);
+                foreach ($revoked_list as $r) {
+                    if ($r->user_id) {
+                        refresh_user_monthly_task_points($r->user_id, $r->year, $r->month);
+                    }
+                }
+            } else if (!$was_done && $is_done) {
+                recalculate_task_point_awards($task_after, true);
+            } else if ($was_done && $is_done) {
+                $deadline_changed = array_key_exists("deadline", $data) && ($existing->deadline != $data["deadline"]);
+                $end_time_changed = array_key_exists("end_time", $data) && ($existing->end_time != $data["end_time"]);
+                $points_changed = array_key_exists("points", $data) && ((float) $existing->points != (float) $data["points"]);
+                $assignee_changed = array_key_exists("assigned_to", $data) && ((int) $existing->assigned_to != (int) $data["assigned_to"]);
+                $collab_changed = array_key_exists("collaborators", $data) && ((string) $existing->collaborators !== (string) $data["collaborators"]);
+
+                if ($deadline_changed || $end_time_changed || $points_changed || $assignee_changed || $collab_changed) {
+                    recalculate_task_point_awards($task_after, true);
+                }
+            }
+        }
+
+        return $save_id;
+    }
+
     function schema() {
         return array(
             "id" => array(
@@ -363,7 +439,16 @@ class Tasks_model extends Crud_model {
 
         $notification_join = " LEFT JOIN (SELECT $notifications_table.task_id FROM $notifications_table WHERE $notifications_table.deleted=0 AND $notifications_table.event='project_task_commented' AND !FIND_IN_SET('$unread_status_user_id', $notifications_table.read_by) AND $notifications_table.user_id!=$unread_status_user_id GROUP BY $notifications_table.task_id) AS notification_table ON notification_table.task_id = $tasks_table.id";
 
-        $awards_join = " LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.deleted=0";
+        $scoped_user_id = $specific_user_id ? (int) $specific_user_id : ($show_assigned_tasks_only_user_id ? (int) $show_assigned_tasks_only_user_id : ($assigned_to ? (int) $assigned_to : 0));
+        if (!$scoped_user_id) {
+            $scoped_user_id = (int) $this->_get_clean_value($options, "user_id");
+        }
+
+        if ($scoped_user_id) {
+            $awards_join = " LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.user_id=$scoped_user_id AND $awards_table.deleted=0";
+        } else {
+            $awards_join = " LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.user_id=COALESCE(NULLIF($tasks_table.assigned_to, 0), 0) AND $awards_table.deleted=0";
+        }
 
         $core_from_joins_where = "
         FROM $tasks_table
@@ -414,7 +499,7 @@ class Tasks_model extends Crud_model {
                     $sub_task_count_select
                     $task_priority_table.title AS priority_title, $task_priority_table.icon AS priority_icon, $task_priority_table.color AS priority_color,
                     IF($tasks_table.deadline IS NULL, $milestones_table.title, '') AS deadline_milestone_title, $unread_select $select_labels_data_query $select_custom_fieds,
-                    $awards_table.earned_points AS awarded_points, $awards_table.original_points AS awarded_original_points, $awards_table.reduction_percent AS point_reduction_percent, $awards_table.reduction_reason AS point_reduction_reason, $awards_table.completed_date AS points_completed_date
+                    $awards_table.earned_points AS awarded_points, $awards_table.original_points AS awarded_original_points, $awards_table.reduction_percent AS point_reduction_percent, $awards_table.reduction_reason AS point_reduction_reason, $awards_table.completed_date AS points_completed_date, $awards_table.is_collaborator AS awarded_is_collaborator, $awards_table.participants_count AS awarded_participants_count
         $data_from_joins_where
         $order $limit_offset";
 
@@ -433,13 +518,77 @@ class Tasks_model extends Crud_model {
                 $rows = $this->_unique_tasks_by_id($rows);
             }
 
+            if (!$status_ids_where) {
+                // Combined single-pass query for total rows, task points, and status counts
+                $combined_count_sql = "SELECT
+                        COUNT(*) AS total_rows,
+                        COALESCE(SUM(agg_rows.points), 0) AS total_given_points,
+                        COALESCE(SUM(agg_rows.gained_points), 0) AS total_gained_points,
+                        COALESCE(SUM(CASE WHEN agg_rows.is_collab = 0 THEN agg_rows.user_overall ELSE 0 END), 0) AS solo_overall_points,
+                        COALESCE(SUM(CASE WHEN agg_rows.is_collab = 0 THEN agg_rows.gained_points ELSE 0 END), 0) AS solo_earned_points,
+                        COALESCE(SUM(CASE WHEN agg_rows.is_collab = 1 THEN agg_rows.user_overall ELSE 0 END), 0) AS collab_overall_points,
+                        COALESCE(SUM(CASE WHEN agg_rows.is_collab = 1 THEN agg_rows.gained_points ELSE 0 END), 0) AS collab_earned_points,
+                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'to_do' THEN 1 ELSE 0 END), 0) AS todo_count,
+                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'in_progress' THEN 1 ELSE 0 END), 0) AS in_progress_count,
+                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name IN ('in_review', 'review') OR LOWER(agg_rows.status_title) IN ('in review', 'review') THEN 1 ELSE 0 END), 0) AS in_review_count,
+                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'done' THEN 1 ELSE 0 END), 0) AS done_count
+                    FROM (
+                        SELECT $tasks_table.id,
+                            MAX($tasks_table.points) AS points,
+                            MAX(IFNULL($awards_table.earned_points, 0)) AS gained_points,
+                            MAX(CASE
+                                WHEN IFNULL($awards_table.original_points, 0) > 0 THEN $awards_table.original_points
+                                WHEN ($tasks_table.collaborators IS NULL OR $tasks_table.collaborators = '') THEN $tasks_table.points
+                                ELSE ROUND($tasks_table.points / (IF($tasks_table.assigned_to > 0, 1, 0) + LENGTH($tasks_table.collaborators) - LENGTH(REPLACE($tasks_table.collaborators, ',', '')) + 1), 2)
+                            END) AS user_overall,
+                            MAX(CASE
+                                WHEN IFNULL($awards_table.participants_count, 1) > 1 OR IFNULL($awards_table.is_collaborator, 0) = 1 OR ($tasks_table.collaborators IS NOT NULL AND $tasks_table.collaborators != '') THEN 1
+                                ELSE 0
+                            END) AS is_collab,
+                            MAX($task_status_table.key_name) AS status_key_name,
+                            MAX($task_status_table.title) AS status_title
+                        $core_from_joins_where
+                        GROUP BY $tasks_table.id
+                    ) AS agg_rows";
+                $counts_row = $this->db->query($combined_count_sql)->getRow();
+
+                return array(
+                    "data" => $rows,
+                    "recordsTotal" => $counts_row ? (int) $counts_row->total_rows : 0,
+                    "recordsFiltered" => $counts_row ? (int) $counts_row->total_rows : 0,
+                    "total_given_points" => $counts_row ? (float) $counts_row->total_given_points : 0,
+                    "total_gained_points" => $counts_row ? (float) $counts_row->total_gained_points : 0,
+                    "solo_overall_points" => $counts_row ? (float) $counts_row->solo_overall_points : 0,
+                    "solo_earned_points" => $counts_row ? (float) $counts_row->solo_earned_points : 0,
+                    "collab_overall_points" => $counts_row ? (float) $counts_row->collab_overall_points : 0,
+                    "collab_earned_points" => $counts_row ? (float) $counts_row->collab_earned_points : 0,
+                    "todo_count" => $counts_row ? (int) $counts_row->todo_count : 0,
+                    "in_progress_count" => $counts_row ? (int) $counts_row->in_progress_count : 0,
+                    "in_review_count" => $counts_row ? (int) $counts_row->in_review_count : 0,
+                    "done_count" => $counts_row ? (int) $counts_row->done_count : 0,
+                );
+            }
+
             $count_sql = "SELECT COUNT(*) AS total_rows,
                     COALESCE(SUM(point_rows.points), 0) AS total_given_points,
-                    COALESCE(SUM(point_rows.gained_points), 0) AS total_gained_points
+                    COALESCE(SUM(point_rows.gained_points), 0) AS total_gained_points,
+                    COALESCE(SUM(CASE WHEN point_rows.is_collab = 0 THEN point_rows.user_overall ELSE 0 END), 0) AS solo_overall_points,
+                    COALESCE(SUM(CASE WHEN point_rows.is_collab = 0 THEN point_rows.gained_points ELSE 0 END), 0) AS solo_earned_points,
+                    COALESCE(SUM(CASE WHEN point_rows.is_collab = 1 THEN point_rows.user_overall ELSE 0 END), 0) AS collab_overall_points,
+                    COALESCE(SUM(CASE WHEN point_rows.is_collab = 1 THEN point_rows.gained_points ELSE 0 END), 0) AS collab_earned_points
                 FROM (
                     SELECT $tasks_table.id,
                         MAX($tasks_table.points) AS points,
-                        MAX(IFNULL($awards_table.earned_points, 0)) AS gained_points
+                        MAX(IFNULL($awards_table.earned_points, 0)) AS gained_points,
+                        MAX(CASE
+                            WHEN IFNULL($awards_table.original_points, 0) > 0 THEN $awards_table.original_points
+                            WHEN ($tasks_table.collaborators IS NULL OR $tasks_table.collaborators = '') THEN $tasks_table.points
+                            ELSE ROUND($tasks_table.points / (IF($tasks_table.assigned_to > 0, 1, 0) + LENGTH($tasks_table.collaborators) - LENGTH(REPLACE($tasks_table.collaborators, ',', '')) + 1), 2)
+                        END) AS user_overall,
+                        MAX(CASE
+                            WHEN IFNULL($awards_table.participants_count, 1) > 1 OR IFNULL($awards_table.is_collaborator, 0) = 1 OR ($tasks_table.collaborators IS NOT NULL AND $tasks_table.collaborators != '') THEN 1
+                            ELSE 0
+                        END) AS is_collab
                     $core_from_joins_where
                     GROUP BY $tasks_table.id
                 ) AS point_rows";
@@ -469,6 +618,10 @@ class Tasks_model extends Crud_model {
                 "recordsFiltered" => $total_rows->total_rows,
                 "total_given_points" => (float) $total_rows->total_given_points,
                 "total_gained_points" => (float) $total_rows->total_gained_points,
+                "solo_overall_points" => $total_rows ? (float) $total_rows->solo_overall_points : 0,
+                "solo_earned_points" => $total_rows ? (float) $total_rows->solo_earned_points : 0,
+                "collab_overall_points" => $total_rows ? (float) $total_rows->collab_overall_points : 0,
+                "collab_earned_points" => $total_rows ? (float) $total_rows->collab_earned_points : 0,
                 "todo_count" => $status_rows ? (int) $status_rows->todo_count : 0,
                 "in_progress_count" => $status_rows ? (int) $status_rows->in_progress_count : 0,
                 "in_review_count" => $status_rows ? (int) $status_rows->in_review_count : 0,
@@ -811,6 +964,16 @@ class Tasks_model extends Crud_model {
 
         $select_labels_data_query = $this->get_labels_data_query();
 
+        $scoped_user_id = $specific_user_id ? (int) $specific_user_id : ($show_assigned_tasks_only_user_id ? (int) $show_assigned_tasks_only_user_id : ($assigned_to ? (int) $assigned_to : 0));
+        if (!$scoped_user_id) {
+            $scoped_user_id = (int) $this->_get_clean_value($options, "user_id");
+        }
+        if ($scoped_user_id) {
+            $awards_join = " LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.user_id=$scoped_user_id AND $awards_table.deleted=0";
+        } else {
+            $awards_join = " LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.user_id=COALESCE(NULLIF($tasks_table.assigned_to, 0), 0) AND $awards_table.deleted=0";
+        }
+
         if (get_array_value($options, "return_task_counts_only")) {
             $sql = "SELECT COUNT($tasks_table.id) as tasks_count, $tasks_table.status_id
             FROM $tasks_table
@@ -827,7 +990,7 @@ class Tasks_model extends Crud_model {
                 (SELECT COUNT($checklist_items_table.id) FROM $checklist_items_table WHERE $checklist_items_table.is_checked=1 AND $checklist_items_table.deleted=0 AND $checklist_items_table.task_id=$tasks_table.id) AS total_checklist_checked,
                 COUNT(sub_tasks_table.id) AS total_sub_tasks, completed_sub_tasks_table.total_sub_tasks_done,
                 $select_labels_data_query,
-                $awards_table.earned_points AS awarded_points, $awards_table.original_points AS awarded_original_points, $awards_table.reduction_percent AS point_reduction_percent, $awards_table.reduction_reason AS point_reduction_reason, $awards_table.completed_date AS points_completed_date
+                $awards_table.earned_points AS awarded_points, $awards_table.original_points AS awarded_original_points, $awards_table.reduction_percent AS point_reduction_percent, $awards_table.reduction_reason AS point_reduction_reason, $awards_table.completed_date AS points_completed_date, $awards_table.is_collaborator AS awarded_is_collaborator, $awards_table.participants_count AS awarded_participants_count
         FROM $tasks_table
         LEFT JOIN (
             SELECT $tasks_table.id, $tasks_table.parent_task_id, $tasks_table.title
@@ -850,7 +1013,7 @@ class Tasks_model extends Crud_model {
         LEFT JOIN $task_priority_table ON $tasks_table.priority_id = $task_priority_table.id 
         LEFT JOIN $milestones_table ON $tasks_table.milestone_id=$milestones_table.id 
         LEFT JOIN $notifications_table ON $notifications_table.task_id = $tasks_table.id AND $notifications_table.deleted=0 AND $notifications_table.event='project_task_commented' AND !FIND_IN_SET('$unread_status_user_id', $notifications_table.read_by) AND $notifications_table.user_id!=$unread_status_user_id
-        LEFT JOIN $awards_table ON $awards_table.task_id=$tasks_table.id AND $awards_table.deleted=0
+        $awards_join
         $extra_left_join
         WHERE $tasks_table.deleted=0 $where $custom_fields_where 
         GROUP BY $tasks_table.id

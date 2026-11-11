@@ -113,6 +113,18 @@ class Notifications_model extends Crud_model {
             $where .= " OR ($users_table.id=(SELECT $tasks_table.assigned_to FROM $tasks_table WHERE $tasks_table.id=$task_id)) ";
         }
 
+        //find task creator
+        if (in_array("task_creator", $notify_to_terms) && $task_id) {
+            $where .= " OR ($users_table.id=(
+                        SELECT COALESCE(
+                            NULLIF($tasks_table.created_by, 0),
+                            (SELECT parent.created_by FROM $tasks_table parent WHERE parent.id = $tasks_table.parent_task_id),
+                            0
+                        )
+                        FROM $tasks_table WHERE $tasks_table.id=$task_id
+                    )) ";
+        }
+
         //find task assigner / creator for 2-hour pre reminder
         if ($task_id && in_array($event, array("project_task_deadline_2_hours_pre_reminder", "project_task_deadline_pre_reminder"))) {
             $assigner_id = $this->_get_task_assigner_id($task_id);
@@ -613,7 +625,7 @@ class Notifications_model extends Crud_model {
 
         $data = array(
             "user_id" => $user_id,
-            "description" => "",
+            "description" => get_array_value($options, "description") ? get_array_value($options, "description") : "",
             "created_at" => get_current_utc_time(),
             "notify_to" => $web_notify_to,
             "read_by" => "",
@@ -1086,12 +1098,18 @@ class Notifications_model extends Crud_model {
 
         $this->db->query("UPDATE $users_table SET $users_table.last_online = '$now' WHERE $users_table.id=$user_id");
 
+        $cap_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
+        $effective_checked_at = $last_notification_checke_at;
+        if (!$effective_checked_at || $effective_checked_at === "0" || $effective_checked_at === "0000-00-00 00:00:00" || $effective_checked_at < $cap_date) {
+            $effective_checked_at = $cap_date;
+        }
+
         //find notifications
         $sql = "SELECT COUNT($notifications_table.id) AS total_notifications
         FROM $notifications_table
         LEFT JOIN $tasks_table ON $tasks_table.id=$notifications_table.task_id
         WHERE $notifications_table.deleted=0 AND FIND_IN_SET($user_id, $notifications_table.notify_to) != 0 AND FIND_IN_SET($user_id, $notifications_table.read_by) = 0
-        " . (($last_notification_checke_at && $last_notification_checke_at !== "0" && $last_notification_checke_at !== "0000-00-00 00:00:00") ? " AND " . $notifications_table . ".created_at > " . $this->db->escape($last_notification_checke_at) : "") . "
+        AND " . $notifications_table . ".created_at > " . $this->db->escape($effective_checked_at) . "
         " . $this->_sql_task_notification_recipient_filter($user_id, $notifications_table, $tasks_table);
 
         $result = $this->db->query($sql);
@@ -1106,6 +1124,7 @@ class Notifications_model extends Crud_model {
     function get_desktop_notification_payloads($user_id, $last_notification_checke_at = "0", $limit = 3) {
         $notifications_table = $this->db->prefixTable('notifications');
         $tasks_table = $this->db->prefixTable('tasks');
+        $projects_table = $this->db->prefixTable('projects');
         $users_table = $this->db->prefixTable('users');
         $user_id = (int) $user_id;
         $limit = (int) $limit;
@@ -1114,6 +1133,12 @@ class Notifications_model extends Crud_model {
         }
         if ($limit > 5) {
             $limit = 5;
+        }
+
+        $cap_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
+        $effective_checked_at = $last_notification_checke_at;
+        if (!$effective_checked_at || $effective_checked_at === "0" || $effective_checked_at === "0000-00-00 00:00:00" || $effective_checked_at < $cap_date) {
+            $effective_checked_at = $cap_date;
         }
 
         $sql = "SELECT $notifications_table.id, $notifications_table.event, $notifications_table.user_id,
@@ -1127,12 +1152,27 @@ class Notifications_model extends Crud_model {
                 $notifications_table.event_id, $notifications_table.activity_log_id,
                 CONCAT($users_table.first_name, ' ', $users_table.last_name) AS user_name,
                 $users_table.image AS user_image,
+                $tasks_table.title AS task_title,
+                $projects_table.title AS project_title,
                 (SELECT CONCAT(u2.first_name, ' ', u2.last_name) FROM $users_table u2 WHERE u2.id=$notifications_table.to_user_id) AS to_user_name
         FROM $notifications_table
         LEFT JOIN $tasks_table ON $tasks_table.id=$notifications_table.task_id
+        LEFT JOIN $projects_table ON $projects_table.id=$notifications_table.project_id
         LEFT JOIN $users_table ON $users_table.id=$notifications_table.user_id
-        WHERE $notifications_table.deleted=0 AND FIND_IN_SET($user_id, $notifications_table.notify_to) != 0 AND FIND_IN_SET($user_id, $notifications_table.read_by) = 0
-        " . (($last_notification_checke_at && $last_notification_checke_at !== "0" && $last_notification_checke_at !== "0000-00-00 00:00:00") ? " AND " . $notifications_table . ".created_at > " . $this->db->escape($last_notification_checke_at) : "") . "
+        WHERE $notifications_table.deleted=0 
+        AND (
+            FIND_IN_SET($user_id, $notifications_table.notify_to) != 0
+            OR (
+                $notifications_table.event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                AND (
+                    COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
+                    OR $tasks_table.created_by = $user_id
+                    OR FIND_IN_SET($user_id, $tasks_table.collaborators)
+                )
+            )
+        )
+        AND FIND_IN_SET($user_id, $notifications_table.read_by) = 0
+        AND " . $notifications_table . ".created_at > " . $this->db->escape($effective_checked_at) . "
         " . $this->_sql_task_notification_recipient_filter($user_id, $notifications_table, $tasks_table) . "
         ORDER BY $notifications_table.id DESC
         LIMIT $limit";
@@ -1141,22 +1181,39 @@ class Notifications_model extends Crud_model {
         $payloads = array();
 
         foreach ($rows as $row) {
-            $message = app_lang("notification_" . $row->event);
-            if ($row->to_user_name) {
-                $message = sprintf(app_lang("notification_" . $row->event), $row->to_user_name);
+            $is_reminder = ($row->event === "project_task_deadline_2_hours_pre_reminder");
+
+            if ($is_reminder) {
+                $task_name = $row->task_title ? trim($row->task_title) : "Task";
+                $title = "#{$row->task_id} - {$task_name}";
+                $proj_prefix = $row->project_title ? "[" . trim($row->project_title) . "] " : "";
+                $message = $proj_prefix . "Reminder: Task deadline is approaching in 2 hours.";
+            } else {
+                $message = app_lang("notification_" . $row->event);
+                if ($row->to_user_name) {
+                    $message = sprintf(app_lang("notification_" . $row->event), $row->to_user_name);
+                }
+                $message = trim(html_entity_decode(strip_tags($message), ENT_QUOTES, "UTF-8"));
+                $title = $row->user_id ? trim($row->user_name) : get_setting("app_title");
             }
-            $message = trim(html_entity_decode(strip_tags($message), ENT_QUOTES, "UTF-8"));
 
             $url_attributes_array = get_notification_url_attributes($row);
             $url_attributes = get_array_value($url_attributes_array, "url_attributes");
 
-            $payloads[] = array(
+            $payload = array(
                 "notification_id" => $row->id,
-                "title" => $row->user_id ? trim($row->user_name) : get_setting("app_title"),
+                "event" => $row->event,
+                "task_id" => $row->task_id,
+                "is_reminder" => $is_reminder,
+                "title" => $title ? $title : get_setting("app_title"),
                 "message" => $message ? $message : get_setting("app_title"),
                 "icon" => get_avatar($row->user_id ? $row->user_image : "system_bot"),
                 "url_attributes" => $url_attributes
             );
+            if ($is_reminder) {
+                $payload["notificationTimeout"] = 15000;
+            }
+            $payloads[] = $payload;
         }
 
         return $payloads;
@@ -1375,7 +1432,12 @@ class Notifications_model extends Crud_model {
             )
             OR (
                 $notifications_table.event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
-                AND FIND_IN_SET($user_id, $notifications_table.notify_to)
+                AND (
+                    FIND_IN_SET($user_id, $notifications_table.notify_to)
+                    OR COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
+                    OR $tasks_table.created_by = $user_id
+                    OR FIND_IN_SET($user_id, $tasks_table.collaborators)
+                )
             )
             OR (
                 $notifications_table.event IN ('project_member_added', 'project_member_deleted')

@@ -142,6 +142,10 @@
             success: function () {
                 appLoader.hide();
 
+                if (typeof window.refreshTaskPointsWidgets === "function") {
+                    window.refreshTaskPointsWidgets();
+                }
+
                 if (isMobile()) {
                     adjustViewHeightWidth();
                 }

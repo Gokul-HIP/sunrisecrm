@@ -21,6 +21,12 @@ foreach ($task_statuses as $status) {
                 onSuccess: function (response, newValue) {
                     if (response.success) {
                         $("#task-table").appTable({newData: response.data, dataId: response.id});
+                        if (typeof window.refreshTaskPointsWidgets === "function") {
+                            window.refreshTaskPointsWidgets();
+                        }
+                        if ($("#task-table").length) {
+                            $("#task-table").appTable({reload: true});
+                        }
                     }
                 }
             });
@@ -39,6 +45,12 @@ foreach ($task_statuses as $status) {
                 success: function (response) {
                     if (response.success) {
                         $("#task-table").appTable({newData: response.data, dataId: response.id});
+                        if (typeof window.refreshTaskPointsWidgets === "function") {
+                            window.refreshTaskPointsWidgets();
+                        }
+                        if ($("#task-table").length) {
+                            $("#task-table").appTable({reload: true});
+                        }
                     }
                 }
             });

@@ -1,0 +1,4 @@
+CRITICAL - 2026-11-10 23:06:40 --> Call to undefined function App\Models\get_array_value()
+in APPPATH\Models\Crud_model.php on line 453.
+ 1 APPPATH\Models\Tasks_model.php(218): App\Models\Crud_model->_get_clean_value([...], 'id')
+ 2 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\get_counters_before.php(27): App\Models\Tasks_model->get_details([...])

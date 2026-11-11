@@ -25,6 +25,14 @@ class Cron extends App_Controller {
         return $this->show_dashboard();
     }
 
+    public function reminders() {
+        if (!headers_sent()) {
+            header("Content-Type: text/plain; charset=utf-8");
+        }
+        $this->check_task_deadline_2_hour_reminders_pre_gate();
+        echo "ok";
+    }
+
     function status() {
         $this->require_dashboard_access(true);
         echo json_encode(array(
@@ -43,6 +51,9 @@ class Cron extends App_Controller {
         $start_time = get_current_utc_time();
 
         $this->diagnostic->log($run_id, "cron_run", "info", "Manual diagnostic cron started.", array());
+
+        // Pre-gate: check task deadline 2-hour reminders
+        $this->check_task_deadline_2_hour_reminders_pre_gate($run_id);
 
         $last_cron_job_time = get_setting("last_cron_job_time");
         $current_time = strtotime(get_current_utc_time());
@@ -431,9 +442,22 @@ class Cron extends App_Controller {
         echo json_encode(array("success" => true, "message" => "Diagnostic logs cleared."));
     }
 
+    private function check_task_deadline_2_hour_reminders_pre_gate($run_id = null) {
+        if (!function_exists('check_task_deadline_2_hour_reminders_throttled')) {
+            helper(['notifications']);
+        }
+
+        return check_task_deadline_2_hour_reminders_throttled(50, $this->diagnostic, $run_id);
+    }
+
     private function run_scheduled_cron() {
-        header("Content-Type: text/plain; charset=utf-8");
+        if (!headers_sent()) {
+            header("Content-Type: text/plain; charset=utf-8");
+        }
         ini_set("max_execution_time", 300);
+
+        // Pre-gate: check task deadline 2-hour reminders
+        $this->check_task_deadline_2_hour_reminders_pre_gate();
 
         $last_cron_job_time = get_setting("last_cron_job_time");
         $current_time = strtotime(get_current_utc_time());
@@ -462,8 +486,10 @@ class Cron extends App_Controller {
                 echo "Cron job failed.";
             }
         } else {
-            $this->Settings_model->save_setting("last_cron_result", "skipped");
-            $this->Settings_model->save_setting("last_cron_skip_reason", "Cron job skipped (ran less than 5 minutes ago).");
+            if (get_setting("last_cron_result") !== "skipped") {
+                $this->Settings_model->save_setting("last_cron_result", "skipped");
+                $this->Settings_model->save_setting("last_cron_skip_reason", "Cron job skipped (ran less than 5 minutes ago).");
+            }
             echo "Cron job skipped (ran less than 5 minutes ago).";
         }
     }

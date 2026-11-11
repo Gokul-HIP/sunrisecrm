@@ -27,6 +27,7 @@
 
         $("#task-table").appTable({
             source: '<?php echo_uri("projects/my_tasks_list_data/1") ?>',
+            serverSide: true,
             order: [[6, "desc"]],
             displayLength: 30,
             responsive: false, //hide responsive (+) icon

@@ -1873,10 +1873,32 @@ class Projects extends Security_Controller {
 
         //by this, we can handel the server side or client side from the app table prams.
         if (get_array_value($all_options, "server_side")) {
-            $list_data = get_array_value($result, "data");
+            if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+                $result = array();
+            } else {
+                $list_data = array();
+                $result = array();
+            }
         } else {
-            $list_data = $result->getResult();
+            if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+            } else if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else {
+                $list_data = array();
+            }
             $result = array();
+        }
+
+        if (!is_array($result)) {
+            $result = array();
+        }
+
+        if (!is_iterable($list_data)) {
+            $list_data = array();
         }
 
         $result_data = array();
@@ -2584,20 +2606,37 @@ class Projects extends Security_Controller {
 
         $user_id = $this->request->getGet("user_id");
         if (!$user_id) {
+            $user_id = $this->request->getPost("user_id");
+        }
+        if (!$user_id) {
             $user_id = $this->login_user->id;
         }
         validate_numeric_value($user_id);
 
-        $parsed = parse_task_points_month($this->request->getGet("month"));
-        $points = get_user_monthly_task_points($user_id, $parsed["year"], $parsed["month"]);
+        $month_param = $this->request->getGet("month");
+        if (!$month_param) {
+            $month_param = $this->request->getPost("month");
+        }
+        $parsed = parse_task_points_month($month_param);
+        $summary = get_user_task_points_header_summary($user_id, array("month" => $parsed["value"]));
         $label_date = strtotime($parsed["value"] . "-01");
 
         echo json_encode(array(
             "success" => true,
             "user_id" => (int) $user_id,
             "month" => $parsed["value"],
-            "points" => format_task_point_value($points),
-            "points_raw" => (float) $points,
+            "points" => $summary["score_label"],
+            "points_raw" => (float) $summary["score"],
+            "total_earned_score_label" => $summary["score_label"],
+            "total_earned_score" => (float) $summary["score"],
+            "solo_earned_points_label" => $summary["solo_earned_label"],
+            "solo_earned_points" => (float) $summary["solo_earned"],
+            "solo_overall_points_label" => $summary["solo_overall_label"],
+            "solo_overall_points" => (float) $summary["solo_overall"],
+            "collab_earned_points_label" => $summary["collab_earned_label"],
+            "collab_earned_points" => (float) $summary["collab_earned"],
+            "collab_overall_points_label" => $summary["collab_overall_label"],
+            "collab_overall_points" => (float) $summary["collab_overall"],
             "label" => $label_date ? date("F Y", $label_date) : $parsed["value"]
         ));
     }
@@ -3373,14 +3412,6 @@ class Projects extends Security_Controller {
                 }
             }
 
-            if (function_exists("sync_task_point_award")) {
-                try {
-                    sync_task_point_award($save_id);
-                } catch (\Exception $ex) {
-                    log_message('error', '[ERROR] task point award {exception}', ['exception' => $ex]);
-                }
-            }
-
             echo json_encode(array("success" => true, "data" => $this->_task_row_data($save_id), 'id' => $save_id, 'message' => app_lang('record_saved'), "add_type" => $add_type));
         } else {
             echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
@@ -3534,14 +3565,6 @@ class Projects extends Security_Controller {
         $save_id = $this->Tasks_model->ci_save($data, $id);
 
         if ($save_id) {
-            if (function_exists("sync_task_point_award")) {
-                try {
-                    sync_task_point_award($save_id);
-                } catch (\Exception $ex) {
-                    log_message('error', '[ERROR] task point award {exception}', ['exception' => $ex]);
-                }
-            }
-
             $task_info = $this->Tasks_model->get_details(array("id" => $id))->getRow();
             echo json_encode(array("success" => true, "data" => (($this->request->getPost("type") == "sub_task") ? $this->_make_sub_task_row($task_info, "data") : $this->_task_row_data($save_id)), 'id' => $save_id, "message" => app_lang('record_saved')));
 
@@ -3600,14 +3623,6 @@ class Projects extends Security_Controller {
         if (!$save_id) {
             echo json_encode(array("success" => false, app_lang('error_occurred')));
             return false;
-        }
-
-        if (function_exists("sync_task_point_award") && ($data_field == "status_id" || $data_field == "points" || $data_field == "deadline")) {
-            try {
-                sync_task_point_award($save_id);
-            } catch (\Exception $ex) {
-                log_message('error', '[ERROR] task point award {exception}', ['exception' => $ex]);
-            }
         }
 
         $task_info = $this->Tasks_model->get_details(array("id" => $save_id))->getRow(); //get data after save
@@ -3690,14 +3705,6 @@ class Projects extends Security_Controller {
         $save_id = $this->Tasks_model->ci_save($data, $id);
 
         if ($save_id) {
-            if (function_exists("sync_task_point_award")) {
-                try {
-                    sync_task_point_award($save_id);
-                } catch (\Exception $ex) {
-                    log_message('error', '[ERROR] task point award {exception}', ['exception' => $ex]);
-                }
-            }
-
             if ($status_id) {
                 log_notification("project_task_updated", array("project_id" => $task_info->project_id, "task_id" => $save_id, "activity_log_id" => get_array_value($data, "activity_log_id")));
             }
@@ -3786,6 +3793,7 @@ class Projects extends Security_Controller {
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
             "quick_filter" => $quick_filter,
+            "task_points_month" => $this->request->getPost('task_points_month') ?: $this->request->getPost('month'),
             "custom_field_filter" => $this->prepare_custom_field_filter_values("tasks", $this->login_user->is_admin, $this->login_user->user_type)
         );
 
@@ -3795,10 +3803,32 @@ class Projects extends Security_Controller {
 
         //by this, we can handel the server side or client side from the app table prams.
         if (get_array_value($all_options, "server_side")) {
-            $list_data = get_array_value($result, "data");
+            if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+                $result = array();
+            } else {
+                $list_data = array();
+                $result = array();
+            }
         } else {
-            $list_data = $result->getResult();
+            if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+            } else if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else {
+                $list_data = array();
+            }
             $result = array();
+        }
+
+        if (!is_array($result)) {
+            $result = array();
+        }
+
+        if (!is_iterable($list_data)) {
+            $list_data = array();
         }
 
         $result_data = array();
@@ -3853,6 +3883,7 @@ class Projects extends Security_Controller {
             "unread_status_user_id" => $this->login_user->id,
             "show_assigned_tasks_only_user_id" => $this->show_assigned_tasks_only_user_id(),
             "quick_filter" => $quick_filter,
+            "task_points_month" => $this->request->getPost('task_points_month') ?: $this->request->getPost('month'),
             "custom_field_filter" => $this->prepare_custom_field_filter_values("tasks", $this->login_user->is_admin, $this->login_user->user_type)
         );
 
@@ -3874,10 +3905,32 @@ class Projects extends Security_Controller {
 
         //by this, we can handel the server side or client side from the app table prams.
         if (get_array_value($all_options, "server_side")) {
-            $list_data = get_array_value($result, "data");
+            if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+                $result = array();
+            } else {
+                $list_data = array();
+                $result = array();
+            }
         } else {
-            $list_data = $result->getResult();
+            if (is_object($result) && method_exists($result, 'getResult')) {
+                $list_data = $result->getResult();
+            } else if (is_array($result)) {
+                $list_data = get_array_value($result, "data");
+            } else {
+                $list_data = array();
+            }
             $result = array();
+        }
+
+        if (!is_array($result)) {
+            $result = array();
+        }
+
+        if (!is_iterable($list_data)) {
+            $list_data = array();
         }
 
         $result_data = array();
@@ -3895,10 +3948,36 @@ class Projects extends Security_Controller {
     }
 
     private function _attach_task_point_summary(&$result, $options = array()) {
-        $given = isset($result["total_given_points"]) ? (float) $result["total_given_points"] : 0;
-        $gained = isset($result["total_gained_points"]) ? (float) $result["total_gained_points"] : 0;
+        $user_id = get_array_value($options, "specific_user_id");
+        if (!$user_id) {
+            $user_id = get_array_value($options, "assigned_to");
+        }
+        if (!$user_id) {
+            $user_id = $this->login_user->id;
+        }
+
+        $header_summary = get_user_task_points_header_summary($user_id, $options);
+        $solo_overall = $header_summary["solo_overall"];
+        $solo_earned = $header_summary["solo_earned"];
+        $collab_overall = $header_summary["collab_overall"];
+        $collab_earned = $header_summary["collab_earned"];
+        $total_earned_score = $header_summary["score"];
+
+        $given = ($solo_overall || $collab_overall) ? ($solo_overall + $collab_overall) : (isset($result["total_given_points"]) ? (float) $result["total_given_points"] : 0);
+        $gained = $total_earned_score;
         $from = get_array_value($options, "created_from");
         $to = get_array_value($options, "created_to");
+
+        $result["solo_overall_points"] = $solo_overall;
+        $result["solo_earned_points"] = $solo_earned;
+        $result["solo_overall_points_label"] = $header_summary["solo_overall_label"];
+        $result["solo_earned_points_label"] = $header_summary["solo_earned_label"];
+        $result["collab_overall_points"] = $collab_overall;
+        $result["collab_earned_points"] = $collab_earned;
+        $result["collab_overall_points_label"] = $header_summary["collab_overall_label"];
+        $result["collab_earned_points_label"] = $header_summary["collab_earned_label"];
+        $result["total_earned_score"] = $total_earned_score;
+        $result["total_earned_score_label"] = $header_summary["score_label"];
 
         $result["total_given_points"] = $given;
         $result["total_gained_points"] = $gained;
@@ -3964,6 +4043,9 @@ class Projects extends Security_Controller {
 
         $rows = array();
         $rows[] = $blank_row();
+        $rows[] = $make_row(app_lang("total_score") ? app_lang("total_score") : "Total Score", "", get_array_value($result, "total_earned_score_label"));
+        $rows[] = $make_row("Solo (Earned / Overall)", "", get_array_value($result, "solo_earned_points_label") . " / " . get_array_value($result, "solo_overall_points_label"));
+        $rows[] = $make_row("Collab (Earned / Overall)", "", get_array_value($result, "collab_earned_points_label") . " / " . get_array_value($result, "collab_overall_points_label"));
         $rows[] = $make_row(app_lang("total_task_points"), get_array_value($result, "total_given_points_label"), "");
         $rows[] = $make_row(app_lang("total_gained_points"), "", get_array_value($result, "total_gained_points_label"));
         $rows[] = $make_row(get_array_value($result, "previous_month_gained_points_title"), "", get_array_value($result, "previous_month_gained_points_label"));
@@ -4057,7 +4139,7 @@ class Projects extends Security_Controller {
             $checkbox_class = "checkbox-checked";
         }
 
-        if (($this->login_user->user_type == "staff" && can_edit_this_task_status($data->assigned_to)) || ($this->login_user->user_type == "client" && $this->can_edit_tasks())) {
+        if (($this->login_user->user_type == "staff" && can_edit_this_task_status($data->assigned_to, $this->login_user)) || ($this->login_user->user_type == "client" && $this->can_edit_tasks())) {
             //show changeable status checkbox and link to team members
             $check_status = js_anchor("<span class='$checkbox_class mr15 float-start'></span>", array('title' => "", "class" => "js-task", "data-id" => $data->id, "data-value" => $data->status_key_name === "done" ? "1" : "3", "data-act" => "update-task-status-checkbox")) . $data->id;
             $status = js_anchor($data->status_key_name ? app_lang($data->status_key_name) : $data->status_title, array('title' => "", "class" => "", "data-id" => $data->id, "data-value" => $data->status_id, "data-act" => "update-task-status"));
@@ -4685,14 +4767,6 @@ class Projects extends Security_Controller {
                     $save_id = $this->Tasks_model->ci_save($task_save_data, $id);
 
                     if ($save_id) {
-                        if (function_exists("sync_task_point_award") && (array_key_exists("status_id", $data) || array_key_exists("points", $data) || array_key_exists("deadline", $data))) {
-                            try {
-                                sync_task_point_award($save_id);
-                            } catch (\Exception $ex) {
-                                log_message('error', '[ERROR] task point award {exception}', ['exception' => $ex]);
-                            }
-                        }
-
                         //we don't send notification if the task is changing on the same position
                         $activity_log_id = get_array_value($data, "activity_log_id");
                         if ($activity_log_id) {

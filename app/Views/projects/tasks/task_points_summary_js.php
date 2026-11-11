@@ -3,11 +3,16 @@
         var styleCss =
             '.task-points-summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid #e5e7eb;background:#fff;}' +
             '.task-points-summary-dates{font-size:13px;color:#374151;font-weight:600;}' +
-            '.task-points-summary-values{display:flex;flex-wrap:wrap;gap:24px;}' +
+            '.task-points-summary-values{display:flex;flex-wrap:wrap;align-items:baseline;gap:20px;}' +
             '.task-status-summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px;flex:1 1 auto;}' +
-            '.task-points-summary-item{display:flex;align-items:baseline;gap:8px;}' +
-            '.task-points-summary-label{font-size:13px;color:#4b5563;}' +
-            '.task-points-given-value,.task-points-gained-value,.task-todo-count,.task-in-progress-count,.task-in-review-count,.task-done-count{font-size:20px;font-weight:700;line-height:1;}' +
+            '.task-points-summary-item{display:flex;align-items:baseline;gap:6px;}' +
+            '.task-points-summary-label{font-size:13px;color:#4b5563;font-weight:500;}' +
+            '.task-points-given-value,.task-points-gained-value,.task-total-score-value,.task-solo-earned-value,.task-collab-earned-value,.task-todo-count,.task-in-progress-count,.task-in-review-count,.task-done-count{font-size:20px;font-weight:700;line-height:1;}' +
+            '.task-points-metric-wrap{display:inline-flex;align-items:baseline;font-size:18px;font-weight:700;line-height:1;}' +
+            '.task-points-sep{font-size:13px;font-weight:400;color:#9ca3af;margin:0 3px;}' +
+            '.task-solo-overall-value,.task-collab-overall-value{font-size:15px;font-weight:500;color:#6b7280;}' +
+            '.task-points-collab-tag{font-size:11px;font-weight:600;opacity:0.85;margin-left:3px;}' +
+            '.task-points-percent{font-size:11px;font-weight:600;margin-left:2px;}' +
             '.task-todo-count{color:#e04b3c;}' +
             '.task-in-progress-count{color:#2b8fd6;}' +
             '.task-in-review-count{color:#6690F4;}' +
@@ -64,21 +69,34 @@
                 }
 
                 var given = json.total_given_points_label || "0";
-                var gained = json.total_gained_points_label || "0";
+                var gained = json.total_earned_score_label || json.total_gained_points_label || "0";
+                var soloEarned = json.solo_earned_points_label || "0";
+                var soloOverall = json.solo_overall_points_label || "0";
+                var collabEarned = json.collab_earned_points_label || "0";
+                var collabOverall = json.collab_overall_points_label || "0";
+
                 var $given = $summary.find(".task-points-given-value");
-                var $gained = $summary.find(".task-points-gained-value");
+                var $gained = $summary.find(".task-points-gained-value, .task-total-score-value");
+                var $soloEarned = $summary.find(".task-solo-earned-value");
+                var $soloOverall = $summary.find(".task-solo-overall-value");
+                var $collabEarned = $summary.find(".task-collab-earned-value");
+                var $collabOverall = $summary.find(".task-collab-overall-value");
                 var $dates = $summary.find(".task-points-summary-dates");
 
                 $given.removeClass("points-zero points-low points-high").addClass(pointClass(json.total_given_points)).text(given);
-                $gained.removeClass("points-zero points-low points-high").addClass(pointClass(json.total_gained_points)).text(gained);
-                var $countsRoot = $summary.closest(".tasks-ui");
-                if (!$countsRoot.length) {
-                    $countsRoot = $summary;
+                $gained.removeClass("points-zero points-low points-high").addClass(pointClass(json.total_earned_score || json.total_gained_points)).text(gained);
+
+                $soloEarned.removeClass("points-zero points-low points-high").addClass(pointClass(json.solo_earned_points)).text(soloEarned);
+                $soloOverall.text(soloOverall);
+
+                $collabEarned.removeClass("points-zero points-low points-high").addClass(pointClass(json.collab_earned_points)).text(collabEarned);
+                $collabOverall.text(collabOverall);
+                if (typeof json.todo_count !== "undefined") {
+                    $(".task-todo-count").text(json.todo_count);
+                    $(".task-in-progress-count").text(json.in_progress_count);
+                    $(".task-in-review-count").text(json.in_review_count);
+                    $(".task-done-count").text(json.done_count);
                 }
-                $countsRoot.find(".task-todo-count").text(json.todo_count || 0);
-                $countsRoot.find(".task-in-progress-count").text(json.in_progress_count || 0);
-                $countsRoot.find(".task-in-review-count").text(json.in_review_count || 0);
-                $countsRoot.find(".task-done-count").text(json.done_count || 0);
 
                 if (json.date_filter_applied && json.date_range_label) {
                     $dates.removeClass("hide").text(json.date_range_label);
@@ -86,6 +104,12 @@
                     $dates.addClass("hide").text("");
                 }
             };
+
+            $(document).on("xhr.dt", function (event, settings, json) {
+                if (settings && (settings.sTableId === tableId || (settings.nTable && settings.nTable.id === tableId))) {
+                    applySummary(json);
+                }
+            });
 
             $table.on("xhr.dt", function (event, settings, json) {
                 applySummary(json);

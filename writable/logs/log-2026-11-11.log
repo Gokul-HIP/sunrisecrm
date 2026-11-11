@@ -1,0 +1,273 @@
+CRITICAL - 2026-11-11 10:40:41 --> Call to undefined function Config\app_hooks()
+in APPPATH\Config\Rise.php on line 40.
+ 1 SYSTEMPATH\Config\Factories.php(129): Config\Rise->__construct()
+ 2 SYSTEMPATH\Common.php(216): CodeIgniter\Config\Factories::__callStatic('config', [])
+ 3 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_throttle_timezone.php(31): config('Rise')
+ 4 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_throttle_timezone.php(114): run_timezone_throttle_tests('Asia/Kolkata')
+CRITICAL - 2026-11-11 10:49:33 --> Cannot modify header information - headers already sent by (output started at C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_throttle_timezone.php:32)
+in APPPATH\Helpers\general_helper.php on line 1944.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler(2, 'Cannot modify header information - headers already sent by (output started at C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_throttle_timezone.php:32)', 'APPPATH\\Helpers\\general_helper.php', 1944)
+ 2 APPPATH\Helpers\general_helper.php(1944): header('Location:http://127.0.0.1:8080/index.php/signin')
+ 3 APPPATH\Controllers\Security_Controller.php(25): app_redirect('signin')
+ 4 APPPATH\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_throttle_timezone.php(40): App\Controllers\Notifications->__construct()
+ 6 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_throttle_timezone.php(119): run_timezone_throttle_tests('Asia/Kolkata')
+ERROR - 2026-11-11 01:34:43 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'hip_wsl'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('172.30.224.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrm_scra...', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1184): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#7 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(72): App\Controllers\Projects_1449be8->__construct()
+#8 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1184): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#6 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(72): App\Controllers\Projects_1449be8->__construct()
+#7 {main}
+ERROR - 2026-11-11 01:34:43 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'hip_wsl'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('172.30.224.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrm_scra...', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#11 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(72): App\Controllers\Projects_1449be8->__construct()
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#10 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(72): App\Controllers\Projects_1449be8->__construct()
+#11 {main}
+ERROR - 2026-11-11 01:34:43 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'hip_wsl'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('172.30.224.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrm_scra...', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1184): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#7 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(126): App\Controllers\Projects_1449be8->__construct()
+#8 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1184): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#6 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(126): App\Controllers\Projects_1449be8->__construct()
+#7 {main}
+ERROR - 2026-11-11 01:34:43 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'hip_wsl'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('172.30.224.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrm_scra...', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#11 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(126): App\Controllers\Projects_1449be8->__construct()
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\Projects_1449be8.php(15): App\Controllers\Security_Controller->__construct()
+#10 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\reproduce_500.php(126): App\Controllers\Projects_1449be8->__construct()
+#11 {main}
+ERROR - 2026-11-11 01:44:25 --> Error connecting to the database: mysqli_sql_exception: Access denied for user 'hip_wsl'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('172.30.224.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrm_scra...', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\check_task_points_invariant.php(58): CodeIgniter\Database\BaseConnection->query('SELECT DISTINCT...')
+#4 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Access denied for user '****'@'172.30.%' to database 'sunrisecrm_scratch' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\check_task_points_invariant.php(58): CodeIgniter\Database\BaseConnection->query('SELECT DISTINCT...')
+#3 {main}
+CRITICAL - 2026-11-11 04:13:50 --> DateTimeZone::__construct(): Unknown or bad timezone ()
+in APPPATH\Helpers\date_time_helper.php on line 11.
+ 1 APPPATH\Helpers\date_time_helper.php(11): DateTimeZone->__construct('\\\\WSL.LOCALHOST\\UBUNTU\\home\\gokul\\projects\\crm_sunrise')
+ 2 APPPATH\Helpers\date_time_helper.php(82): get_timezone_offset()
+ 3 APPPATH\Helpers\date_time_helper.php(383): get_my_local_time()
+ 4 FCPATH\tests\phase13_test_cron.php(35): get_today_date()
+CRITICAL - 2026-11-11 04:14:48 --> Call to undefined method App\Models\Settings_model::get_all_settings
+in SYSTEMPATH\Model.php on line 842.
+ 1 FCPATH\tests\phase13_test_cron.php(34): CodeIgniter\Model->__call('get_all_settings', [])
+CRITICAL - 2026-11-11 04:17:56 --> Undefined property: stdClass::$start_date
+in APPPATH\Libraries\Cron_job.php on line 545.
+ 1 APPPATH\Libraries\Cron_job.php(545): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined property: stdClass::$start_date', 'APPPATH\\Libraries\\Cron_job.php', 545)
+ 2 FCPATH\tests\phase13_test_calc.php(45): App\Libraries\Cron_job->calculate_next_clone(Object(stdClass))
+CRITICAL - 2026-11-11 04:26:18 --> DateTime::modify(): Failed to parse time string (+66 * 1 days) at position 4 (*): Unexpected character
+in FCPATH\tests\phase13_test_formula.php on line 56.
+ 1 FCPATH\tests\phase13_test_formula.php(56): DateTime->modify('+66 * 1 days')
+ 2 FCPATH\tests\phase13_test_formula.php(94): fastForwardDate('2026-09-07', 'days', 1, '2026-11-11')
+ERROR - 2026-11-11 16:55:01 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(316): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:55:01 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-11 16:55:07 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(341): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:55:07 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-11 16:55:15 --> mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 3 in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('\n    SELECT id,...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('\n    SELECT id,...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('\n    SELECT id,...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(414): CodeIgniter\Database\BaseConnection->query('\n    SELECT id,...')
+#4 {main}
+CRITICAL - 2026-11-11 16:55:15 --> You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 3
+in SYSTEMPATH\Database\BaseConnection.php on line 645.
+ 1 FCPATH\tests\phase14_master_test.php(414): CodeIgniter\Database\BaseConnection->query('
+    SELECT id, event, user_id, notify_to 
+    FROM rise_notifications 
+    WHERE event = \'recurring_task_created_via_cron_job\' AND task_id = 
+')
+ERROR - 2026-11-11 16:57:43 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(316): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:57:43 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-11 16:57:49 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(341): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:57:49 --> Notification create failed: Column 'user_id' cannot be null
+CRITICAL - 2026-11-11 16:57:57 --> Undefined variable $refQueryDate
+in FCPATH\tests\phase14_master_test.php on line 408.
+ 1 FCPATH\tests\phase14_master_test.php(408): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined variable $refQueryDate', 'FCPATH\\tests\\phase14_master_test.php', 408)
+ERROR - 2026-11-11 16:59:09 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(316): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:59:09 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-11 16:59:15 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(341): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 16:59:15 --> Notification create failed: Column 'user_id' cannot be null
+CRITICAL - 2026-11-11 16:59:17 --> Property App\Libraries\Cron_job::$query_date does not exist
+in FCPATH\tests\phase14_master_test.php on line 411.
+ 1 FCPATH\tests\phase14_master_test.php(411): ReflectionProperty->__construct(Object(App\Libraries\Cron_job), 'query_date')
+ERROR - 2026-11-11 17:01:50 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(316): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 17:01:50 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-11 17:01:56 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(224): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(667): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_cr...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1286): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\phase14_master_test.php(341): log_notification('project_task_cr...', Array)
+#9 {main}
+ERROR - 2026-11-11 17:01:56 --> Notification create failed: Column 'user_id' cannot be null

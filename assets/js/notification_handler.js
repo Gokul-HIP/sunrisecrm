@@ -91,6 +91,35 @@ window.NotificationSoundEngine = {
         return player;
     },
 
+    _ensureAlertPlayer: function () {
+        if (!(AppHelper && AppHelper.alertSoundSrc)) {
+            return null;
+        }
+        var player = document.getElementById("alertNotificationPlayer");
+        if (!player || player.getAttribute("src") !== AppHelper.alertSoundSrc) {
+            if (player) {
+                $(player).remove();
+            }
+            $("<audio></audio>").attr({
+                src: AppHelper.alertSoundSrc,
+                id: "alertNotificationPlayer",
+                preload: "auto",
+                playsinline: "playsinline"
+            }).appendTo("body");
+            player = document.getElementById("alertNotificationPlayer");
+            var self = this;
+            self.alertLoadFailed = false;
+            player.addEventListener("error", function () {
+                self.alertLoadFailed = true;
+            });
+            try {
+                player.load();
+            } catch (e) {
+            }
+        }
+        return player;
+    },
+
     preload: function () {
         if (!(AppHelper && AppHelper.notificationSoundSrc)) {
             return;
@@ -213,6 +242,47 @@ window.NotificationSoundEngine = {
         }
     },
 
+    playAlert: function (fromPending) {
+        if (typeof isWindowsNotificationSoundEnabled === "function" && isWindowsNotificationSoundEnabled()) {
+            return;
+        }
+
+        var volume = this._getVolume();
+        if (!volume) {
+            return;
+        }
+
+        var now = Date.now();
+        if (!fromPending && (now - (this.lastAlertPlayAt || 0)) < 400) {
+            return;
+        }
+        this.lastAlertPlayAt = now;
+
+        var player = this._ensureAlertPlayer();
+        if (this.alertLoadFailed || !player) {
+            this.play(fromPending);
+            return;
+        }
+
+        var self = this;
+        try {
+            player.muted = false;
+            player.volume = volume;
+            player.currentTime = 0;
+            var playPromise = player.play();
+            if (playPromise && typeof playPromise.then === "function") {
+                playPromise.catch(function (err) {
+                    if (err && err.name === "NotAllowedError") {
+                        window.NotificationSoundEngine.pendingBlockedAlert = true;
+                    }
+                    self.play(fromPending);
+                });
+            }
+        } catch (e) {
+            this.play(fromPending);
+        }
+    },
+
     play: function (fromPending) {
         if (typeof isWindowsNotificationSoundEnabled === "function" && isWindowsNotificationSoundEnabled()) {
             return;
@@ -263,6 +333,10 @@ window.NotificationSoundEngine = {
             if (window.NotificationSoundEngine.unlocked && typeof dismissNotificationSoundUnlockBanner === "function") {
                 dismissNotificationSoundUnlockBanner(true);
             }
+            if (window.NotificationSoundEngine.pendingBlockedAlert) {
+                window.NotificationSoundEngine.pendingBlockedAlert = false;
+                window.NotificationSoundEngine.playAlert(true);
+            }
         }
     };
     $(document).on("click.notificationAudio keydown.notificationAudio touchstart.notificationAudio", keepUnlocked);
@@ -273,6 +347,21 @@ window.NotificationSoundEngine = {
             if (window.NotificationSoundEngine.unlocked && typeof dismissNotificationSoundUnlockBanner === "function") {
                 dismissNotificationSoundUnlockBanner(true);
             }
+        }
+        if (!document.hidden && window._activeNotificationPollers && window._activeNotificationPollers.length) {
+            window._activeNotificationPollers.forEach(function (params) {
+                if (params && params._pollTimer) {
+                    clearTimeout(params._pollTimer);
+                    params._pollTimer = null;
+                    params.showPushNotification = true;
+                    if (params.notificationCountUrl) {
+                        params.notificationUrl = params.notificationCountUrl;
+                    }
+                    if (typeof checkNotifications === "function") {
+                        checkNotifications(params);
+                    }
+                }
+            });
         }
     });
 
@@ -304,7 +393,8 @@ requestDesktopNotificationPermission = function () {
 };
 
 // How long before auto-close (only used when AUTO_CLOSE_DESKTOP_NOTIFICATION is true)
-var DESKTOP_NOTIFICATION_TIMEOUT_MS = 5000; // 5 seconds
+var DESKTOP_NOTIFICATION_TIMEOUT_MS = 5000; // 5 seconds (new task / general notifications)
+var DESKTOP_NOTIFICATION_REMINDER_TIMEOUT_MS = 15000; // 15 seconds (reminders only)
 
 /**
  * Keep toast in Windows Notification Center?
@@ -316,7 +406,7 @@ var AUTO_CLOSE_DESKTOP_NOTIFICATION = false;
 /**
  * Windows notification sound toggle
  * true  = use Windows/Chrome system sound (project MP3 is NOT played)
- * false = mute Windows sound and play files/system/notification.mp3 from this project
+ * false = mute Windows sound and play notification sound from this project
  */
 var USE_WINDOWS_NOTIFICATION_SOUND = false;
 
@@ -341,9 +431,8 @@ showBrowserNotification = function (data) {
 
     var useWindowsSound = isWindowsNotificationSoundEnabled();
     var notificationId = String(data.notification_id || ("n-" + Date.now()));
+    var isReminder = !!(data.is_reminder || data.event === "project_task_deadline_2_hours_pre_reminder");
 
-    // Always try project sound first (even if toast is deduped later, sound still attempts once per call site)
-    // Toast lock below prevents duplicate Windows popups across tabs.
     var allowToast = true;
     try {
         var lockKey = "sunrise_desktop_notif_lock";
@@ -356,35 +445,67 @@ showBrowserNotification = function (data) {
         var now = Date.now();
         var sameIdRecently = String(lock.id) === notificationId && (now - (lock.at || 0)) < 20000;
         var anyToastVeryRecently = (now - (lock.at || 0)) < 2500;
-        if (sameIdRecently || anyToastVeryRecently) {
-            allowToast = false;
+
+        if (isReminder) {
+            // Requirement 3: For reminders, ignore anyToastVeryRecently and only dedupe by same notification id
+            if (sameIdRecently) {
+                allowToast = false;
+            } else {
+                localStorage.setItem(lockKey, JSON.stringify({id: notificationId, at: now}));
+            }
         } else {
-            localStorage.setItem(lockKey, JSON.stringify({id: notificationId, at: now}));
+            // Requirement 2: Keep new-task / other-event logic unchanged
+            if (sameIdRecently || anyToastVeryRecently) {
+                allowToast = false;
+            } else {
+                localStorage.setItem(lockKey, JSON.stringify({id: notificationId, at: now}));
+            }
         }
     } catch (e) {
     }
 
-    // Play project sound even when toast is suppressed as duplicate (only one tab should call this usually)
-    if (!useWindowsSound) {
-        playNotification();
-        // Retry once shortly after — covers suspended AudioContext / buffer not ready
-        setTimeout(function () {
+    if (isReminder) {
+        // Multi-tab check for reminders: play alert sound once across open tabs (when allowToast is true)
+        if (allowToast && !useWindowsSound) {
+            playAlertNotification();
+        }
+
+        if (!allowToast) {
+            return;
+        }
+
+        var notificationData = {
+            icon: data.icon,
+            body: data.message,
+            tag: (data.task_id ? ("sunrise-task-reminder-" + data.task_id) : ("sunrise-crm-" + notificationId)),
+            renotify: true,
+            requireInteraction: false,
+            silent: !useWindowsSound
+        };
+    } else {
+        // Requirement 2: Keep new-task / other-event path EXACTLY as it is today:
+        // original order, second playNotification after 350ms, renotify false, auto-close
+        if (!useWindowsSound) {
             playNotification();
-        }, 350);
-    }
+            // Retry once shortly after — covers suspended AudioContext / buffer not ready
+            setTimeout(function () {
+                playNotification();
+            }, 350);
+        }
 
-    if (!allowToast) {
-        return;
-    }
+        if (!allowToast) {
+            return;
+        }
 
-    var notificationData = {
-        icon: data.icon,
-        body: data.message,
-        tag: "sunrise-crm-" + notificationId,
-        renotify: false,
-        requireInteraction: false,
-        silent: !useWindowsSound
-    };
+        var notificationData = {
+            icon: data.icon,
+            body: data.message,
+            tag: "sunrise-crm-" + notificationId,
+            renotify: false,
+            requireInteraction: false,
+            silent: !useWindowsSound
+        };
+    }
 
     var openNotification = function () {
         try {
@@ -405,7 +526,8 @@ showBrowserNotification = function (data) {
             var notification = new Notification(data.title || "Sunrise CRM", notificationData);
 
             if (shouldAutoCloseDesktopNotification()) {
-                var timeout = (data.notificationTimeout * 1) || DESKTOP_NOTIFICATION_TIMEOUT_MS;
+                var defaultTimeout = isReminder ? DESKTOP_NOTIFICATION_REMINDER_TIMEOUT_MS : DESKTOP_NOTIFICATION_TIMEOUT_MS;
+                var timeout = (data.notificationTimeout * 1) || defaultTimeout;
                 setTimeout(function () {
                     try {
                         notification.close();
@@ -584,6 +706,14 @@ playNotification = function () {
     }
 };
 
+playAlertNotification = function () {
+    if (window.NotificationSoundEngine && window.NotificationSoundEngine.playAlert) {
+        window.NotificationSoundEngine.playAlert();
+    } else {
+        playNotification();
+    }
+};
+
 showDesktopNotifications = function (desktopNotifications) {
     if (!desktopNotifications || !desktopNotifications.length) {
         return;
@@ -612,15 +742,30 @@ scheduleNotificationCheck = function (params) {
         return;
     }
 
-    var check_notification_after_every = (params.checkNotificationAfterEvery * 1000) || 15000;
-    if (check_notification_after_every < 10000) {
-        check_notification_after_every = 10000;
+    window._activeNotificationPollers = window._activeNotificationPollers || [];
+    if (window._activeNotificationPollers.indexOf(params) === -1) {
+        window._activeNotificationPollers.push(params);
     }
+
+    if (params._pollTimer) {
+        clearTimeout(params._pollTimer);
+        params._pollTimer = null;
+    }
+
+    var isHidden = !!document.hidden;
+    var check_notification_after_every;
     if (params.isMessageNotification) {
-        check_notification_after_every = 5000;
+        check_notification_after_every = isHidden ? 30000 : 5000;
+    } else {
+        var baseInterval = (params.checkNotificationAfterEvery * 1000) || 15000;
+        if (baseInterval < 10000) {
+            baseInterval = 10000;
+        }
+        check_notification_after_every = isHidden ? 60000 : baseInterval;
     }
 
     params._pollTimer = setTimeout(function () {
+        params._pollTimer = null;
         params.showPushNotification = true;
         if (params.notificationCountUrl) {
             params.notificationUrl = params.notificationCountUrl;

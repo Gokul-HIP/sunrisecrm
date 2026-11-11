@@ -75,12 +75,35 @@
                         if (result && result.success) {
                             $root.find(".task-points-month-value").text(result.points);
                             applyPointColor(typeof result.points_raw !== "undefined" ? result.points_raw : result.points);
+
+                            var $summary = $("#task-points-summary");
+                            if ($summary.length) {
+                                var applySummary = $summary.data("apply-summary");
+                                if (typeof applySummary === "function") {
+                                    applySummary(result);
+                                }
+                            }
                         }
                     }
                 });
             };
 
-            $root.on("change", ".task-points-month-filter", loadPoints);
+            window.refreshTaskPointsWidgets = function () {
+                loadPoints();
+            };
+
+            $root.on("change", ".task-points-month-filter", function () {
+                loadPoints();
+                var monthVal = $(this).val();
+                if (window.InstanceCollection) {
+                    ["task-table", "all-tasks-table"].forEach(function (instId) {
+                        var settings = window.InstanceCollection[instId];
+                        if (settings && settings.filterParams) {
+                            settings.filterParams.task_points_month = monthVal;
+                        }
+                    });
+                }
+            });
             $(document).on("change", userSelector, loadPoints);
             loadPoints();
         };

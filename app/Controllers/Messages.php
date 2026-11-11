@@ -349,6 +349,10 @@ class Messages extends Security_Controller {
     }
 
     function count_notifications() {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         $this->validate_submitted_data(array(
             "active_message_id" => "numeric"
         ));

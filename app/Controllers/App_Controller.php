@@ -90,9 +90,6 @@ class App_Controller extends Controller {
 
         //load helpers
         helper(array('url', 'file', 'form', 'language', 'general', 'date_time', 'app_files', 'widget', 'activity_logs', 'currency', 'task_points', 'notifications'));
-        if (function_exists('ensure_task_point_tables')) {
-            ensure_task_point_tables();
-        }
         if (function_exists('ensure_deadline_2_hour_notification_settings')) {
             ensure_deadline_2_hour_notification_settings();
         }
@@ -105,10 +102,14 @@ class App_Controller extends Controller {
 
         $login_user_id = $this->Users_model->login_user_id();
 
-        //assign settings from database
-        $settings = $this->Settings_model->get_all_required_settings($login_user_id)->getResult();
-        foreach ($settings as $setting) {
-            config('Rise')->app_settings_array[$setting->setting_name] = $setting->setting_value;
+        //assign settings from database (cached per-user for the current request)
+        static $settings_loaded_users = array();
+        if (!isset($settings_loaded_users[$login_user_id])) {
+            $settings = $this->Settings_model->get_all_required_settings($login_user_id)->getResult();
+            foreach ($settings as $setting) {
+                config('Rise')->app_settings_array[$setting->setting_name] = $setting->setting_value;
+            }
+            $settings_loaded_users[$login_user_id] = true;
         }
 
         $users = $this->Users_model->get_one($login_user_id);

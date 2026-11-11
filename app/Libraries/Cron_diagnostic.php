@@ -12,12 +12,13 @@ class Cron_diagnostic {
 
     function __construct() {
         $this->ci = new App_Controller();
-        $this->ensure_table();
         $this->logs_model = model("App\Models\Cron_diagnostic_logs_model");
     }
 
     function ensure_table() {
-        if ($this->table_ready) {
+        static $table_ready_static = false;
+        if ($table_ready_static || $this->table_ready) {
+            $this->table_ready = true;
             return true;
         }
 
@@ -44,6 +45,7 @@ class Cron_diagnostic {
         try {
             $db->query($sql);
             $this->table_ready = true;
+            $table_ready_static = true;
             return true;
         } catch (\Throwable $e) {
             $this->table_ready = false;

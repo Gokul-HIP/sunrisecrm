@@ -210,7 +210,7 @@
         if (!$titleBar.length || $titleBar.find(".tasks-seg-track").length) {
             return;
         }
-        var $tabs = $titleBar.children("li").not(".title-tab, .task-status-summary");
+        var $tabs = $titleBar.children("li").not(".title-tab, .task-status-summary, .task-status-summary-tab");
         if ($tabs.length) {
             $tabs.wrapAll('<li class="tasks-seg-track"><ul class="tasks-seg-list"></ul></li>');
         }
@@ -268,6 +268,51 @@
         if (!$card.find($dateRow).length) {
             $card.append($dateRow);
         }
+    };
+
+    var repositionFilterDropdown = function ($dropdown) {
+        var $toggle = $dropdown.find(".dropdown-toggle").first();
+        var $menu = $dropdown.find(".dropdown-menu").first();
+        if (!$toggle.length || !$menu.length) {
+            return;
+        }
+
+        var toggleWidth = $toggle.outerWidth();
+        if (toggleWidth > 0) {
+            $menu.css("min-width", toggleWidth + "px");
+        }
+
+        var toggleRect = $toggle[0].getBoundingClientRect();
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        var menuHeight = $menu.outerHeight() || 240;
+        var spaceBelow = viewportHeight - toggleRect.bottom;
+        var spaceAbove = toggleRect.top;
+
+        if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+            $dropdown.addClass("dropup");
+            $menu.addClass("dropup-menu");
+        } else {
+            $dropdown.removeClass("dropup");
+            $menu.removeClass("dropup-menu");
+        }
+    };
+
+    var bindFilterDropdownRepositioning = function ($container) {
+        if ($container.data("tasks-ui-dropdowns-bound")) {
+            return;
+        }
+        $container.data("tasks-ui-dropdowns-bound", true);
+
+        $container.on("show.bs.dropdown shown.bs.dropdown", ".dropdown, .filter-multi-select", function () {
+            repositionFilterDropdown($(this));
+        });
+
+        $container.on("click", ".dropdown-toggle", function () {
+            var $parent = $(this).closest(".dropdown, .filter-multi-select");
+            setTimeout(function () {
+                repositionFilterDropdown($parent);
+            }, 0);
+        });
     };
 
     var organizeKanbanFilters = function ($root) {
@@ -328,6 +373,7 @@
 
         $card.append($rowA).append($rowB);
         $card.data("tasks-ui-organized", true);
+        bindFilterDropdownRepositioning($card);
     };
 
     var organizeFilters = function ($root) {
@@ -417,6 +463,7 @@
 
         $card.append($rowA).append($rowB);
         $card.data("tasks-ui-organized", true);
+        bindFilterDropdownRepositioning($card);
         restorePagination($root);
 
         $wrapper.children(".datatable-tools, .task-list-sticky-top, .created-date-filter-row").each(function () {

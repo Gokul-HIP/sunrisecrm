@@ -15,6 +15,8 @@ if (!function_exists('ensure_task_point_tables')) {
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `task_id` int(11) NOT NULL,
             `user_id` int(11) NOT NULL DEFAULT 0,
+            `is_collaborator` tinyint(1) NOT NULL DEFAULT 0,
+            `participants_count` int(11) NOT NULL DEFAULT 1,
             `original_points` decimal(10,2) NOT NULL DEFAULT 0.00,
             `earned_points` decimal(10,2) NOT NULL DEFAULT 0.00,
             `reduction_percent` int(11) NOT NULL DEFAULT 0,
@@ -26,7 +28,8 @@ if (!function_exists('ensure_task_point_tables')) {
             `month` int(11) NOT NULL,
             `deleted` tinyint(1) NOT NULL DEFAULT 0,
             PRIMARY KEY (`id`),
-            UNIQUE KEY `task_id` (`task_id`),
+            UNIQUE KEY `task_user` (`task_id`, `user_id`),
+            KEY `idx_task_id` (`task_id`, `deleted`),
             KEY `user_month` (`user_id`, `year`, `month`, `deleted`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
@@ -128,10 +131,115 @@ if (!function_exists('get_task_deadline_datetime')) {
 
 }
 
+if (!function_exists('get_task_points_collab_split_from')) {
+
+    function get_task_points_collab_split_from() {
+        $setting = function_exists("get_setting") ? trim((string) get_setting("task_points_collab_split_from")) : "";
+        return $setting;
+    }
+
+}
+
+if (!function_exists('is_task_collab_split_eligible')) {
+
+    function is_task_collab_split_eligible($task, $completed_at = "") {
+        if (!$task) {
+            return false;
+        }
+
+        $effective_from = get_task_points_collab_split_from();
+        if ($effective_from === "") {
+            return false;
+        }
+
+        if (!$completed_at) {
+            if (!empty($task->status_changed_at) && $task->status_changed_at !== "0000-00-00 00:00:00") {
+                $completed_at = $task->status_changed_at;
+            } else if (!empty($task->points_completed_at) && $task->points_completed_at !== "0000-00-00 00:00:00") {
+                $completed_at = $task->points_completed_at;
+            } else if (!empty($task->points_completed_date) && $task->points_completed_date !== "0000-00-00") {
+                $completed_at = $task->points_completed_date . " 00:00:00";
+            }
+        }
+
+        if (!$completed_at) {
+            $completed_at = get_current_utc_time();
+        }
+
+        $completed_ts = strtotime($completed_at . (strpos($completed_at, 'Z') === false ? ' UTC' : ''));
+        $effective_ts = strtotime($effective_from . (strpos($effective_from, 'Z') === false ? ' UTC' : ''));
+        return ($completed_ts !== false && $effective_ts !== false && $completed_ts >= $effective_ts);
+    }
+
+}
+
+if (!function_exists('get_task_participants')) {
+
+    function get_task_participants($task) {
+        $participants = array();
+        $assigned_to = isset($task->assigned_to) ? (int) $task->assigned_to : 0;
+        if ($assigned_to > 0) {
+            $participants[] = $assigned_to;
+        }
+
+        $collab_str = isset($task->collaborators) ? (string) $task->collaborators : "";
+        if ($collab_str !== "") {
+            $parts = explode(",", $collab_str);
+            foreach ($parts as $p) {
+                $cid = (int) trim($p);
+                if ($cid > 0 && !in_array($cid, $participants)) {
+                    $participants[] = $cid;
+                }
+            }
+        }
+        return $participants;
+    }
+
+}
+
+if (!function_exists('distribute_task_points_shares')) {
+
+    function distribute_task_points_shares($total_points, $participants, $assigned_to = 0) {
+        $count = count($participants);
+        $result = array();
+        if ($count === 0) {
+            return $result;
+        }
+
+        if ($count === 1) {
+            $uid = $participants[0];
+            $result[$uid] = array(
+                "share_original" => round((float) $total_points, 2),
+                "is_collab" => ($assigned_to && $uid == $assigned_to) ? 0 : 0,
+                "participants_count" => 1
+            );
+            return $result;
+        }
+
+        $total_cents = (int) round(((float) $total_points) * 100);
+        $base_cents = intdiv($total_cents, $count);
+        $rem_cents = $total_cents % $count;
+
+        foreach ($participants as $i => $uid) {
+            $cents = $base_cents + ($i < $rem_cents ? 1 : 0);
+            $result[$uid] = array(
+                "share_original" => round($cents / 100, 2),
+                "is_collab" => ($assigned_to && $uid == $assigned_to) ? 0 : 1,
+                "participants_count" => $count
+            );
+        }
+
+        return $result;
+    }
+
+}
+
 if (!function_exists('calculate_task_point_result')) {
 
-    function calculate_task_point_result($task, $completed_at = "") {
-        $original_points = isset($task->points) ? (float) $task->points : 0;
+    function calculate_task_point_result($task, $completed_at = "", $override_original_points = null) {
+        $original_points = ($override_original_points !== null)
+            ? (float) $override_original_points
+            : (isset($task->points) ? (float) $task->points : 0);
         $result = array(
             "original_points" => $original_points,
             "earned_points" => $original_points,
@@ -173,7 +281,7 @@ if (!function_exists('calculate_task_point_result')) {
             $result["reduction_reason"] = $result["is_preview"]
                 ? sprintf(app_lang("points_will_be_reduced_48h"), format_task_point_value($original_points), format_task_point_value($result["earned_points"]))
                 : sprintf(app_lang("points_reduced_48h"), format_task_point_value($original_points), format_task_point_value($result["earned_points"]));
-        } else if ($hours_late <= 72) {
+        } else if ($hours_late < 72) {
             $result["reduction_percent"] = 20;
             $result["earned_points"] = round($original_points * 0.8, 2);
             $result["reduction_reason"] = $result["is_preview"]
@@ -203,7 +311,6 @@ if (!function_exists('refresh_user_monthly_task_points')) {
             return 0;
         }
 
-        ensure_task_point_tables();
         $total = model("App\Models\Task_point_awards_model")->get_monthly_sum($user_id, $year, $month);
         model("App\Models\Task_point_monthly_totals_model")->upsert_total($user_id, $year, $month, $total);
         return $total;
@@ -266,7 +373,6 @@ if (!function_exists('get_user_monthly_task_points')) {
             $month = (int) get_my_local_time("n");
         }
 
-        ensure_task_point_tables();
         $stored = model("App\Models\Task_point_monthly_totals_model")->get_for_user_month($user_id, $year, $month);
         if ($stored && $stored->id) {
             return (float) $stored->total_points;
@@ -277,13 +383,252 @@ if (!function_exists('get_user_monthly_task_points')) {
 
 }
 
+if (!function_exists('get_user_task_points_header_summary')) {
+
+    function get_user_task_points_header_summary($user_id, $options = array()) {
+        $user_id = (int) $user_id;
+        if (!$user_id) {
+            return array(
+                "score" => 0,
+                "score_label" => "0",
+                "solo_earned" => 0,
+                "solo_earned_label" => "0",
+                "solo_overall" => 0,
+                "solo_overall_label" => "0",
+                "collab_earned" => 0,
+                "collab_earned_label" => "0",
+                "collab_overall" => 0,
+                "collab_overall_label" => "0",
+                "year" => (int) get_my_local_time("Y"),
+                "month" => (int) get_my_local_time("n")
+            );
+        }
+
+        $month_param = get_array_value($options, "month");
+        if (!$month_param) {
+            $month_param = get_array_value($options, "task_points_month");
+        }
+        $from = get_array_value($options, "created_from");
+        $to = get_array_value($options, "created_to");
+
+        if (!$month_param && $from) {
+            $month_param = substr($from, 0, 7);
+        }
+
+        $parsed = parse_task_points_month($month_param);
+        $year = $parsed["year"];
+        $month = $parsed["month"];
+
+        if (!$from || !$to) {
+            $from = sprintf("%04d-%02d-01", $year, $month);
+            $to = date("Y-m-t", strtotime($from));
+        }
+
+        $db = db_connect('default');
+        $awards_table = $db->prefixTable('task_point_awards');
+        $tasks_table = $db->prefixTable('tasks');
+
+        // 1. Earned points from awards table by completion month (independent of status filter)
+        $earned_sql = "SELECT
+            COALESCE(SUM(CASE WHEN (participants_count <= 1 AND is_collaborator = 0) THEN earned_points ELSE 0 END), 0) AS solo_earned,
+            COALESCE(SUM(CASE WHEN (participants_count > 1 OR is_collaborator = 1) THEN earned_points ELSE 0 END), 0) AS collab_earned,
+            COALESCE(SUM(earned_points), 0) AS total_earned
+        FROM $awards_table
+        WHERE user_id = $user_id
+          AND year = $year
+          AND month = $month
+          AND deleted = 0";
+        $earned_row = $db->query($earned_sql)->getRow();
+
+        $solo_earned = $earned_row ? (float) $earned_row->solo_earned : 0.0;
+        $collab_earned = $earned_row ? (float) $earned_row->collab_earned : 0.0;
+        $score = $earned_row ? (float) $earned_row->total_earned : 0.0;
+
+        // 2. Overall points = user's share of tasks created in that period (solo vs collab), including not-done tasks
+        $project_id = (int) get_array_value($options, "project_id");
+        $project_filter = $project_id ? " AND t.project_id = $project_id " : "";
+
+        $escaped_from = $db->escape($from);
+        $escaped_to = $db->escape($to);
+        $collab_split_from = get_task_points_collab_split_from();
+        $split_active = ($collab_split_from !== "");
+        $done_status_id = (int) get_done_task_status_id();
+
+        $overall_sql = "SELECT
+            COALESCE(SUM(CASE WHEN task_rows.is_collab = 0 THEN task_rows.user_share ELSE 0 END), 0) AS solo_overall,
+            COALESCE(SUM(CASE WHEN task_rows.is_collab = 1 THEN task_rows.user_share ELSE 0 END), 0) AS collab_overall
+        FROM (
+            SELECT
+                t.id,
+                CASE
+                    WHEN a.id IS NOT NULL THEN (IF(a.participants_count > 1 OR a.is_collaborator = 1, 1, 0))
+                    WHEN " . ($split_active ? "1" : "0") . " = 1 AND (t.collaborators IS NOT NULL AND t.collaborators != '') THEN 1
+                    ELSE 0
+                END AS is_collab,
+                MAX(CASE
+                    WHEN IFNULL(a.original_points, 0) > 0 THEN a.original_points
+                    WHEN " . ($split_active ? "1" : "0") . " = 0 OR (t.collaborators IS NULL OR t.collaborators = '') THEN IF(t.assigned_to = $user_id, t.points, 0)
+                    ELSE ROUND(t.points / (IF(t.assigned_to > 0, 1, 0) + LENGTH(t.collaborators) - LENGTH(REPLACE(t.collaborators, ',', '')) + 1), 2)
+                END) AS user_share
+            FROM $tasks_table t
+            LEFT JOIN $awards_table a ON (t.id = a.task_id AND a.user_id = $user_id AND a.deleted = 0 AND ((a.year = $year AND a.month = $month) OR (a.completed_date >= $escaped_from AND a.completed_date <= $escaped_to)))
+            WHERE t.deleted = 0
+              AND (t.assigned_to = $user_id OR FIND_IN_SET($user_id, t.collaborators))
+              AND (
+                  (a.id IS NOT NULL)
+                  OR
+                  (t.status_id = $done_status_id AND (
+                      (t.status_changed_at IS NOT NULL AND DATE(t.status_changed_at) >= $escaped_from AND DATE(t.status_changed_at) <= $escaped_to)
+                      OR (t.status_changed_at IS NULL AND (
+                          (t.deadline IS NOT NULL AND t.deadline >= $escaped_from AND t.deadline <= $escaped_to)
+                          OR (t.deadline IS NULL AND t.created_date >= $escaped_from AND t.created_date <= $escaped_to)
+                      ))
+                  ))
+                  OR
+                  (t.status_id != $done_status_id AND (
+                      (t.deadline IS NOT NULL AND t.deadline >= $escaped_from AND t.deadline <= $escaped_to)
+                      OR (t.deadline IS NULL AND t.created_date >= $escaped_from AND t.created_date <= $escaped_to)
+                  ))
+              )
+              $project_filter
+            GROUP BY t.id
+        ) AS task_rows";
+        $overall_row = $db->query($overall_sql)->getRow();
+
+        $solo_overall = $overall_row ? (float) $overall_row->solo_overall : 0.0;
+        $collab_overall = $overall_row ? (float) $overall_row->collab_overall : 0.0;
+
+        return array(
+            "score" => $score,
+            "score_label" => format_task_point_value($score),
+            "solo_earned" => $solo_earned,
+            "solo_earned_label" => format_task_point_value($solo_earned),
+            "solo_overall" => $solo_overall,
+            "solo_overall_label" => format_task_point_value($solo_overall),
+            "collab_earned" => $collab_earned,
+            "collab_earned_label" => format_task_point_value($collab_earned),
+            "collab_overall" => $collab_overall,
+            "collab_overall_label" => format_task_point_value($collab_overall),
+            "year" => $year,
+            "month" => $month
+        );
+    }
+
+}
+
+if (!function_exists('recalculate_task_point_awards')) {
+
+    function recalculate_task_point_awards($task_or_id, $force = false) {
+        ensure_task_point_tables();
+
+        $task = is_object($task_or_id) ? $task_or_id : null;
+        $task_id = is_object($task_or_id) ? (isset($task_or_id->id) ? (int) $task_or_id->id : 0) : (int) $task_or_id;
+        if (!$task && $task_id) {
+            $task = model("App\Models\Tasks_model")->get_details(array("id" => $task_id))->getRow();
+        }
+
+        if (!$task || empty($task->id)) {
+            return null;
+        }
+
+        $awards_model = model("App\Models\Task_point_awards_model");
+
+        if (!is_task_status_done($task) || !empty($task->deleted)) {
+            $revoked_list = $awards_model->revoke_all_by_task_id($task->id);
+            foreach ($revoked_list as $revoked) {
+                if ($revoked->user_id) {
+                    refresh_user_monthly_task_points($revoked->user_id, $revoked->year, $revoked->month);
+                }
+            }
+            return null;
+        }
+
+        // Task IS Done.
+        $is_split_eligible = is_task_collab_split_eligible($task);
+        $existing_awards = $awards_model->get_all_by_task_id($task->id, false);
+
+        // Pre-effective date tasks: keep their current single award untouched
+        if (!$is_split_eligible && !empty($existing_awards)) {
+            return $existing_awards[0];
+        }
+
+        $completed_at = (!empty($task->status_changed_at) && $task->status_changed_at !== "0000-00-00 00:00:00")
+            ? $task->status_changed_at
+            : (!empty($existing_awards[0]->completed_at) ? $existing_awards[0]->completed_at : get_current_utc_time());
+
+        $completed_date = convert_date_utc_to_local($completed_at, "Y-m-d");
+        $year = (int) date("Y", strtotime($completed_date));
+        $month = (int) date("n", strtotime($completed_date));
+
+        $assigned_to = isset($task->assigned_to) ? (int) $task->assigned_to : 0;
+        if (!$is_split_eligible) {
+            $participants = $assigned_to ? array($assigned_to) : array();
+        } else {
+            $participants = get_task_participants($task);
+        }
+
+        if (empty($participants)) {
+            $revoked_list = $awards_model->revoke_all_by_task_id($task->id);
+            foreach ($revoked_list as $revoked) {
+                if ($revoked->user_id) {
+                    refresh_user_monthly_task_points($revoked->user_id, $revoked->year, $revoked->month);
+                }
+            }
+            return null;
+        }
+
+        // Revoke awards for users who no longer participate
+        $participant_map = array_flip($participants);
+        foreach ($existing_awards as $old_award) {
+            if (!isset($participant_map[$old_award->user_id])) {
+                $awards_model->revoke_for_user($task->id, $old_award->user_id);
+                refresh_user_monthly_task_points($old_award->user_id, $old_award->year, $old_award->month);
+                if ($old_award->year != $year || $old_award->month != $month) {
+                    refresh_user_monthly_task_points($old_award->user_id, $year, $month);
+                }
+            }
+        }
+
+        $total_points = isset($task->points) ? (float) $task->points : 0;
+        $shares = distribute_task_points_shares($total_points, $participants, $assigned_to);
+
+        foreach ($participants as $uid) {
+            $share_info = $shares[$uid];
+            $calc = calculate_task_point_result($task, $completed_at, $share_info["share_original"]);
+
+            $award_data = array(
+                "task_id" => $task->id,
+                "user_id" => $uid,
+                "is_collaborator" => $share_info["is_collab"] ? 1 : 0,
+                "participants_count" => $share_info["participants_count"],
+                "original_points" => $share_info["share_original"],
+                "earned_points" => $calc["earned_points"],
+                "reduction_percent" => $calc["reduction_percent"],
+                "reduction_reason" => $calc["reduction_reason"],
+                "deadline" => (!empty($task->deadline) && $task->deadline !== "0000-00-00") ? $task->deadline : null,
+                "completed_date" => $completed_date,
+                "completed_at" => $completed_at,
+                "year" => $year,
+                "month" => $month,
+                "deleted" => 0
+            );
+
+            $awards_model->upsert_award_for_user($award_data, $task->id, $uid);
+            refresh_user_monthly_task_points($uid, $year, $month);
+        }
+
+        return $awards_model->get_by_task_id($task->id);
+    }
+
+}
+
 if (!function_exists('sync_task_point_award')) {
 
     function sync_task_point_award($task_or_id) {
         ensure_task_point_tables();
 
         $task = is_object($task_or_id) ? $task_or_id : null;
-        $task_id = is_object($task_or_id) ? (isset($task_or_id->id) ? $task_or_id->id : 0) : (int) $task_or_id;
+        $task_id = is_object($task_or_id) ? (isset($task_or_id->id) ? (int) $task_or_id->id : 0) : (int) $task_or_id;
         if (!$task && $task_id) {
             $task = model("App\Models\Tasks_model")->get_details(array("id" => $task_id))->getRow();
         }
@@ -295,49 +640,22 @@ if (!function_exists('sync_task_point_award')) {
         $awards_model = model("App\Models\Task_point_awards_model");
 
         if (!is_task_status_done($task)) {
-            $revoked = $awards_model->revoke_by_task_id($task->id);
-            if ($revoked && $revoked->user_id) {
-                refresh_user_monthly_task_points($revoked->user_id, $revoked->year, $revoked->month);
+            $revoked_list = $awards_model->revoke_all_by_task_id($task->id);
+            foreach ($revoked_list as $revoked) {
+                if ($revoked->user_id) {
+                    refresh_user_monthly_task_points($revoked->user_id, $revoked->year, $revoked->month);
+                }
             }
             return null;
         }
 
+        // Early return for read/display paths: if award exists, return immediately without recalculating
         $existing = $awards_model->get_by_task_id($task->id);
         if ($existing) {
             return $existing;
         }
 
-        $completed_at = (!empty($task->status_changed_at) && $task->status_changed_at !== "0000-00-00 00:00:00")
-            ? $task->status_changed_at
-            : get_current_utc_time();
-
-        $calc = calculate_task_point_result($task, $completed_at);
-        $completed_date = convert_date_utc_to_local($completed_at, "Y-m-d");
-        $year = (int) date("Y", strtotime($completed_date));
-        $month = (int) date("n", strtotime($completed_date));
-        $user_id = isset($task->assigned_to) ? (int) $task->assigned_to : 0;
-
-        $data = array(
-            "task_id" => $task->id,
-            "user_id" => $user_id,
-            "original_points" => $calc["original_points"],
-            "earned_points" => $calc["earned_points"],
-            "reduction_percent" => $calc["reduction_percent"],
-            "reduction_reason" => $calc["reduction_reason"],
-            "deadline" => (!empty($task->deadline) && $task->deadline !== "0000-00-00") ? $task->deadline : null,
-            "completed_date" => $completed_date,
-            "completed_at" => $completed_at,
-            "year" => $year,
-            "month" => $month,
-            "deleted" => 0
-        );
-
-        $awards_model->upsert_award($data, $task->id);
-        if ($user_id) {
-            refresh_user_monthly_task_points($user_id, $year, $month);
-        }
-
-        return $awards_model->get_by_task_id($task->id);
+        return recalculate_task_point_awards($task, false);
     }
 
 }
@@ -375,7 +693,10 @@ if (!function_exists('get_task_point_display')) {
             "is_reduced" => false,
             "is_preview" => false,
             "is_completed" => false,
-            "completed_date" => ""
+            "completed_date" => "",
+            "total_task_points" => $original_points,
+            "is_collab" => false,
+            "participants_count" => 1
         );
 
         if (!$task) {
@@ -393,6 +714,19 @@ if (!function_exists('get_task_point_display')) {
             $display["is_reduced"] = $display["earned_points"] != $display["original_points"];
             $display["is_completed"] = true;
             $display["completed_date"] = isset($task->points_completed_date) ? $task->points_completed_date : "";
+            $display["total_task_points"] = $original_points;
+
+            $participants_count = !empty($task->awarded_participants_count) ? (int) $task->awarded_participants_count : 1;
+            $is_collab = $participants_count > 1 || !empty($task->awarded_is_collaborator);
+            if (!$is_collab && !empty($task->collaborators)) {
+                $p = get_task_participants($task);
+                if (count($p) > 1) {
+                    $is_collab = true;
+                    $participants_count = count($p);
+                }
+            }
+            $display["is_collab"] = $is_collab;
+            $display["participants_count"] = $participants_count;
             return $display;
         }
 
@@ -406,6 +740,10 @@ if (!function_exists('get_task_point_display')) {
                 $display["is_reduced"] = $display["earned_points"] != $display["original_points"];
                 $display["is_completed"] = true;
                 $display["completed_date"] = $award->completed_date;
+                $display["total_task_points"] = $original_points;
+                $participants_count = !empty($award->participants_count) ? (int) $award->participants_count : 1;
+                $display["is_collab"] = $participants_count > 1 || !empty($award->is_collaborator);
+                $display["participants_count"] = $participants_count;
                 return $display;
             }
 
@@ -418,7 +756,29 @@ if (!function_exists('get_task_point_display')) {
             return $display;
         }
 
-        $calc = calculate_task_point_result($task);
+        $participants = get_task_participants($task);
+        $p_count = count($participants);
+        $is_collab = $p_count > 1;
+        $total_pts = $original_points;
+
+        $user_share_points = $original_points;
+        $split_eligible = $is_collab && is_task_collab_split_eligible($task, get_current_utc_time());
+        if ($split_eligible) {
+            $assigned_to = isset($task->assigned_to) ? (int) $task->assigned_to : 0;
+            $shares = distribute_task_points_shares($total_pts, $participants, $assigned_to);
+            $first_share = reset($shares);
+            $user_share_points = $first_share ? $first_share["share_original"] : round($total_pts / $p_count, 2);
+        } else {
+            $is_collab = false;
+            $p_count = 1;
+        }
+
+        $display["original_points"] = $user_share_points;
+        $display["total_task_points"] = $total_pts;
+        $display["is_collab"] = $is_collab;
+        $display["participants_count"] = $p_count;
+
+        $calc = calculate_task_point_result($task, "", $user_share_points);
         $display["earned_points"] = $calc["earned_points"];
         $display["reduction_percent"] = $calc["reduction_percent"];
         $display["reduction_reason"] = $calc["reduction_reason"];
@@ -441,22 +801,44 @@ if (!function_exists('get_task_points_badge_html')) {
 
         $original = format_task_point_value($display["original_points"]);
         $earned = format_task_point_value($display["earned_points"]);
-        $reason = $display["reduction_reason"] ? htmlspecialchars($display["reduction_reason"]) : app_lang("points");
+        $is_collab = !empty($display["is_collab"]) && !empty($display["participants_count"]) && $display["participants_count"] > 1;
+        $participants_count = $is_collab ? (int) $display["participants_count"] : 1;
 
         $points_text = "<span class='task-points-given'>" . $original . "</span>";
         if ($display["is_reduced"]) {
             $points_text .= " <span class='task-points-earned'>→ " . $earned . "</span>";
         }
 
-        $html = "<span class='badge clickable mt0 task-points-badge' title='" . $reason . "'>" . $points_text . "</span>";
+        if ($compact && $display["is_reduced"]) {
+            $points_text .= " <span class='task-points-percent'>-" . (int) $display["reduction_percent"] . "%</span>";
+        }
 
-        if ($show_reason && $display["is_reduced"] && $display["reduction_reason"]) {
-            $reason_class = $display["is_preview"] ? "text-warning" : "text-danger";
-            if ($compact) {
-                $html .= " <span class='small $reason_class task-points-reduction' title='" . $reason . "'>-" . (int) $display["reduction_percent"] . "%</span>";
-            } else {
-                $html .= "<div class='small $reason_class mt5 task-points-reason'><i data-feather='alert-circle' class='icon-14'></i> " . $reason . "</div>";
+        if ($is_collab) {
+            $points_text .= " <span class='task-points-collab-tag'>(1 of " . $participants_count . ")</span>";
+        }
+
+        if ($is_collab) {
+            $total_pts_str = format_task_point_value($display["total_task_points"]);
+            $tooltip = sprintf(
+                "Task points %s split among %d members. Your share %s, earned %s",
+                $total_pts_str,
+                $participants_count,
+                number_format((float) $display["original_points"], 2, ".", ""),
+                number_format((float) $display["earned_points"], 2, ".", "")
+            );
+            if ($display["is_reduced"] && $display["reduction_reason"]) {
+                $tooltip .= ". " . $display["reduction_reason"];
             }
+        } else {
+            $tooltip = $display["reduction_reason"] ? $display["reduction_reason"] : app_lang("points");
+        }
+
+        $title_attr = htmlspecialchars($tooltip, ENT_QUOTES, 'UTF-8');
+        $html = "<span class='badge clickable mt0 task-points-badge' title='" . $title_attr . "'>" . $points_text . "</span>";
+
+        if ($show_reason && $display["is_reduced"] && $display["reduction_reason"] && !$compact) {
+            $reason_class = $display["is_preview"] ? "text-warning" : "text-danger";
+            $html .= "<div class='small $reason_class mt5 task-points-reason'><i data-feather='alert-circle' class='icon-14'></i> " . htmlspecialchars($display["reduction_reason"]) . "</div>";
         }
 
         return $html;

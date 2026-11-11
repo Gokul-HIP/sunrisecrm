@@ -240,6 +240,9 @@ $task_link = anchor(get_uri("projects/task_view/$model_info->id"), '<i data-feat
                     if (response.success) {
                         sub_task_status_checkbox.closest("div").html(response.data);
                         window.reloadKanban = true;
+                        if (typeof window.refreshTaskPointsWidgets === "function") {
+                            window.refreshTaskPointsWidgets();
+                        }
                     }
                 }
             });

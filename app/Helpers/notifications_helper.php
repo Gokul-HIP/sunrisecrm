@@ -403,7 +403,7 @@ if (!function_exists('get_notification_config')) {
                 "info" => $task_link
             ),
             "project_task_deadline_2_hours_pre_reminder" => array(
-                "notify_to" => array("task_assignee"),
+                "notify_to" => array("task_assignee", "task_collaborators"),
                 "info" => $task_link
             ),
             "project_task_deadline_pre_reminder" => array(
@@ -419,7 +419,7 @@ if (!function_exists('get_notification_config')) {
                 "info" => $task_link
             ),
             "recurring_task_created_via_cron_job" => array(
-                "notify_to" => array("project_members", "client_primary_contact", "client_all_contacts", "task_assignee", "task_collaborators", "team_members", "team"),
+                "notify_to" => array("project_members", "client_primary_contact", "client_all_contacts", "task_creator", "task_assignee", "task_collaborators", "team_members", "team"),
                 "info" => $task_link
             ),
             "lead_created" => array(
@@ -1207,78 +1207,156 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
         }
         $last_checked_timestamp = $now_epoch;
 
-        ensure_deadline_2_hour_notification_settings();
-
         $ci = new \App\Controllers\App_Controller();
-        $tasks_table = $ci->Tasks_model->db->prefixTable('tasks');
-        $notifications_table = $ci->Tasks_model->db->prefixTable('notifications');
-        $task_status_table = $ci->Tasks_model->db->prefixTable('task_status');
 
-        $today = get_today_date();
-        $now_local = get_my_local_time("Y-m-d H:i:s");
-        $now_ts = strtotime($now_local);
-
-        // Fetch done status id
-        $done_status = $ci->Tasks_model->db->query("SELECT id FROM $task_status_table WHERE key_name = 'done' AND deleted = 0 LIMIT 1")->getRow();
-        $done_status_id = $done_status ? (int) $done_status->id : 3;
-
-        // Fetch tasks matching:
-        // - active (deleted = 0)
-        // - not finished (status_id != done_status_id)
-        // - deadline is today
-        // - end_time is populated
-        $sql = "SELECT id, project_id, title, assigned_to, collaborators, created_by, deadline, end_time
-                FROM $tasks_table
-                WHERE deleted = 0
-                  AND status_id != $done_status_id
-                  AND deadline = '$today'
-                  AND end_time IS NOT NULL
-                  AND end_time != ''
-                  AND end_time != '00:00:00'";
-
-        $tasks = $ci->Tasks_model->db->query($sql)->getResult();
-        if (!$tasks) {
-            return 0;
+        // MySQL named mutex (timeout 0 = non-blocking): prevents concurrent execution between Cron and web AJAX polls
+        $lock_row = $ci->Tasks_model->db->query("SELECT GET_LOCK('crm_deadline_2h_reminder_lock', 0) AS got_lock")->getRow();
+        if (!$lock_row || (int) $lock_row->got_lock !== 1) {
+            return 0; // Lock is held by another process; exit immediately without blocking
         }
 
-        $sent_count = 0;
-        foreach ($tasks as $task) {
-            $deadline_datetime = $task->deadline . " " . $task->end_time;
-            $deadline_ts = strtotime($deadline_datetime);
-            if (!$deadline_ts) {
-                continue;
+        try {
+            $tasks_table = $ci->Tasks_model->db->prefixTable('tasks');
+            $notifications_table = $ci->Tasks_model->db->prefixTable('notifications');
+            $task_status_table = $ci->Tasks_model->db->prefixTable('task_status');
+
+            $today = get_today_date();
+            $tomorrow = get_tomorrow_date();
+            $now_local = get_my_local_time("Y-m-d H:i:s");
+            $now_ts = strtotime($now_local);
+
+            // Fetch done status id
+            $done_status = $ci->Tasks_model->db->query("SELECT id FROM $task_status_table WHERE key_name = 'done' AND deleted = 0 LIMIT 1")->getRow();
+            $done_status_id = $done_status ? (int) $done_status->id : 3;
+
+            // Fetch tasks matching:
+            // - active (deleted = 0)
+            // - not finished (status_id != done_status_id)
+            // - deadline is today or tomorrow (candidate for 2-hour pre-reminder)
+            // - end_time is populated
+            $sql = "SELECT id, project_id, title, assigned_to, collaborators, created_by, deadline, end_time
+                    FROM $tasks_table
+                    WHERE deleted = 0
+                      AND status_id != $done_status_id
+                      AND deadline IN ('$today', '$tomorrow')
+                      AND end_time IS NOT NULL
+                      AND end_time != ''
+                      AND end_time != '00:00:00'";
+
+            $tasks = $ci->Tasks_model->db->query($sql)->getResult();
+            if (!$tasks) {
+                return 0;
             }
 
-            // Target time: exactly 2 hours (7200s) before task end_time
-            $target_ts = $deadline_ts - 7200;
-
-            // Trigger when local time is at or after 2 hours before end_time AND before the deadline passes
-            if ($now_ts >= $target_ts && $now_ts < $deadline_ts) {
-                // Check if notification already logged for this task today
-                $already = $ci->Tasks_model->db->query("
-                    SELECT id FROM $notifications_table
-                    WHERE task_id = {$task->id}
-                      AND event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
-                      AND deleted = 0
-                      AND created_at >= '{$today} 00:00:00'
-                    LIMIT 1
-                ")->getRow();
-
-                if ($already) {
+            $sent_count = 0;
+            foreach ($tasks as $task) {
+                $deadline_datetime = $task->deadline . " " . $task->end_time;
+                $deadline_ts = strtotime($deadline_datetime);
+                if (!$deadline_ts) {
                     continue;
                 }
 
-                // Dispatch notification for this task
-                log_notification("project_task_deadline_2_hours_pre_reminder", array(
-                    "task_id" => $task->id,
-                    "project_id" => $task->project_id
-                ), "0");
+                // Target time: exactly 2 hours (7200s) before task end_time
+                $target_ts = $deadline_ts - 7200;
 
-                $sent_count++;
+                // Trigger when local time is at or after 2 hours before end_time AND before the deadline passes
+                if ($now_ts >= $target_ts && $now_ts < $deadline_ts) {
+                    // Check if reminder was already sent for this specific deadline datetime (UTC/IST mismatch safe)
+                    $deadline_escaped = $ci->Tasks_model->db->escape($deadline_datetime);
+                    $window_start_utc = convert_date_local_to_utc(date("Y-m-d H:i:s", $target_ts - 120));
+                    $window_end_utc = convert_date_local_to_utc(date("Y-m-d H:i:s", $deadline_ts));
+
+                    $already = $ci->Tasks_model->db->query("
+                        SELECT id FROM $notifications_table
+                        WHERE task_id = {$task->id}
+                          AND event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                          AND deleted = 0
+                          AND (
+                              description = {$deadline_escaped}
+                              OR (
+                                  (description IS NULL OR description = '')
+                                  AND created_at >= '{$window_start_utc}'
+                                  AND created_at <= '{$window_end_utc}'
+                              )
+                          )
+                        LIMIT 1
+                    ")->getRow();
+
+                    if ($already) {
+                        continue;
+                    }
+
+                    // Dispatch notification directly in-process to avoid loopback cURL deadlocks
+                    try {
+                        $processor = new \App\Controllers\Notification_processor();
+                        $processor->create_notification(array(
+                            "event" => encode_id("project_task_deadline_2_hours_pre_reminder", "notification"),
+                            "task_id" => $task->id,
+                            "project_id" => $task->project_id,
+                            "user_id" => "0",
+                            "description" => $deadline_datetime
+                        ));
+                        $sent_count++;
+                    } catch (\Throwable $ex) {
+                        log_message('error', 'Deadline 2-hour reminder dispatch error: {message}', ['message' => $ex->getMessage()]);
+                    }
+                }
             }
+
+            return $sent_count;
+        } finally {
+            $ci->Tasks_model->db->query("SELECT RELEASE_LOCK('crm_deadline_2h_reminder_lock')");
+        }
+    }
+
+}
+
+if (!function_exists('check_task_deadline_2_hour_reminders_throttled')) {
+
+    /**
+     * Shared throttled runner for 2-hour task deadline reminders.
+     * Uses time() (Unix epoch timestamp) as the consistent, timezone-agnostic basis.
+     * 
+     * @param int $throttle_seconds Minimum interval between checks (default 50s)
+     * @param object|null $logger Optional diagnostic logger instance
+     * @param string|null $run_id Optional diagnostic run ID
+     * @return int Number of reminders sent, or 0 if throttled/no reminders
+     */
+    function check_task_deadline_2_hour_reminders_throttled($throttle_seconds = 50, $logger = null, $run_id = null) {
+        $now_epoch = time();
+        $last_check = (int) get_setting("last_task_deadline_2_hour_reminder_check_time");
+
+        // Cheap throttle: skip if checked within throttle window
+        if ($last_check > 0 && ($now_epoch - $last_check) < $throttle_seconds) {
+            return 0;
         }
 
-        return $sent_count;
+        // Update in-memory settings array first (0 DB queries for subsequent calls in same request)
+        $rise_config = config('Rise');
+        if (isset($rise_config->app_settings_array)) {
+            $rise_config->app_settings_array["last_task_deadline_2_hour_reminder_check_time"] = $now_epoch;
+        }
+
+        // Persist to database
+        $settings_model = model('App\Models\Settings_model');
+        $settings_model->save_setting("last_task_deadline_2_hour_reminder_check_time", $now_epoch);
+
+        $sent = check_and_send_task_deadline_2_hour_reminders(true);
+
+        if ($sent > 0 && $logger && method_exists($logger, 'log')) {
+            if (!$run_id && method_exists($logger, 'new_run_id')) {
+                $run_id = $logger->new_run_id("reminder");
+            }
+            $logger->log(
+                $run_id,
+                "task_deadline_2h_reminder",
+                "info",
+                "Sent {$sent} task deadline 2-hour pre-reminder(s).",
+                array("sent" => $sent, "checked_at" => get_current_utc_time())
+            );
+        }
+
+        return $sent;
     }
 
 }
