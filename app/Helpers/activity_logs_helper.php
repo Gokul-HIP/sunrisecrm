@@ -4,6 +4,23 @@ use App\Controllers\Security_Controller;
 use App\Controllers\App_Controller;
 
 /**
+ * Internal task fields that must never appear in the activity feed.
+ * Kept out of new log "changes" in Crud_model, and filtered when rendering old rows.
+ */
+if (!function_exists('get_task_activity_log_hidden_fields')) {
+
+    function get_task_activity_log_hidden_fields() {
+        return array(
+            "submitted_for_review_at",
+            "status_changed_at",
+            "points_edited",
+            "activity_log_id",
+        );
+    }
+
+}
+
+/**
  * dynamically generate the activity logs for projects
  *
  * @param string $log_type
@@ -18,6 +35,10 @@ if (!function_exists('get_change_logs')) {
         $from_value = $value['from'];
         $to_value = $value['to'];
         $changes = "";
+
+        if ($log_type === "task" && in_array($field, get_task_activity_log_hidden_fields(), true)) {
+            return false;
+        }
 
         $ci = new App_Controller();
         $model_schema = array();
@@ -34,7 +55,13 @@ if (!function_exists('get_change_logs')) {
         } else if ($log_type === "task_comment") {
             $model_schema = $ci->Project_comments_model->schema();
         }
-        $schema_info = get_array_value($model_schema, $field) ? get_array_value($model_schema, $field) : get_change_logs_of_custom_fields($field);
+        // Only treat as custom field when the encoded custom-field marker is present.
+        // Otherwise unknown columns (e.g. submitted_for_review_at) were wrongly rendered
+        // as raw text with character-level HtmlDiff.
+        $schema_info = get_array_value($model_schema, $field);
+        if (!$schema_info && strpos($field, '[:') !== false) {
+            $schema_info = get_change_logs_of_custom_fields($field);
+        }
         if ($schema_info) {
             //prepare change value
             if (get_array_value($schema_info, "type") === "int") {
@@ -127,9 +154,26 @@ if (!function_exists('get_change_logs')) {
 
                 $changes = "<del>" . $from_value . "</del> <ins>" . $to_value . "</ins>";
             } else if (get_array_value($schema_info, "type") === "time") {
-                $changes = "<del>" . $from_value . "</del> <ins>" . $to_value . "</ins>";
+                // end_time is a wall-clock time (not a UTC datetime)
+                $from_display = $from_value;
+                $to_display = $to_value;
+                if ($from_value && $from_value !== "00:00:00" && function_exists("format_to_time")) {
+                    $from_display = format_to_time($from_value, false);
+                }
+                if ($to_value && $to_value !== "00:00:00" && function_exists("format_to_time")) {
+                    $to_display = format_to_time($to_value, false);
+                }
+                $changes = "<del>" . $from_display . "</del> <ins>" . $to_display . "</ins>";
             } else if (get_array_value($schema_info, "type") === "date_time") {
-                $changes = "<del>" . $from_value . "</del> <ins>" . $to_value . "</ins>";
+                $from_display = $from_value;
+                $to_display = $to_value;
+                if ($from_value && function_exists("format_to_datetime")) {
+                    $from_display = format_to_datetime($from_value);
+                }
+                if ($to_value && function_exists("format_to_datetime")) {
+                    $to_display = format_to_datetime($to_value);
+                }
+                $changes = "<del>" . $from_display . "</del> <ins>" . $to_display . "</ins>";
             } else {
                 $changes = "<del>" . $from_value . "</del> <ins>" . $to_value . "</ins>";
             }
@@ -273,6 +317,9 @@ if (!function_exists('get_change_logs_array')) {
                     $changes_array = get_logs_of_bitbucket_or_github_commit($changes, $is_notification, "github");
                 } else if ($action === "all" || $action === "updated") {
                     foreach ($changes as $field => $value) {
+                        if ($log_type === "task" && in_array($field, get_task_activity_log_hidden_fields(), true)) {
+                            continue;
+                        }
                         if ($is_notification) {
                             array_push($changes_array, get_change_logs_of_custom_fields($field, $is_notification));
                         } else {
