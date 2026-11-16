@@ -31,7 +31,15 @@ class Notifications extends Security_Controller {
         if (!function_exists('check_task_deadline_2_hour_reminders_throttled')) {
             helper(['notifications']);
         }
-        check_task_deadline_2_hour_reminders_throttled(50);
+        $sent_fallback = check_task_deadline_2_hour_reminders_throttled(50);
+        if ($sent_fallback > 0) {
+            if (class_exists('\App\Libraries\Request_performance_tracker')) {
+                \App\Libraries\Request_performance_tracker::$has_missed_reminders = true;
+            }
+            if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+                \App\Libraries\Cron_performance_tracker::log_run('pre_gate_2h_reminders', 'poll_fallback', gmdate('Y-m-d H:i:s'), 0, 'ok', null, $sent_fallback);
+            }
+        }
 
         $user_id = $this->login_user->id;
         // Always read fresh checked_at from DB so polling stays accurate after dropdown opens

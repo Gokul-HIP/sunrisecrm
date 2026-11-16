@@ -63,7 +63,46 @@ if (!function_exists('get_done_task_status_id')) {
         }
 
         $status = model("App\Models\Task_status_model")->get_one_where(array("key_name" => "done", "deleted" => 0));
-        $status_id = ($status && $status->id) ? $status->id : 3;
+        if (!$status || !$status->id) {
+            $status = model("App\Models\Task_status_model")->get_one_where(array("title" => "Done", "deleted" => 0));
+        }
+        $status_id = ($status && $status->id) ? (int) $status->id : 0;
+        return $status_id;
+    }
+
+}
+
+if (!function_exists('get_in_review_task_status_id')) {
+
+    function get_in_review_task_status_id() {
+        static $status_id = null;
+        if ($status_id !== null) {
+            return $status_id;
+        }
+
+        $status = model("App\Models\Task_status_model")->get_one_where(array("key_name" => "in_review", "deleted" => 0));
+        if (!$status || !$status->id) {
+            $status = model("App\Models\Task_status_model")->get_one_where(array("title" => "In review", "deleted" => 0));
+        }
+        $status_id = ($status && $status->id) ? (int) $status->id : 0;
+        return $status_id;
+    }
+
+}
+
+if (!function_exists('get_changes_task_status_id')) {
+
+    function get_changes_task_status_id() {
+        static $status_id = null;
+        if ($status_id !== null) {
+            return $status_id;
+        }
+
+        $status = model("App\Models\Task_status_model")->get_one_where(array("key_name" => "changes", "deleted" => 0));
+        if (!$status || !$status->id) {
+            $status = model("App\Models\Task_status_model")->get_one_where(array("title" => "Changes", "deleted" => 0));
+        }
+        $status_id = ($status && $status->id) ? (int) $status->id : 0;
         return $status_id;
     }
 
@@ -255,7 +294,19 @@ if (!function_exists('calculate_task_point_result')) {
             return $result;
         }
 
-        if ($completed_at) {
+        // Lateness rule (Phase 16G):
+        // Use submitted_for_review_at ONLY when workflow is on AND a stamp is present.
+        // Stamps are kept only for In review -> Done; cleared on leave-In-review (non-Done),
+        // direct Done, and reopen — so direct Done always uses completed_at.
+        $use_submitted_for_lateness = get_setting("task_review_workflow_enabled")
+            && !empty($task->submitted_for_review_at)
+            && $task->submitted_for_review_at !== "0000-00-00 00:00:00";
+        if ($use_submitted_for_lateness) {
+            $completed_local = convert_date_utc_to_local($task->submitted_for_review_at, "Y-m-d H:i:s");
+            if (!$completed_at) {
+                $result["is_preview"] = true;
+            }
+        } else if ($completed_at) {
             $completed_local = convert_date_utc_to_local($completed_at, "Y-m-d H:i:s");
         } else {
             $completed_local = get_my_local_time("Y-m-d H:i:s");
@@ -899,6 +950,121 @@ if (!function_exists('task_points_second_edit_blocked')) {
         }
 
         return task_points_already_edited($existing_task);
+    }
+
+}
+
+if (!function_exists('is_legacy_in_review_task')) {
+
+    /**
+     * Legacy In-review task: status = In review AND submitted_for_review_at IS NULL.
+     * When review workflow is on, these stay visible on the Tasks page and out of the
+     * review queue/badges; lateness uses completed_at until they re-enter In review.
+     */
+    function is_legacy_in_review_task($task) {
+        if (!$task || !is_object($task)) {
+            return false;
+        }
+        $in_review_status_id = (int) get_in_review_task_status_id();
+        if (!$in_review_status_id) {
+            return false;
+        }
+        if ((int) $task->status_id !== $in_review_status_id) {
+            return false;
+        }
+        $submitted = property_exists($task, "submitted_for_review_at") ? $task->submitted_for_review_at : null;
+        return ($submitted === null || $submitted === "" || $submitted === "0000-00-00 00:00:00");
+    }
+
+}
+
+if (!function_exists('apply_review_stamp_on_status_change')) {
+
+    /**
+     * Stamp / clear submitted_for_review_at for a status transition.
+     *
+     * Rule:
+     * - Entering In review (workflow on): set stamp = now
+     * - In review -> Done: keep stamp (lateness judged at submission time)
+     * - Leaving In review for any other status: clear stamp
+     * - Direct Done (from any non-In-review status): clear stamp
+     * - Leaving Done (reopen): clear stamp
+     * Mutates $data in place.
+     */
+    function apply_review_stamp_on_status_change($task_info, $new_status_id, &$data, $now = null) {
+        if (!$task_info || !isset($task_info->status_id)) {
+            return;
+        }
+        $old_id = (int) $task_info->status_id;
+        $new_id = (int) $new_status_id;
+        if ($old_id === $new_id) {
+            return;
+        }
+
+        $in_review_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+        $done_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+        if (!$now) {
+            $now = get_current_utc_time();
+        }
+
+        if ($in_review_id && $new_id === $in_review_id && get_setting("task_review_workflow_enabled")) {
+            $data["submitted_for_review_at"] = $now;
+            return;
+        }
+
+        // In review -> Done: keep existing stamp for lateness
+        if ($in_review_id && $done_id && $old_id === $in_review_id && $new_id === $done_id) {
+            return;
+        }
+
+        // Leaving In review for non-Done, or direct Done / reopen: clear stamp
+        if ($in_review_id && $old_id === $in_review_id) {
+            $data["submitted_for_review_at"] = null;
+            return;
+        }
+        if ($done_id && $new_id === $done_id) {
+            $data["submitted_for_review_at"] = null;
+            return;
+        }
+        if ($done_id && $old_id === $done_id) {
+            $data["submitted_for_review_at"] = null;
+        }
+    }
+
+}
+
+if (!function_exists('count_tasks_in_review')) {
+
+    function count_tasks_in_review($user = null) {
+        if (!get_setting("task_review_workflow_enabled")) {
+            return 0;
+        }
+        if (!$user) {
+            $ci = new \App\Controllers\App_Controller();
+            $user = $ci->login_user;
+        }
+        if (!$user || empty($user->id)) {
+            return 0;
+        }
+
+        $in_review_status_id = get_in_review_task_status_id();
+        if (!$in_review_status_id) {
+            return 0;
+        }
+
+        $db = db_connect('default');
+        $prefix = $db->getPrefix();
+        $tasks_table = "{$prefix}tasks";
+
+        $uid = (int) $user->id;
+        $sql = "SELECT COUNT(*) AS total FROM `$tasks_table` 
+                WHERE `deleted` = 0 
+                  AND `status_id` = $in_review_status_id 
+                  AND `submitted_for_review_at` IS NOT NULL 
+                  AND `created_by` = $uid";
+
+        $row = $db->query($sql)->getRow();
+        return $row ? (int) $row->total : 0;
     }
 
 }

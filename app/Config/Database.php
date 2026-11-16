@@ -74,7 +74,7 @@ class Database extends Config
 	// local db
 	public $default = [
 		'DSN'      => '',
-		'hostname' => '172.30.224.1',
+		'hostname' => '127.0.0.1',
 		'username' => 'hip_wsl',
 		'password' => 'HipWsl_ChangeThis123!',
 		'database' => 'sunrisecrmnew',

@@ -7,7 +7,7 @@
             '.task-status-summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px;flex:1 1 auto;}' +
             '.task-points-summary-item{display:flex;align-items:baseline;gap:6px;}' +
             '.task-points-summary-label{font-size:13px;color:#4b5563;font-weight:500;}' +
-            '.task-points-given-value,.task-points-gained-value,.task-total-score-value,.task-solo-earned-value,.task-collab-earned-value,.task-todo-count,.task-in-progress-count,.task-in-review-count,.task-done-count{font-size:20px;font-weight:700;line-height:1;}' +
+            '.task-points-given-value,.task-points-gained-value,.task-total-score-value,.task-solo-earned-value,.task-collab-earned-value,.task-todo-count,.task-in-progress-count,.task-in-review-count,.task-changes-count,.task-done-count{font-size:20px;font-weight:700;line-height:1;}' +
             '.task-points-metric-wrap{display:inline-flex;align-items:baseline;font-size:18px;font-weight:700;line-height:1;}' +
             '.task-points-sep{font-size:13px;font-weight:400;color:#9ca3af;margin:0 3px;}' +
             '.task-solo-overall-value,.task-collab-overall-value{font-size:15px;font-weight:500;color:#6b7280;}' +
@@ -16,6 +16,7 @@
             '.task-todo-count{color:#e04b3c;}' +
             '.task-in-progress-count{color:#2b8fd6;}' +
             '.task-in-review-count{color:#6690F4;}' +
+            '.task-changes-count{color:#e67e22;}' +
             '.task-done-count{color:#1fa85a;}' +
             '.task-points-summary .points-zero{color:#dc2626;}' +
             '.task-points-summary .points-low{color:#f87171;}' +
@@ -95,6 +96,7 @@
                     $(".task-todo-count").text(json.todo_count);
                     $(".task-in-progress-count").text(json.in_progress_count);
                     $(".task-in-review-count").text(json.in_review_count);
+                    $(".task-changes-count").text(json.changes_count || 0);
                     $(".task-done-count").text(json.done_count);
                 }
 

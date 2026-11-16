@@ -277,6 +277,10 @@ if (!function_exists('active_menu')) {
                     $found_special_active_key = $key;
                 }
 
+                if ((substr($uri_string, 0, 24) === "projects/tasks_in_review" || substr($uri_string, 0, 25) === "/projects/tasks_in_review") && ($menu_name === "tasks" || substr($menu_url, 0, 18) === "projects/all_tasks")) {
+                    $found_special_active_key = $key;
+                }
+
 
                 //check in submenu values
                 $submenu = get_array_value($menu, "submenu");

@@ -346,6 +346,30 @@ class Tasks_model extends Crud_model {
             $where .= " AND $ticket_table.ticket_id=$ticket_id";
         }
 
+        $exclude_review_tasks_for_assignee = $this->_get_clean_value($options, "exclude_review_tasks_for_assignee");
+        if ($exclude_review_tasks_for_assignee) {
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if ($in_review_status_id) {
+                $where .= " AND NOT ($tasks_table.status_id = $in_review_status_id AND $tasks_table.submitted_for_review_at IS NOT NULL)";
+            }
+        }
+
+        $awaiting_review_for_user_id = $this->_get_clean_value($options, "awaiting_review_for_user_id");
+        if ($awaiting_review_for_user_id) {
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if ($in_review_status_id) {
+                $where .= " AND $tasks_table.status_id = $in_review_status_id AND $tasks_table.submitted_for_review_at IS NOT NULL AND $tasks_table.created_by = $awaiting_review_for_user_id";
+            }
+        }
+
+        $awaiting_review_all = $this->_get_clean_value($options, "awaiting_review_all");
+        if ($awaiting_review_all) {
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if ($in_review_status_id) {
+                $where .= " AND $tasks_table.status_id = $in_review_status_id AND $tasks_table.submitted_for_review_at IS NOT NULL";
+            }
+        }
+
         $order = "";
         $sort_by_project = $this->_get_clean_value($options, "sort_by_project");
         if ($sort_by_project) {
@@ -519,6 +543,10 @@ class Tasks_model extends Crud_model {
             }
 
             if (!$status_ids_where) {
+                $in_review_cond = get_setting("task_review_workflow_enabled") 
+                    ? "((agg_rows.status_key_name IN ('in_review', 'review') OR LOWER(agg_rows.status_title) IN ('in review', 'review')) AND agg_rows.submitted_for_review_at IS NULL)"
+                    : "(agg_rows.status_key_name IN ('in_review', 'review') OR LOWER(agg_rows.status_title) IN ('in review', 'review'))";
+
                 // Combined single-pass query for total rows, task points, and status counts
                 $combined_count_sql = "SELECT
                         COUNT(*) AS total_rows,
@@ -530,7 +558,8 @@ class Tasks_model extends Crud_model {
                         COALESCE(SUM(CASE WHEN agg_rows.is_collab = 1 THEN agg_rows.gained_points ELSE 0 END), 0) AS collab_earned_points,
                         COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'to_do' THEN 1 ELSE 0 END), 0) AS todo_count,
                         COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'in_progress' THEN 1 ELSE 0 END), 0) AS in_progress_count,
-                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name IN ('in_review', 'review') OR LOWER(agg_rows.status_title) IN ('in review', 'review') THEN 1 ELSE 0 END), 0) AS in_review_count,
+                        COALESCE(SUM(CASE WHEN $in_review_cond THEN 1 ELSE 0 END), 0) AS in_review_count,
+                        COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'changes' OR LOWER(agg_rows.status_title) = 'changes' THEN 1 ELSE 0 END), 0) AS changes_count,
                         COALESCE(SUM(CASE WHEN agg_rows.status_key_name = 'done' THEN 1 ELSE 0 END), 0) AS done_count
                     FROM (
                         SELECT $tasks_table.id,
@@ -546,7 +575,8 @@ class Tasks_model extends Crud_model {
                                 ELSE 0
                             END) AS is_collab,
                             MAX($task_status_table.key_name) AS status_key_name,
-                            MAX($task_status_table.title) AS status_title
+                            MAX($task_status_table.title) AS status_title,
+                            MAX($tasks_table.submitted_for_review_at) AS submitted_for_review_at
                         $core_from_joins_where
                         GROUP BY $tasks_table.id
                     ) AS agg_rows";
@@ -565,6 +595,7 @@ class Tasks_model extends Crud_model {
                     "todo_count" => $counts_row ? (int) $counts_row->todo_count : 0,
                     "in_progress_count" => $counts_row ? (int) $counts_row->in_progress_count : 0,
                     "in_review_count" => $counts_row ? (int) $counts_row->in_review_count : 0,
+                    "changes_count" => $counts_row ? (int) $counts_row->changes_count : 0,
                     "done_count" => $counts_row ? (int) $counts_row->done_count : 0,
                 );
             }
@@ -598,15 +629,21 @@ class Tasks_model extends Crud_model {
             if ($status_ids_where) {
                 $status_from = str_replace($status_ids_where, "", $status_from);
             }
+            $status_in_review_cond = get_setting("task_review_workflow_enabled")
+                ? "((status_rows.status_key_name IN ('in_review', 'review') OR LOWER(status_rows.status_title) IN ('in review', 'review')) AND status_rows.submitted_for_review_at IS NULL)"
+                : "(status_rows.status_key_name IN ('in_review', 'review') OR LOWER(status_rows.status_title) IN ('in review', 'review'))";
+
             $status_count_sql = "SELECT
                     COALESCE(SUM(CASE WHEN status_rows.status_key_name = 'to_do' THEN 1 ELSE 0 END), 0) AS todo_count,
                     COALESCE(SUM(CASE WHEN status_rows.status_key_name = 'in_progress' THEN 1 ELSE 0 END), 0) AS in_progress_count,
-                    COALESCE(SUM(CASE WHEN status_rows.status_key_name IN ('in_review', 'review') OR LOWER(status_rows.status_title) IN ('in review', 'review') THEN 1 ELSE 0 END), 0) AS in_review_count,
+                    COALESCE(SUM(CASE WHEN $status_in_review_cond THEN 1 ELSE 0 END), 0) AS in_review_count,
+                    COALESCE(SUM(CASE WHEN status_rows.status_key_name = 'changes' OR LOWER(status_rows.status_title) = 'changes' THEN 1 ELSE 0 END), 0) AS changes_count,
                     COALESCE(SUM(CASE WHEN status_rows.status_key_name = 'done' THEN 1 ELSE 0 END), 0) AS done_count
                 FROM (
                     SELECT $tasks_table.id,
                         MAX($task_status_table.key_name) AS status_key_name,
-                        MAX($task_status_table.title) AS status_title
+                        MAX($task_status_table.title) AS status_title,
+                        MAX($tasks_table.submitted_for_review_at) AS submitted_for_review_at
                     $status_from
                     GROUP BY $tasks_table.id
                 ) AS status_rows";
@@ -625,6 +662,7 @@ class Tasks_model extends Crud_model {
                 "todo_count" => $status_rows ? (int) $status_rows->todo_count : 0,
                 "in_progress_count" => $status_rows ? (int) $status_rows->in_progress_count : 0,
                 "in_review_count" => $status_rows ? (int) $status_rows->in_review_count : 0,
+                "changes_count" => $status_rows ? (int) $status_rows->changes_count : 0,
                 "done_count" => $status_rows ? (int) $status_rows->done_count : 0,
             );
         } else {
@@ -950,6 +988,14 @@ class Tasks_model extends Crud_model {
         $quick_filter = $this->_get_clean_value($options, "quick_filter");
         if ($quick_filter) {
             $where .= $this->make_quick_filter_query($quick_filter, $tasks_table);
+        }
+
+        $exclude_review_tasks_for_assignee = $this->_get_clean_value($options, "exclude_review_tasks_for_assignee");
+        if ($exclude_review_tasks_for_assignee) {
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if ($in_review_status_id) {
+                $where .= " AND NOT ($tasks_table.status_id = $in_review_status_id AND $tasks_table.submitted_for_review_at IS NOT NULL)";
+            }
         }
 
 

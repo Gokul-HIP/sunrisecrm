@@ -42,8 +42,6 @@ if ($targetDb) {
     $dbConfig = config('Database');
     $dbConfig->default['database'] = $targetDb;
     $dbConfig->default['hostname'] = '127.0.0.1';
-    $dbConfig->default['username'] = 'root';
-    $dbConfig->default['password'] = '';
     echo "Using target database: $targetDb\n";
 }
 

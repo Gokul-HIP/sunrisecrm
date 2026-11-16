@@ -403,7 +403,23 @@ if (!function_exists('get_notification_config')) {
                 "info" => $task_link
             ),
             "project_task_deadline_2_hours_pre_reminder" => array(
-                "notify_to" => array("task_assignee", "task_collaborators"),
+                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "info" => $task_link
+            ),
+            "project_task_deadline_1_hour_pre_reminder" => array(
+                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "info" => $task_link
+            ),
+            "project_task_deadline_30_mins_pre_reminder" => array(
+                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "info" => $task_link
+            ),
+            "project_task_sent_for_review" => array(
+                "notify_to" => array("task_creator"),
+                "info" => $task_link
+            ),
+            "project_task_changes_requested" => array(
+                "notify_to" => array("task_assignee"),
                 "info" => $task_link
             ),
             "project_task_deadline_pre_reminder" => array(
@@ -765,7 +781,7 @@ if (!function_exists('send_notification_emails')) {
             $parser_data["SUBSCRIPTION_ID"] = $notification->subscription_id;
             $parser_data["SUBSCRIPTION_TITLE"] = $notification->subscription_title;
             $parser_data["PROJECT_URL"] = $url;
-        } else if ($notification->event == "project_task_created" || $notification->event == "project_task_assigned" || $notification->event == "project_task_commented" || $notification->event == "project_task_updated" || $notification->event == "project_task_started" || $notification->event == "project_task_finished" || $notification->event == "project_task_reopened" || $notification->event == "project_task_deleted" || $notification->event == "project_task_deadline_2_hours_pre_reminder") {
+        } else if ($notification->event == "project_task_created" || $notification->event == "project_task_assigned" || $notification->event == "project_task_commented" || $notification->event == "project_task_updated" || $notification->event == "project_task_started" || $notification->event == "project_task_finished" || $notification->event == "project_task_reopened" || $notification->event == "project_task_deleted" || $notification->event == "project_task_deadline_2_hours_pre_reminder" || $notification->event == "project_task_deadline_1_hour_pre_reminder" || $notification->event == "project_task_deadline_30_mins_pre_reminder" || $notification->event == "project_task_sent_for_review" || $notification->event == "project_task_changes_requested") {
             if ($notification->event == "project_task_commented") {
                 $template_name = "task_commented";
 
@@ -1181,10 +1197,20 @@ if (!function_exists('ensure_deadline_2_hour_notification_settings')) {
             $prefix = $db->getPrefix();
             $table = "{$prefix}notification_settings";
 
-            $row = $db->query("SELECT id FROM `$table` WHERE event = 'project_task_deadline_2_hours_pre_reminder'")->getRow();
-            if (!$row) {
-                $db->query("INSERT INTO `$table` (`event`, `category`, `enable_email`, `enable_web`, `enable_slack`, `notify_to_team`, `notify_to_team_members`, `notify_to_terms`, `sort`, `deleted`)
-                            VALUES ('project_task_deadline_2_hours_pre_reminder', 'project', 0, 1, 0, '', '', 'task_assignee', 21, 0)");
+            $events = array(
+                'project_task_deadline_2_hours_pre_reminder' => array('sort' => 21, 'terms' => 'task_assignee,task_collaborators,task_creator'),
+                'project_task_deadline_1_hour_pre_reminder' => array('sort' => 22, 'terms' => 'task_assignee,task_collaborators,task_creator'),
+                'project_task_deadline_30_mins_pre_reminder' => array('sort' => 23, 'terms' => 'task_assignee,task_collaborators,task_creator'),
+                'project_task_sent_for_review' => array('sort' => 24, 'terms' => 'task_creator'),
+                'project_task_changes_requested' => array('sort' => 25, 'terms' => 'task_assignee')
+            );
+
+            foreach ($events as $event => $conf) {
+                $row = $db->query("SELECT id FROM `$table` WHERE event = '$event'")->getRow();
+                if (!$row) {
+                    $db->query("INSERT INTO `$table` (`event`, `category`, `enable_email`, `enable_web`, `enable_slack`, `notify_to_team`, `notify_to_team_members`, `notify_to_terms`, `sort`, `deleted`)
+                                VALUES ('$event', 'project', 0, 1, 0, '', '', '{$conf['terms']}', {$conf['sort']}, 0)");
+                }
             }
             $ensured = true;
         } catch (\Throwable $e) {
@@ -1218,6 +1244,7 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
         try {
             $tasks_table = $ci->Tasks_model->db->prefixTable('tasks');
             $notifications_table = $ci->Tasks_model->db->prefixTable('notifications');
+            $activity_logs_table = $ci->Tasks_model->db->prefixTable('activity_logs');
             $task_status_table = $ci->Tasks_model->db->prefixTable('task_status');
 
             $today = get_today_date();
@@ -1225,23 +1252,66 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
             $now_local = get_my_local_time("Y-m-d H:i:s");
             $now_ts = strtotime($now_local);
 
-            // Fetch done status id
-            $done_status = $ci->Tasks_model->db->query("SELECT id FROM $task_status_table WHERE key_name = 'done' AND deleted = 0 LIMIT 1")->getRow();
-            $done_status_id = $done_status ? (int) $done_status->id : 3;
+            // Fetch dynamic status ids resolved by key_name
+            helper('task_points');
+            $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if (!$done_status_id || !$in_review_status_id) {
+                $status_rows = $ci->Tasks_model->db->query("SELECT id, key_name FROM $task_status_table WHERE key_name IN ('done', 'in_review') AND deleted = 0")->getResult();
+                foreach ($status_rows as $sr) {
+                    if ($sr->key_name === 'done') $done_status_id = (int)$sr->id;
+                    if ($sr->key_name === 'in_review') $in_review_status_id = (int)$sr->id;
+                }
+            }
+
+            // Multi-stage configuration (minutes before deadline)
+            $stages_setting = get_setting("task_deadline_reminder_stages");
+            if (!$stages_setting) {
+                $stages_setting = "120,60,30";
+            }
+            $stages_raw = array_filter(array_map('trim', explode(',', (string) $stages_setting)));
+            $stages = array();
+            foreach ($stages_raw as $s_item) {
+                $m_val = (int) $s_item;
+                if ($m_val > 0) {
+                    $stages[] = $m_val;
+                }
+            }
+            if (empty($stages)) {
+                $stages = array(120, 60, 30);
+            }
+            rsort($stages); // descending: 120, 60, 30
+
+            $get_stage_event = function($minutes) {
+                if ($minutes === 120) {
+                    return "project_task_deadline_2_hours_pre_reminder";
+                } else if ($minutes === 60) {
+                    return "project_task_deadline_1_hour_pre_reminder";
+                } else if ($minutes === 30) {
+                    return "project_task_deadline_30_mins_pre_reminder";
+                }
+                return "project_task_deadline_{$minutes}_mins_pre_reminder";
+            };
 
             // Fetch tasks matching:
             // - active (deleted = 0)
             // - not finished (status_id != done_status_id)
-            // - deadline is today or tomorrow (candidate for 2-hour pre-reminder)
+            // - not in review (status_id != in_review_status_id) [tasks in Changes KEEP reminders]
+            // - deadline is today or tomorrow (candidate for pre-reminders)
             // - end_time is populated
-            $sql = "SELECT id, project_id, title, assigned_to, collaborators, created_by, deadline, end_time
-                    FROM $tasks_table
-                    WHERE deleted = 0
-                      AND status_id != $done_status_id
-                      AND deadline IN ('$today', '$tomorrow')
-                      AND end_time IS NOT NULL
-                      AND end_time != ''
-                      AND end_time != '00:00:00'";
+            $sql = "SELECT t.id, t.project_id, t.title, t.assigned_to, t.collaborators, t.created_by, t.deadline, t.end_time, t.status_id, t.created_date,
+                           COALESCE(
+                               (SELECT n.created_at FROM $notifications_table n WHERE n.task_id = t.id AND n.event = 'project_task_created' LIMIT 1),
+                               (SELECT a.created_at FROM $activity_logs_table a WHERE a.log_type = 'task' AND a.log_type_id = t.id AND a.action = 'created' LIMIT 1),
+                               CONCAT(t.created_date, ' 00:00:00')
+                           ) AS task_created_at
+                    FROM $tasks_table t
+                    WHERE t.deleted = 0
+                      AND t.status_id NOT IN ($done_status_id, $in_review_status_id)
+                      AND t.deadline IN ('$today', '$tomorrow')
+                      AND t.end_time IS NOT NULL
+                      AND t.end_time != ''
+                      AND t.end_time != '00:00:00'";
 
             $tasks = $ci->Tasks_model->db->query($sql)->getResult();
             if (!$tasks) {
@@ -1252,31 +1322,50 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
             foreach ($tasks as $task) {
                 $deadline_datetime = $task->deadline . " " . $task->end_time;
                 $deadline_ts = strtotime($deadline_datetime);
-                if (!$deadline_ts) {
+                if (!$deadline_ts || $now_ts >= $deadline_ts) {
                     continue;
                 }
 
-                // Target time: exactly 2 hours (7200s) before task end_time
-                $target_ts = $deadline_ts - 7200;
+                $task_created_local = convert_date_utc_to_local($task->task_created_at, "Y-m-d H:i:s");
+                $task_created_ts = strtotime($task_created_local);
+                if (!$task_created_ts) {
+                    $task_created_ts = strtotime($task->created_date . " 00:00:00");
+                }
 
-                // Trigger when local time is at or after 2 hours before end_time AND before the deadline passes
-                if ($now_ts >= $target_ts && $now_ts < $deadline_ts) {
-                    // Check if reminder was already sent for this specific deadline datetime (UTC/IST mismatch safe)
-                    $deadline_escaped = $ci->Tasks_model->db->escape($deadline_datetime);
+                $deadline_escaped = $ci->Tasks_model->db->escape($deadline_datetime);
+
+                $legitimate_past_stages = array();
+                $all_past_unsent_stages = array();
+                $has_upcoming_stage = false;
+
+                foreach ($stages as $m) {
+                    $target_ts = $deadline_ts - ($m * 60);
+                    $event_name = $get_stage_event($m);
+
+                    if ($now_ts < $target_ts) {
+                        $has_upcoming_stage = true;
+                        continue;
+                    }
+
+                    // Check if reminder was already sent for this specific stage and deadline datetime.
+                    // Recognizes both NEW dedupe key (description = deadline datetime)
+                    // and OLD legacy dedupe format (description is empty/null, created within the last 24 hours).
                     $window_start_utc = convert_date_local_to_utc(date("Y-m-d H:i:s", $target_ts - 120));
                     $window_end_utc = convert_date_local_to_utc(date("Y-m-d H:i:s", $deadline_ts));
 
                     $already = $ci->Tasks_model->db->query("
                         SELECT id FROM $notifications_table
                         WHERE task_id = {$task->id}
-                          AND event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                          AND event = '{$event_name}'
                           AND deleted = 0
                           AND (
                               description = {$deadline_escaped}
                               OR (
-                                  (description IS NULL OR description = '')
-                                  AND created_at >= '{$window_start_utc}'
-                                  AND created_at <= '{$window_end_utc}'
+                                  (description IS NULL OR description = '' OR description = '{$task->deadline}')
+                                  AND (
+                                      (created_at >= '{$window_start_utc}' AND created_at <= '{$window_end_utc}')
+                                      OR created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)
+                                  )
                               )
                           )
                         LIMIT 1
@@ -1286,11 +1375,36 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
                         continue;
                     }
 
-                    // Dispatch notification directly in-process to avoid loopback cURL deadlocks
+                    $stage_item = array("minutes" => $m, "event" => $event_name, "target_ts" => $target_ts);
+                    $all_past_unsent_stages[] = $stage_item;
+
+                    // If task was created before or at this threshold, it is legitimate
+                    if ($task_created_ts <= $target_ts) {
+                        $legitimate_past_stages[] = $stage_item;
+                    }
+                }
+
+                $stage_to_fire = null;
+
+                if (!empty($legitimate_past_stages)) {
+                    // Send ONLY the most urgent stage (smallest minutes before deadline), never a burst
+                    usort($legitimate_past_stages, function($a, $b) { return $a['minutes'] - $b['minutes']; });
+                    $stage_to_fire = $legitimate_past_stages[0];
+                } else if (!empty($all_past_unsent_stages)) {
+                    // Task created after earlier thresholds.
+                    // If an upcoming stage exists, wait for it (do NOT fire earlier stages).
+                    // If no upcoming stage exists (created/edited late with e.g. 20m left), fire only most urgent.
+                    if (!$has_upcoming_stage) {
+                        usort($all_past_unsent_stages, function($a, $b) { return $a['minutes'] - $b['minutes']; });
+                        $stage_to_fire = $all_past_unsent_stages[0];
+                    }
+                }
+
+                if ($stage_to_fire) {
                     try {
                         $processor = new \App\Controllers\Notification_processor();
                         $processor->create_notification(array(
-                            "event" => encode_id("project_task_deadline_2_hours_pre_reminder", "notification"),
+                            "event" => encode_id($stage_to_fire["event"], "notification"),
                             "task_id" => $task->id,
                             "project_id" => $task->project_id,
                             "user_id" => "0",
@@ -1298,7 +1412,7 @@ if (!function_exists('check_and_send_task_deadline_2_hour_reminders')) {
                         ));
                         $sent_count++;
                     } catch (\Throwable $ex) {
-                        log_message('error', 'Deadline 2-hour reminder dispatch error: {message}', ['message' => $ex->getMessage()]);
+                        log_message('error', 'Deadline reminder dispatch error: {message}', ['message' => $ex->getMessage()]);
                     }
                 }
             }

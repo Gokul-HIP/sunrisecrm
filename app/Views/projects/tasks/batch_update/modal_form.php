@@ -78,7 +78,13 @@
                 <label for="status_id" class=" col-md-2 text-off"><?php echo app_lang('status'); ?></label>
                 <div class="col-md-9">
                     <?php
+                    $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
+                    $task_status = array();
                     foreach ($statuses as $status) {
+                        if ((int) $status->id === $changes_status_id || $status->key_name === "changes") {
+                            continue; // Never offer Changes in batch update
+                        }
                         $task_status[$status->id] = $status->key_name ? app_lang($status->key_name) : $status->title;
                     }
 

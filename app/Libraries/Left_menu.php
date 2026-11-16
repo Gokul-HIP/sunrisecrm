@@ -214,6 +214,38 @@ class Left_menu {
             $view_data["sidebar_menu"] = $this->_get_sidebar_menu_items($type);
         }
 
+        if (get_setting("task_review_workflow_enabled")) {
+            $in_review_badge = function_exists('count_tasks_in_review') ? count_tasks_in_review($this->ci->login_user) : 0;
+            foreach ($view_data["sidebar_menu"] as $m_key => $m_val) {
+                if (get_array_value($m_val, "name") == "tasks") {
+                    $existing_submenu = get_array_value($m_val, "submenu");
+                    $has_review = false;
+                    if (is_array($existing_submenu)) {
+                        foreach ($existing_submenu as $sm_k => $sm) {
+                            if (get_array_value($sm, "name") == "in_review" || get_array_value($sm, "url") == "projects/tasks_in_review") {
+                                $has_review = true;
+                                $existing_submenu[$sm_k]["badge"] = $in_review_badge ? $in_review_badge : "";
+                                $existing_submenu[$sm_k]["badge_class"] = "bg-warning";
+                            }
+                        }
+                        $view_data["sidebar_menu"][$m_key]["submenu"] = $existing_submenu;
+                    } else {
+                        $existing_submenu = array();
+                    }
+                    if (!$has_review) {
+                        $tasks_sub = array(
+                            array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle"),
+                            array("name" => "in_review", "url" => "projects/tasks_in_review", "class" => "clock", "badge" => $in_review_badge ? $in_review_badge : "", "badge_class" => "bg-warning")
+                        );
+                        $view_data["sidebar_menu"][$m_key]["submenu"] = array_merge($existing_submenu, $tasks_sub);
+                    }
+                    $view_data["sidebar_menu"][$m_key]["badge"] = $in_review_badge ? $in_review_badge : "";
+                    $view_data["sidebar_menu"][$m_key]["badge_class"] = "bg-warning";
+                    break;
+                }
+            }
+        }
+
         $view_data["is_preview"] = $is_preview;
         $view_data["login_user"] = $this->ci->login_user;
         return view("includes/left_menu", $view_data);
@@ -283,7 +315,16 @@ class Left_menu {
 
             if ($this->ci->login_user->is_admin || !get_array_value($this->ci->login_user->permissions, "do_not_show_projects")) {
                 $sidebar_menu["projects"] = array("name" => "projects", "url" => "projects/all_projects", "class" => "grid");
-                $sidebar_menu["tasks"] = array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle");
+                if (get_setting("task_review_workflow_enabled")) {
+                    $in_review_badge = function_exists('count_tasks_in_review') ? count_tasks_in_review($this->ci->login_user) : 0;
+                    $tasks_submenu = array(
+                        "tasks_list" => array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle"),
+                        "tasks_in_review" => array("name" => "in_review", "url" => "projects/tasks_in_review", "class" => "clock", "badge" => $in_review_badge ? $in_review_badge : "", "badge_class" => "bg-warning")
+                    );
+                    $sidebar_menu["tasks"] = array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle", "submenu" => $tasks_submenu, "badge" => $in_review_badge ? $in_review_badge : "", "badge_class" => "bg-warning");
+                } else {
+                    $sidebar_menu["tasks"] = array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle");
+                }
             }
 
             if (get_setting("module_lead") == "1" && ($this->ci->login_user->is_admin || $access_lead)) {

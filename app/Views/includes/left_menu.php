@@ -95,6 +95,13 @@
                                 <a <?php echo $sub_menu_target; ?> href="<?php echo $is_custom_menu_item ? $url : get_uri($url); ?>">
                                     <i data-feather='minus' width='12'></i>
                                     <span><?php echo $s_menu_name; ?></span>
+                                    <?php
+                                    $s_badge = get_array_value($s_menu, "badge");
+                                    $s_badge_class = get_array_value($s_menu, "badge_class");
+                                    if ($s_badge) {
+                                        echo "<span class='badge rounded-pill $s_badge_class'>$s_badge</span>";
+                                    }
+                                    ?>
                                 </a>
                             </li>
                             <?php

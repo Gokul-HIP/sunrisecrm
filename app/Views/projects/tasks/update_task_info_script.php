@@ -1,6 +1,15 @@
 <?php
+$changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
 $status_dropdown_for_update = array();
+// Keep current Changes label resolvable for select2 (not offered as a new choice).
+if (!empty($model_info->status_id) && $changes_status_id && (int) $model_info->status_id === $changes_status_id) {
+    $status_dropdown_for_update[] = array("id" => $changes_status_id, "text" => app_lang("changes"));
+}
 foreach ($statuses as $status) {
+    if ((int) $status->id === $changes_status_id || $status->key_name === "changes") {
+        continue; // Never offer Changes as a new selectable choice
+    }
     $status_dropdown_for_update[] = array("id" => $status->id, "text" => $status->key_name ? app_lang($status->key_name) : $status->title);
 }
 

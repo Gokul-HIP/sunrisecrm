@@ -3563,7 +3563,8 @@ showHideAppTableColumn = function (tableInstance, columnIndex, visible) {
                 $("#" + tempId).select2(settings.select2Option);
             } else {
                 $("#" + tempId).select2(settings.select2Option).change(function (action) {
-                    initAjaxAction($instance, $(this).val(), settings, action["added"]["text"]);
+                    var changedText = (action && action.added && action.added.text) ? action.added.text : "";
+                    initAjaxAction($instance, $(this).val(), settings, changedText);
                 });
             }
         } else if (settings.actionType === "date") {

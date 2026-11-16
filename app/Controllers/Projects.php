@@ -2688,6 +2688,9 @@ class Projects extends Security_Controller {
             $options["project_member_id"] = $this->login_user->id; //don't show all tasks to non-admin users
         }
 
+        if (get_setting("task_review_workflow_enabled")) {
+            $options["exclude_review_tasks_for_assignee"] = true;
+        }
 
         $max_sort = $this->request->getPost('max_sort');
         $column_id = $this->request->getPost('kanban_column_id');
@@ -2709,7 +2712,14 @@ class Projects extends Security_Controller {
                 $column_tasks_count[$task_count->status_id] = $task_count->tasks_count;
             }
 
+            // All tasks kanban: exclude Changes when workflow is disabled; keep In review and Changes when enabled
             $exclude_status_ids = $this->get_removed_task_status_ids($project_id);
+            if (!get_setting("task_review_workflow_enabled")) {
+                $changes_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+                if ($changes_id) {
+                    $exclude_status_ids = $exclude_status_ids ? ($exclude_status_ids . "," . $changes_id) : (string) $changes_id;
+                }
+            }
             $statuses = $this->Task_status_model->get_details(array("hide_from_kanban" => 0, "exclude_status_ids" => $exclude_status_ids));
 
             $view_data["total_columns"] = $statuses->resultID->num_rows;
@@ -2787,6 +2797,7 @@ class Projects extends Security_Controller {
                 $column_tasks_count[$task_count->status_id] = $task_count->tasks_count;
             }
 
+            // Project view kanban is unfiltered (retained from original scope)
             $exclude_status_ids = $this->get_removed_task_status_ids($project_id);
             $statuses = $this->Task_status_model->get_details(array("hide_from_kanban" => 0, "exclude_status_ids" => $exclude_status_ids));
 
@@ -2982,6 +2993,10 @@ class Projects extends Security_Controller {
         $view_data['points_dropdown'] = $task_points;
 
         $exclude_status_ids = $this->get_removed_task_status_ids($project_id);
+        $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+        if ($changes_status_id) {
+            $exclude_status_ids = $exclude_status_ids ? ($exclude_status_ids . "," . $changes_status_id) : (string) $changes_status_id;
+        }
         $view_data['statuses'] = $this->Task_status_model->get_details(array("exclude_status_ids" => $exclude_status_ids))->getResult();
 
         $priorities = $this->Task_priority_model->get_details()->getResult();
@@ -3307,11 +3322,28 @@ class Projects extends Security_Controller {
         //save status changing time for edit mode
         if ($id) {
             $task_info = $this->Tasks_model->get_one($id);
+            $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
+            if ($changes_status_id && (int) $status_id === $changes_status_id && get_setting("task_review_workflow_enabled")) {
+                echo json_encode(array("success" => false, 'message' => app_lang("changes_status_can_only_be_set_via_review_queue")));
+                return false;
+            }
+
             if ($task_info->status_id !== $status_id) {
                 $data["status_changed_at"] = $now;
+                if (function_exists('apply_review_stamp_on_status_change')) {
+                    apply_review_stamp_on_status_change($task_info, $status_id, $data, $now);
+                }
             }
 
             $this->check_sub_tasks_statuses($status_id, $id);
+        } else {
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            if ($in_review_status_id && (int) $status_id === $in_review_status_id && get_setting("task_review_workflow_enabled")) {
+                $data["submitted_for_review_at"] = $now;
+            }
         }
 
         $save_id = $this->Tasks_model->ci_save($data, $id);
@@ -3387,6 +3419,13 @@ class Projects extends Security_Controller {
 
             if ($id) {
                 //updated
+                if (get_setting("task_review_workflow_enabled") && isset($task_info) && $task_info->status_id !== $status_id) {
+                    if ((int) $status_id === $in_review_status_id) {
+                        log_notification("project_task_sent_for_review", array("project_id" => $project_id, "task_id" => $save_id), $this->login_user->id);
+                    } else if ((int) $status_id === $changes_status_id) {
+                        log_notification("project_task_changes_requested", array("project_id" => $project_id, "task_id" => $save_id), $this->login_user->id);
+                    }
+                }
                 log_notification("project_task_updated", array("project_id" => $project_id, "task_id" => $save_id, "activity_log_id" => $new_activity_log_id ? $new_activity_log_id : $activity_log_id));
             } else {
                 //created
@@ -3558,8 +3597,20 @@ class Projects extends Security_Controller {
             app_redirect("forbidden");
         }
 
+        $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+        $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+        $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
+        if ($changes_status_id && (int) $status_id === $changes_status_id && get_setting("task_review_workflow_enabled")) {
+            echo json_encode(array("success" => false, 'message' => app_lang("changes_status_can_only_be_set_via_review_queue")));
+            return false;
+        }
+
         if ($task_info->status_id !== $status_id) {
             $data["status_changed_at"] = get_current_utc_time();
+            if (function_exists('apply_review_stamp_on_status_change')) {
+                apply_review_stamp_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
+            }
         }
 
         $save_id = $this->Tasks_model->ci_save($data, $id);
@@ -3567,6 +3618,14 @@ class Projects extends Security_Controller {
         if ($save_id) {
             $task_info = $this->Tasks_model->get_details(array("id" => $id))->getRow();
             echo json_encode(array("success" => true, "data" => (($this->request->getPost("type") == "sub_task") ? $this->_make_sub_task_row($task_info, "data") : $this->_task_row_data($save_id)), 'id' => $save_id, "message" => app_lang('record_saved')));
+
+            if (get_setting("task_review_workflow_enabled")) {
+                if ((int) $status_id === $in_review_status_id) {
+                    log_notification("project_task_sent_for_review", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+                } else if ((int) $status_id === $changes_status_id) {
+                    log_notification("project_task_changes_requested", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+                }
+            }
 
             log_notification("project_task_updated", array("project_id" => $task_info->project_id, "task_id" => $save_id, "activity_log_id" => get_array_value($data, "activity_log_id")));
         } else {
@@ -3611,11 +3670,23 @@ class Projects extends Security_Controller {
             $data["points_edited"] = 1;
         }
 
-        if ($data_field === "status_id" && $task_info->status_id !== $value) {
-            $data["status_changed_at"] = get_current_utc_time();
-        }
+        if ($data_field === "status_id") {
+            $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
 
-        if ($data_field == "status_id") {
+            if ($changes_status_id && (int) $value === $changes_status_id && get_setting("task_review_workflow_enabled")) {
+                echo json_encode(array("success" => false, 'message' => app_lang("changes_status_can_only_be_set_via_review_queue")));
+                return false;
+            }
+
+            if ($task_info->status_id !== $value) {
+                $data["status_changed_at"] = get_current_utc_time();
+                if (function_exists('apply_review_stamp_on_status_change')) {
+                    apply_review_stamp_on_status_change($task_info, $value, $data, $data["status_changed_at"]);
+                }
+            }
+
             $this->check_sub_tasks_statuses($value, $id);
         }
 
@@ -3623,6 +3694,14 @@ class Projects extends Security_Controller {
         if (!$save_id) {
             echo json_encode(array("success" => false, app_lang('error_occurred')));
             return false;
+        }
+
+        if ($data_field === "status_id" && get_setting("task_review_workflow_enabled")) {
+            if ((int) $value === $in_review_status_id) {
+                log_notification("project_task_sent_for_review", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+            } else if ((int) $value === $changes_status_id) {
+                log_notification("project_task_changes_requested", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+            }
         }
 
         $task_info = $this->Tasks_model->get_details(array("id" => $save_id))->getRow(); //get data after save
@@ -3689,6 +3768,15 @@ class Projects extends Security_Controller {
         }
 
         $status_id = $this->request->getPost('status_id');
+        $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+        $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+        $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
+        if ($status_id && $changes_status_id && (int) $status_id === $changes_status_id && get_setting("task_review_workflow_enabled")) {
+            echo json_encode(array("success" => false, 'message' => app_lang("changes_status_can_only_be_set_via_review_queue")));
+            return false;
+        }
+
         $this->check_sub_tasks_statuses($status_id, $id);
         $data = array(
             "sort" => $this->request->getPost('sort')
@@ -3699,6 +3787,9 @@ class Projects extends Security_Controller {
 
             if ($task_info->status_id !== $status_id) {
                 $data["status_changed_at"] = get_current_utc_time();
+                if (function_exists('apply_review_stamp_on_status_change')) {
+                    apply_review_stamp_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
+                }
             }
         }
 
@@ -3706,6 +3797,13 @@ class Projects extends Security_Controller {
 
         if ($save_id) {
             if ($status_id) {
+                if (get_setting("task_review_workflow_enabled")) {
+                    if ((int) $status_id === $in_review_status_id) {
+                        log_notification("project_task_sent_for_review", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+                    } else if ((int) $status_id === $changes_status_id) {
+                        log_notification("project_task_changes_requested", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+                    }
+                }
                 log_notification("project_task_updated", array("project_id" => $task_info->project_id, "task_id" => $save_id, "activity_log_id" => get_array_value($data, "activity_log_id")));
             }
         } else {
@@ -3899,6 +3997,37 @@ class Projects extends Security_Controller {
             $options["project_member_id"] = $this->login_user->id; //don't show all tasks to non-admin users
         }
 
+        if (get_setting("task_review_workflow_enabled")) {
+            $options["exclude_review_tasks_for_assignee"] = true;
+            $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+            $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+            $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+            if ($status) {
+                $status_arr = array_filter(explode(",", $status));
+                $has_active = false;
+                foreach ($status_arr as $sid) {
+                    if ((int)$sid !== $done_status_id) {
+                        $has_active = true;
+                        break;
+                    }
+                }
+                if ($has_active) {
+                    $changed_arr = false;
+                    if ($changes_status_id && !in_array($changes_status_id, $status_arr)) {
+                        $status_arr[] = $changes_status_id;
+                        $changed_arr = true;
+                    }
+                    if ($in_review_status_id && !in_array($in_review_status_id, $status_arr)) {
+                        $status_arr[] = $in_review_status_id;
+                        $changed_arr = true;
+                    }
+                    if ($changed_arr) {
+                        $options["status_ids"] = implode(",", $status_arr);
+                    }
+                }
+            }
+        }
+
         $all_options = append_server_side_filtering_commmon_params($options);
 
         $result = $this->Tasks_model->get_details($all_options);
@@ -3986,6 +4115,7 @@ class Projects extends Security_Controller {
         $result["todo_count"] = isset($result["todo_count"]) ? (int) $result["todo_count"] : 0;
         $result["in_progress_count"] = isset($result["in_progress_count"]) ? (int) $result["in_progress_count"] : 0;
         $result["in_review_count"] = isset($result["in_review_count"]) ? (int) $result["in_review_count"] : 0;
+        $result["changes_count"] = isset($result["changes_count"]) ? (int) $result["changes_count"] : 0;
         $result["done_count"] = isset($result["done_count"]) ? (int) $result["done_count"] : 0;
         $result["date_filter_applied"] = ($from && $to) ? true : false;
         $result["date_from_label"] = $from ? format_to_date($from, false) : "";
@@ -4753,8 +4883,17 @@ class Projects extends Security_Controller {
                         app_redirect("forbidden");
                     }
 
-                    if (array_key_exists("status_id", $data) && $task_info->status_id !== get_array_value($data, "status_id")) {
-                        $data["status_changed_at"] = $now;
+                    if (array_key_exists("status_id", $data)) {
+                        $target_status_id = (int) get_array_value($data, "status_id");
+                        $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+                        $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+
+                        if ($task_info->status_id !== get_array_value($data, "status_id")) {
+                            $data["status_changed_at"] = $now;
+                            if (function_exists('apply_review_stamp_on_status_change')) {
+                                apply_review_stamp_on_status_change($task_info, $target_status_id, $data, $now);
+                            }
+                        }
                     }
 
                     $task_save_data = $data;
@@ -6648,6 +6787,182 @@ class Projects extends Security_Controller {
     private function has_client_feedback_access_permission() {
         if ($this->login_user->user_type != "client") {
             return get_array_value($this->login_user->permissions, "client_feedback_access_permission");
+        }
+    }
+
+    /* Tasks awaiting review page */
+    function tasks_in_review($filter = "mine") {
+        $this->access_only_team_members();
+
+        $view_data = array();
+        $view_data["filter"] = $filter;
+        $view_data["is_admin"] = $this->login_user->is_admin;
+        $view_data["can_create_tasks"] = $this->can_create_tasks(false);
+
+        return $this->template->rander("projects/tasks/tasks_in_review", $view_data);
+    }
+
+    function tasks_in_review_list_data($filter = "mine") {
+        $this->access_only_team_members();
+
+        $options = array();
+        if ($filter === "all" && $this->login_user->is_admin) {
+            $options["awaiting_review_all"] = true;
+        } else {
+            $options["awaiting_review_for_user_id"] = $this->login_user->id;
+        }
+
+        $all_options = append_server_side_filtering_commmon_params($options);
+        $result = $this->Tasks_model->get_details($all_options);
+
+        if (get_array_value($all_options, "server_side")) {
+            $list_data = is_array($result) ? get_array_value($result, "data") : (is_object($result) ? $result->getResult() : array());
+        } else {
+            $list_data = is_object($result) ? $result->getResult() : (is_array($result) ? get_array_value($result, "data") : array());
+        }
+
+        $result_data = array();
+        foreach ($list_data as $data) {
+            $result_data[] = $this->_make_task_in_review_row($data);
+        }
+
+        $response = array("data" => $result_data);
+        if (is_array($result) && isset($result["recordsTotal"])) {
+            $response["recordsTotal"] = $result["recordsTotal"];
+            $response["recordsFiltered"] = $result["recordsFiltered"];
+        }
+
+        echo json_encode($response);
+    }
+
+    private function _make_task_in_review_row($data) {
+        $title = modal_anchor(get_uri("projects/task_view"), $data->title, array("title" => app_lang('task_info') . " #$data->id", "data-post-id" => $data->id));
+
+        $project_title = anchor(get_uri("projects/view/" . $data->project_id), $data->project_title);
+
+        $assigned_to = "-";
+        if ($data->assigned_to) {
+            $image_url = get_avatar($data->assigned_to_avatar);
+            $assigned_to_user = "<span class='avatar avatar-xs mr10'><img src='$image_url' alt='...'></span> $data->assigned_to_user";
+            $assigned_to = get_team_member_profile_link($data->assigned_to, $assigned_to_user);
+        }
+
+        $submitted_at = "-";
+        if (!empty($data->submitted_for_review_at) && $data->submitted_for_review_at !== "0000-00-00 00:00:00") {
+            $submitted_at = format_to_relative_time($data->submitted_for_review_at);
+        }
+
+        $deadline_text = "-";
+        if ($data->deadline) {
+            $deadline_text = format_to_date($data->deadline, false);
+            if (!empty($data->end_time) && $data->end_time !== "00:00:00") {
+                $deadline_text .= " " . format_to_time($data->deadline . " " . $data->end_time, false);
+            }
+        }
+
+        $points = isset($data->points) ? format_task_point_value($data->points) : "-";
+
+        $actions = "";
+        $can_action = $this->login_user->is_admin || ((int)$this->login_user->id === (int)$data->created_by);
+        if ($can_action) {
+            $actions .= '<button type="button" class="btn btn-sm btn-success approve-review-task-btn mr5" data-id="' . $data->id . '"><i data-feather="check" class="icon-14"></i> ' . app_lang("approve") . '</button>';
+            $actions .= '<button type="button" class="btn btn-sm btn-warning text-white request-changes-task-btn" data-id="' . $data->id . '"><i data-feather="refresh-cw" class="icon-14"></i> ' . app_lang("request_changes") . '</button>';
+        }
+
+        return array(
+            $data->id,
+            $title,
+            $project_title,
+            $assigned_to,
+            $submitted_at,
+            $deadline_text,
+            $points,
+            $actions
+        );
+    }
+
+    function approve_task_review($id = 0) {
+        $this->access_only_team_members();
+        validate_numeric_value($id);
+
+        $task_info = $this->Tasks_model->get_one($id);
+        if (!$task_info || !$task_info->id) {
+            echo json_encode(array("success" => false, "message" => app_lang("record_not_found")));
+            return false;
+        }
+
+        if (!$this->login_user->is_admin && (int)$this->login_user->id !== (int)$task_info->created_by) {
+            echo json_encode(array("success" => false, "message" => app_lang("only_creator_or_admin_can_mark_task_done")));
+            return false;
+        }
+
+        $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+        $now = get_current_utc_time();
+
+        $data = array(
+            "status_id" => $done_status_id,
+            "status_changed_at" => $now
+        );
+
+        $save_id = $this->Tasks_model->ci_save($data, $id);
+        if ($save_id) {
+            if (function_exists("sync_task_point_award")) {
+                sync_task_point_award($save_id);
+            }
+            log_notification("project_task_finished", array("project_id" => $task_info->project_id, "task_id" => $save_id));
+            echo json_encode(array("success" => true, "message" => app_lang("record_saved"), "id" => $save_id));
+        } else {
+            echo json_encode(array("success" => false, "message" => app_lang("error_occurred")));
+        }
+    }
+
+    function request_task_changes($id = 0) {
+        $this->access_only_team_members();
+        validate_numeric_value($id);
+
+        $task_info = $this->Tasks_model->get_one($id);
+        if (!$task_info || !$task_info->id) {
+            echo json_encode(array("success" => false, "message" => app_lang("record_not_found")));
+            return false;
+        }
+
+        if (!$this->login_user->is_admin && (int)$this->login_user->id !== (int)$task_info->created_by) {
+            echo json_encode(array("success" => false, "message" => app_lang("only_creator_or_admin_can_mark_task_done")));
+            return false;
+        }
+
+        $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+        $now = get_current_utc_time();
+
+        $data = array(
+            "status_id" => $changes_status_id,
+            "status_changed_at" => $now
+        );
+        if (function_exists('apply_review_stamp_on_status_change')) {
+            apply_review_stamp_on_status_change($task_info, $changes_status_id, $data, $now);
+        }
+
+        $comment = trim((string) $this->request->getPost('comment'));
+        if ($comment !== "") {
+            $comment_data = array(
+                "created_by" => $this->login_user->id,
+                "created_at" => $now,
+                "project_id" => $task_info->project_id,
+                "task_id" => $id,
+                "description" => $comment
+            );
+            $this->Project_comments_model->save_comment($comment_data);
+        }
+
+        $save_id = $this->Tasks_model->ci_save($data, $id);
+        if ($save_id) {
+            if (function_exists("sync_task_point_award")) {
+                sync_task_point_award($save_id);
+            }
+            log_notification("project_task_changes_requested", array("project_id" => $task_info->project_id, "task_id" => $save_id), $this->login_user->id);
+            echo json_encode(array("success" => true, "message" => app_lang("record_saved"), "id" => $save_id));
+        } else {
+            echo json_encode(array("success" => false, "message" => app_lang("error_occurred")));
         }
     }
 

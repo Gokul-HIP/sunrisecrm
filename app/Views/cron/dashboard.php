@@ -25,6 +25,8 @@
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-manual">Run cron</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-test-task">Test task</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-existing">Existing task</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-cron-jobs">Cron jobs</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-performance">Performance</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logs">Logs</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-health">Database</a></li>
             </ul>
@@ -149,6 +151,143 @@
                     </div>
                 </div>
 
+                <div class="tab-pane fade" id="tab-cron-jobs">
+                    <div class="card mb15">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Cron Jobs Status</strong>
+                            <button type="button" class="btn btn-default btn-sm" id="btn-refresh-cron-jobs">
+                                <i data-feather="refresh-cw" class="icon-16"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="cron-job-cards-container" class="row"></div>
+                        </div>
+                    </div>
+
+                    <div class="card mb15">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Cron Runs Over Time (Duration ms)</strong>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-default cron-chart-hours active" data-hours="6">6h</button>
+                                <button type="button" class="btn btn-default cron-chart-hours" data-hours="24">24h</button>
+                                <button type="button" class="btn btn-default cron-chart-hours" data-hours="72">3d</button>
+                                <button type="button" class="btn btn-default cron-chart-hours" data-hours="168">7d</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div style="position: relative; height: 320px; width: 100%;">
+                                <canvas id="cron-runs-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>Cron Run Execution Logs</strong>
+                            <div class="float-end d-flex gap-2">
+                                <select id="cron-log-filter-job" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                    <option value="">All Jobs</option>
+                                </select>
+                                <select id="cron-log-filter-status" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                    <option value="">All Statuses</option>
+                                    <option value="ok">OK</option>
+                                    <option value="skipped_by_gate">Skipped by Gate</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                                <button type="button" class="btn btn-default btn-sm" id="btn-filter-cron-logs">Filter</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="cron-run-logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Started (IST)</th>
+                                            <th>Job</th>
+                                            <th>Trigger</th>
+                                            <th>Status</th>
+                                            <th>Duration</th>
+                                            <th>Items</th>
+                                            <th>Memory</th>
+                                            <th>Gate Reason / Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cron-run-logs-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-performance">
+                    <div class="card mb15">
+                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <strong>Performance & Request Load (Per-Minute Total ms)</strong>
+                                <span id="perf-system-metrics" class="ms-3"></span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-default perf-range-btn active" data-range="1h">1h</button>
+                                    <button type="button" class="btn btn-default perf-range-btn" data-range="6h">6h</button>
+                                    <button type="button" class="btn btn-default perf-range-btn" data-range="24h">24h</button>
+                                    <button type="button" class="btn btn-default perf-range-btn" data-range="7d">7d</button>
+                                </div>
+                                <div class="form-check form-switch ms-2">
+                                    <input class="form-check-input" type="checkbox" id="perf-auto-refresh">
+                                    <label class="form-check-label small" for="perf-auto-refresh">Auto 60s</label>
+                                </div>
+                                <button type="button" class="btn btn-default btn-sm" id="btn-refresh-perf">
+                                    <i data-feather="refresh-cw" class="icon-16"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-off small mb10">
+                                Shows aggregated processing time by request category. Click any spike on the chart to inspect top endpoints, active users, slow queries, and concurrent cron jobs.
+                            </p>
+                            <div style="position: relative; height: 350px; width: 100%;">
+                                <canvas id="perf-stacked-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" id="perf-drilldown-card" style="display: none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong id="perf-drilldown-title">Spike Drill-Down Analysis</strong>
+                            <button type="button" class="btn-close" id="btn-close-drilldown" aria-label="Close"></button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 col-sm-6 mb15">
+                                    <div class="p10 border rounded bg-light h-100">
+                                        <h6 class="fw-bold mb10 text-primary">Top Endpoints</h6>
+                                        <div id="drilldown-endpoints" class="small"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb15">
+                                    <div class="p10 border rounded bg-light h-100">
+                                        <h6 class="fw-bold mb10 text-success">Active Users</h6>
+                                        <div id="drilldown-users" class="small"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb15">
+                                    <div class="p10 border rounded bg-light h-100">
+                                        <h6 class="fw-bold mb10 text-danger">Slow Queries (>300ms)</h6>
+                                        <div id="drilldown-slow-queries" class="small"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb15">
+                                    <div class="p10 border rounded bg-light h-100">
+                                        <h6 class="fw-bold mb10 text-info">Cron Jobs In Window</h6>
+                                        <div id="drilldown-cron-jobs" class="small"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="tab-pane fade" id="tab-logs">
                     <div class="card">
                         <div class="card-header">
@@ -214,6 +353,11 @@
     .cron-diagnostic-page .cron-summary.warning { border-left-color: #ffc107; }
     .cron-diagnostic-page .cron-summary.error { border-left-color: #dc3545; }
     .cron-diagnostic-page .cron-log-filter.active { background: #0d6efd; color: #fff; }
+    .cron-chip { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+    .cron-job-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #fff; height: 100%; transition: box-shadow 0.2s; }
+    .cron-job-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .drilldown-item { border-bottom: 1px solid #eee; padding: 6px 0; }
+    .drilldown-item:last-child { border-bottom: none; }
 </style>
 
 <script>
@@ -229,7 +373,10 @@
             logs: "<?php echo get_uri("cron/logs"); ?>",
             logDetail: "<?php echo get_uri("cron/log_detail"); ?>",
             refreshTask: "<?php echo get_uri("cron/refresh_task"); ?>",
-            clearLogs: "<?php echo get_uri("cron/clear_diagnostic_logs"); ?>"
+            clearLogs: "<?php echo get_uri("cron/clear_diagnostic_logs"); ?>",
+            cronJobsData: "<?php echo get_uri("cron/cron_jobs_data"); ?>",
+            perfData: "<?php echo get_uri("cron/performance_data"); ?>",
+            spikeDrilldown: "<?php echo get_uri("cron/spike_drilldown"); ?>"
         };
         var localDebug = <?php echo !empty($local_debug) ? "true" : "false"; ?>;
         var initialStatus = <?php echo json_encode($status); ?>;
@@ -809,6 +956,321 @@
             copyText($(this).data("copy"));
         });
 
+        // ====================================================================
+        // PHASE 15: CRON JOBS & PERFORMANCE TABS
+        // ====================================================================
+        var cronRunsChart = null;
+        var perfChart = null;
+        var currentCronHours = 6;
+        var currentPerfRange = '1h';
+
+        function getStatusBadge(status) {
+            if (status === 'ok' || status === 'SUCCESS') return '<span class="badge bg-success">OK</span>';
+            if (status === 'skipped_by_gate' || status === 'SKIPPED') return '<span class="badge bg-warning text-dark">SKIPPED</span>';
+            if (status === 'failed' || status === 'FAILED') return '<span class="badge bg-danger">FAILED</span>';
+            return '<span class="badge bg-secondary">NEVER RUN</span>';
+        }
+
+        function loadCronJobsData(hours) {
+            hours = hours || currentCronHours;
+            var jobFilter = $("#cron-log-filter-job").val() || "";
+            var statusFilter = $("#cron-log-filter-status").val() || "";
+
+            $.getJSON(urls.cronJobsData, {hours: hours, job: jobFilter, status: statusFilter}, function (res) {
+                if (!res || !res.success) return;
+
+                // 1. Render Status Cards
+                var cardsHtml = "";
+                var jobSelectHtml = '<option value="">All Jobs</option>';
+                res.status.forEach(function (j) {
+                    cardsHtml += '<div class="col-xl-3 col-lg-4 col-md-6 mb15">';
+                    cardsHtml += '  <div class="cron-job-card shadow-sm">';
+                    cardsHtml += '    <div class="d-flex justify-content-between align-items-center mb5">';
+                    cardsHtml += '      <strong class="text-truncate" style="max-width: 170px;" title="' + escapeHtml(j.label) + '"><span class="cron-chip" style="background:' + j.color + ';"></span>' + escapeHtml(j.label) + '</strong>';
+                    cardsHtml += '      ' + getStatusBadge(j.status);
+                    cardsHtml += '    </div>';
+                    cardsHtml += '    <div class="small text-muted mb5">';
+                    cardsHtml += '      <div>Schedule: <strong>' + escapeHtml(j.schedule || "-") + '</strong></div>';
+                    cardsHtml += '      <div>Last run: <strong>' + escapeHtml(j.time_ago) + '</strong></div>';
+                    cardsHtml += '      <div class="text-truncate" title="' + escapeHtml(j.last_run_ist) + '">' + escapeHtml(j.last_run_ist) + '</div>';
+                    cardsHtml += '      <div>Next run: <strong>' + escapeHtml(j.next_expected_run_ist || "-") + '</strong></div>';
+                    cardsHtml += '    </div>';
+                    cardsHtml += '    <div class="small d-flex justify-content-between text-secondary mb5">';
+                    cardsHtml += '      <span>Duration: <strong>' + j.duration_ms + ' ms</strong></span>';
+                    cardsHtml += '      <span>Items: <strong>' + j.items_processed + '</strong></span>';
+                    cardsHtml += '    </div>';
+                    if (j.last_error) {
+                        cardsHtml += '    <div class="small text-danger text-truncate" title="' + escapeHtml(j.last_error) + '">Error: ' + escapeHtml(j.last_error) + '</div>';
+                    } else if (j.gate_reason) {
+                        cardsHtml += '    <div class="small text-warning text-truncate" title="' + escapeHtml(j.gate_reason) + '">' + escapeHtml(j.gate_reason) + '</div>';
+                    }
+                    cardsHtml += '  </div>';
+                    cardsHtml += '</div>';
+
+                    jobSelectHtml += '<option value="' + escapeHtml(j.job) + '"' + (jobFilter === j.job ? ' selected' : '') + '>' + escapeHtml(j.label) + '</option>';
+                });
+                $("#cron-job-cards-container").html(cardsHtml);
+
+                if ($("#cron-log-filter-job option").length <= 1) {
+                    $("#cron-log-filter-job").html(jobSelectHtml);
+                }
+
+                // 2. Render Runs Chart (Chart.js)
+                var ctx = document.getElementById("cron-runs-chart");
+                if (ctx && window.Chart) {
+                    if (cronRunsChart) {
+                        cronRunsChart.destroy();
+                    }
+
+                    // Format chart datasets
+                    var chartDatasets = res.chart.map(function(ds) {
+                        return {
+                            label: ds.label,
+                            borderColor: ds.borderColor,
+                            backgroundColor: ds.backgroundColor,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            data: ds.data.map(function(pt) {
+                                return { x: pt.x, y: pt.y };
+                            })
+                        };
+                    });
+
+                    // Collect all unique labels for x-axis
+                    var allLabels = [];
+                    res.chart.forEach(function(ds) {
+                        ds.data.forEach(function(pt) {
+                            if (allLabels.indexOf(pt.x) === -1) allLabels.push(pt.x);
+                        });
+                    });
+                    allLabels.sort();
+
+                    cronRunsChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: allLabels,
+                            datasets: chartDatasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                xAxes: [{
+                                    scaleLabel: { display: true, labelString: 'Time (IST)' },
+                                    ticks: { maxTicksLimit: 12, autoSkip: true }
+                                }],
+                                yAxes: [{
+                                    scaleLabel: { display: true, labelString: 'Duration (ms)' },
+                                    ticks: { beginAtZero: true }
+                                }]
+                            },
+                            tooltips: {
+                                mode: 'nearest',
+                                intersect: false
+                            }
+                        }
+                    });
+                }
+
+                // 3. Render Run Logs Table
+                var logsTbody = "";
+                if (res.logs && res.logs.length) {
+                    res.logs.forEach(function (l) {
+                        logsTbody += '<tr>';
+                        logsTbody += '  <td>' + escapeHtml(l.started_at_ist) + '</td>';
+                        logsTbody += '  <td><span class="cron-chip" style="background:' + l.color + ';"></span>' + escapeHtml(l.job_label) + '</td>';
+                        logsTbody += '  <td><span class="badge bg-light text-dark">' + escapeHtml(l.trigger_source) + '</span></td>';
+                        logsTbody += '  <td>' + getStatusBadge(l.status) + '</td>';
+                        logsTbody += '  <td>' + l.duration_ms + ' ms</td>';
+                        logsTbody += '  <td>' + l.items_processed + '</td>';
+                        logsTbody += '  <td>' + l.memory_peak_mb + ' MB</td>';
+                        logsTbody += '  <td class="small text-truncate" style="max-width: 250px;" title="' + escapeHtml(l.error_message || l.gate_reason || "") + '">' + escapeHtml(l.error_message || l.gate_reason || "-") + '</td>';
+                        logsTbody += '</tr>';
+                    });
+                } else {
+                    logsTbody = '<tr><td colspan="8" class="text-center text-muted p15">No execution logs found for the selected filter.</td></tr>';
+                }
+                $("#cron-run-logs-tbody").html(logsTbody);
+            });
+        }
+
+        function loadPerformanceData(range) {
+            range = range || currentPerfRange;
+            $.getJSON(urls.perfData, {range: range}, function (res) {
+                if (!res || !res.success) return;
+
+                // 1. Summary Metric Badges Display
+                if (res.system_metrics && res.system_metrics.available) {
+                    var mHtml = "";
+                    mHtml += '<span class="badge bg-primary me-2">Rate: ' + res.system_metrics.current_req_rate + ' req/min</span>';
+                    mHtml += '<span class="badge bg-warning text-dark me-2">P95: ' + res.system_metrics.p95_duration_ms + ' ms</span>';
+                    mHtml += '<span class="badge ' + (res.system_metrics.slow_query_count_last_hour > 0 ? 'bg-danger' : 'bg-success') + ' me-2">Slow Queries (1h): ' + res.system_metrics.slow_query_count_last_hour + '</span>';
+                    mHtml += '<span class="badge bg-info text-dark me-2">Cron Queue: ' + escapeHtml(res.system_metrics.cron_queue_status) + '</span>';
+                    if (res.system_metrics.server_load !== null) {
+                        mHtml += '<span class="badge bg-secondary me-2">Load: ' + res.system_metrics.server_load + '</span>';
+                    }
+                    if (res.system_metrics.mysql_threads !== null) {
+                        mHtml += '<span class="badge bg-dark">MySQL Threads: ' + res.system_metrics.mysql_threads + '</span>';
+                    }
+                    $("#perf-system-metrics").html(mHtml);
+                } else {
+                    $("#perf-system-metrics").html("");
+                }
+
+                // 2. Stacked Area Chart (Chart.js)
+                var ctx = document.getElementById("perf-stacked-chart");
+                if (ctx && window.Chart) {
+                    if (perfChart) {
+                        perfChart.destroy();
+                    }
+
+                    perfChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: res.labels,
+                            datasets: res.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                xAxes: [{
+                                    stacked: true,
+                                    scaleLabel: { display: true, labelString: 'Minute (IST)' },
+                                    ticks: { maxTicksLimit: 14, autoSkip: true }
+                                }],
+                                yAxes: [{
+                                    stacked: true,
+                                    scaleLabel: { display: true, labelString: 'Total Processing Time (ms)' },
+                                    ticks: { beginAtZero: true }
+                                }]
+                            },
+                            tooltips: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    });
+
+                    // Click spike handler
+                    ctx.onclick = function (evt) {
+                        var activePoints = perfChart.getElementsAtEvent(evt);
+                        if (activePoints && activePoints.length > 0) {
+                            var idx = activePoints[0]._index;
+                            var clickedMinute = perfChart.data.labels[idx];
+                            loadSpikeDrilldown(clickedMinute);
+                        }
+                    };
+                }
+            });
+        }
+
+        function loadSpikeDrilldown(minute) {
+            if (!minute) return;
+            $("#perf-drilldown-card").slideDown();
+            $("#perf-drilldown-title").text("Spike Analysis: " + minute + " IST");
+            $("#drilldown-endpoints, #drilldown-users, #drilldown-slow-queries, #drilldown-cron-jobs").html('<div class="text-muted p10">Loading details...</div>');
+            $("html, body").animate({scrollTop: $("#perf-drilldown-card").offset().top - 80}, 200);
+
+            $.getJSON(urls.spikeDrilldown, {minute: minute}, function (res) {
+                if (!res || !res.success) {
+                    $("#drilldown-endpoints").html('<div class="text-danger p10">Failed to load spike details.</div>');
+                    return;
+                }
+
+                // Endpoints
+                var epHtml = "";
+                if (res.top_endpoints && res.top_endpoints.length) {
+                    res.top_endpoints.forEach(function (ep) {
+                        epHtml += '<div class="drilldown-item">';
+                        epHtml += '  <div class="fw-bold text-truncate" title="' + escapeHtml(ep.endpoint) + '">' + escapeHtml(ep.endpoint) + '</div>';
+                        epHtml += '  <div class="text-muted">' + ep.requests + ' reqs | ' + ep.total_ms + ' ms (max ' + ep.max_ms + ' ms)</div>';
+                        epHtml += '</div>';
+                    });
+                } else {
+                    epHtml = '<div class="text-muted">No endpoints recorded.</div>';
+                }
+                $("#drilldown-endpoints").html(epHtml);
+
+                // Users
+                var uHtml = "";
+                if (res.top_users && res.top_users.length) {
+                    res.top_users.forEach(function (u) {
+                        uHtml += '<div class="drilldown-item">';
+                        uHtml += '  <div class="fw-bold">' + escapeHtml(u.name) + '</div>';
+                        uHtml += '  <div class="text-muted">User ID #' + u.user_id + ' (' + u.samples + ' hits)</div>';
+                        uHtml += '</div>';
+                    });
+                } else {
+                    uHtml = '<div class="text-muted">No user samples recorded.</div>';
+                }
+                $("#drilldown-users").html(uHtml);
+
+                // Slow Queries
+                var sqHtml = "";
+                if (res.top_slow_queries && res.top_slow_queries.length) {
+                    res.top_slow_queries.forEach(function (sq) {
+                        sqHtml += '<div class="drilldown-item">';
+                        sqHtml += '  <div class="fw-bold text-danger">' + sq.duration_ms + ' ms</div>';
+                        sqHtml += '  <code class="d-block small text-break">' + escapeHtml(sq.fingerprint) + '</code>';
+                        sqHtml += '</div>';
+                    });
+                } else {
+                    sqHtml = '<div class="text-success">0 slow queries (&gt;300ms) in this window.</div>';
+                }
+                $("#drilldown-slow-queries").html(sqHtml);
+
+                // Cron Jobs
+                var cjHtml = "";
+                if (res.cron_jobs && res.cron_jobs.length) {
+                    res.cron_jobs.forEach(function (cj) {
+                        cjHtml += '<div class="drilldown-item">';
+                        cjHtml += '  <div class="fw-bold">' + escapeHtml(cj.job_label) + ' ' + getStatusBadge(cj.status) + '</div>';
+                        cjHtml += '  <div class="text-muted">' + cj.duration_ms + ' ms (' + cj.items + ' items)</div>';
+                        if (cj.gate_reason) cjHtml += '  <div class="small text-warning">' + escapeHtml(cj.gate_reason) + '</div>';
+                        cjHtml += '</div>';
+                    });
+                } else {
+                    cjHtml = '<div class="text-muted">No cron jobs ran during this minute.</div>';
+                }
+                $("#drilldown-cron-jobs").html(cjHtml);
+            });
+        }
+
+        // Event bindings
+        $("#btn-refresh-cron-jobs").on("click", function() { loadCronJobsData(); });
+        $(".cron-chart-hours").on("click", function() {
+            $(".cron-chart-hours").removeClass("active");
+            $(this).addClass("active");
+            currentCronHours = $(this).data("hours");
+            loadCronJobsData(currentCronHours);
+        });
+        $("#btn-filter-cron-logs").on("click", function() { loadCronJobsData(); });
+
+        $(".perf-range-btn").on("click", function() {
+            $(".perf-range-btn").removeClass("active");
+            $(this).addClass("active");
+            currentPerfRange = $(this).data("range");
+            loadPerformanceData(currentPerfRange);
+        });
+        $("#btn-refresh-perf").on("click", function() { loadPerformanceData(currentPerfRange); });
+        $("#btn-close-drilldown").on("click", function() { $("#perf-drilldown-card").slideUp(); });
+
+        $('a[href="#tab-cron-jobs"]').on('shown.bs.tab', function () {
+            loadCronJobsData();
+        });
+        $('a[href="#tab-performance"]').on('shown.bs.tab', function () {
+            loadPerformanceData();
+        });
+
+        setInterval(function() {
+            if ($("#perf-auto-refresh").is(":checked") && $("#tab-performance").is(":visible")) {
+                loadPerformanceData(currentPerfRange);
+            }
+        }, 60000);
+
+        window.loadSpikeDrilldown = loadSpikeDrilldown;
         renderStatus(initialStatus);
         renderHealth(initialHealth);
         renderLogs(initialLogs);

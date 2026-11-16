@@ -1,6 +1,11 @@
 <?php
+$review_workflow_enabled = get_setting("task_review_workflow_enabled");
+$changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
 $status_dropdown = array();
 foreach ($task_statuses as $status) {
+    if ((int) $status->id === $changes_status_id || $status->key_name === "changes") {
+        continue; // Never offer Changes in quick status menu
+    }
     $status_dropdown[] = array("id" => $status->id, "text" => $status->key_name ? app_lang($status->key_name) : $status->title);
 }
 ?>

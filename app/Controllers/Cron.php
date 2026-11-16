@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Libraries\Cron_diagnostic;
 use App\Libraries\Cron_job;
+use App\Libraries\Cron_performance_tracker;
+use App\Libraries\Request_performance_tracker;
 
 class Cron extends App_Controller {
 
@@ -29,7 +31,13 @@ class Cron extends App_Controller {
         if (!headers_sent()) {
             header("Content-Type: text/plain; charset=utf-8");
         }
-        $this->check_task_deadline_2_hour_reminders_pre_gate();
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            Cron_performance_tracker::track_job("reminders_endpoint", "reminders_endpoint", function() {
+                return $this->check_task_deadline_2_hour_reminders_pre_gate();
+            });
+        } else {
+            $this->check_task_deadline_2_hour_reminders_pre_gate();
+        }
         echo "ok";
     }
 
@@ -40,6 +48,59 @@ class Cron extends App_Controller {
             "status" => $this->diagnostic->get_status(),
             "health" => $this->diagnostic->get_db_health()
         ));
+    }
+
+    public function cron_jobs_data() {
+        $this->require_dashboard_access(true);
+        if (!class_exists('\App\Libraries\Cron_performance_tracker')) {
+            echo json_encode(array("success" => false, "message" => "Cron performance tracker not installed."));
+            return;
+        }
+        $hours = (int) $this->request->getGet('hours');
+        if (!$hours) $hours = 24;
+
+        $status = Cron_performance_tracker::get_jobs_status();
+        $chart_data = Cron_performance_tracker::get_runs_chart_data($hours);
+        $job_filter = (string) $this->request->getGet('job');
+        $status_filter = (string) $this->request->getGet('status');
+        $logs = Cron_performance_tracker::get_runs_logs(array(
+            "job" => $job_filter,
+            "status" => $status_filter,
+            "limit" => 100
+        ));
+
+        echo json_encode(array(
+            "success" => true,
+            "status" => $status,
+            "chart" => $chart_data,
+            "logs" => $logs
+        ));
+    }
+
+    public function performance_data() {
+        $this->require_dashboard_access(true);
+        if (!class_exists('\App\Libraries\Request_performance_tracker')) {
+            echo json_encode(array("success" => false, "message" => "Request performance tracker not installed."));
+            return;
+        }
+        $range = (string) $this->request->getGet('range');
+        if (!in_array($range, array('1h', '6h', '24h', '7d'))) {
+            $range = '1h';
+        }
+
+        $data = Request_performance_tracker::get_performance_chart_data($range);
+        echo json_encode(array_merge(array("success" => true), $data));
+    }
+
+    public function spike_drilldown() {
+        $this->require_dashboard_access(true);
+        if (!class_exists('\App\Libraries\Request_performance_tracker')) {
+            echo json_encode(array("success" => false, "message" => "Request performance tracker not installed."));
+            return;
+        }
+        $minute = (string) $this->request->getGet('minute');
+        $data = Request_performance_tracker::get_spike_drilldown($minute);
+        echo json_encode(array_merge(array("success" => true), $data));
     }
 
     function run() {
@@ -53,7 +114,13 @@ class Cron extends App_Controller {
         $this->diagnostic->log($run_id, "cron_run", "info", "Manual diagnostic cron started.", array());
 
         // Pre-gate: check task deadline 2-hour reminders
-        $this->check_task_deadline_2_hour_reminders_pre_gate($run_id);
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            Cron_performance_tracker::track_job("pre_gate_2h_reminders", "manual", function() use ($run_id) {
+                return $this->check_task_deadline_2_hour_reminders_pre_gate($run_id);
+            });
+        } else {
+            $this->check_task_deadline_2_hour_reminders_pre_gate($run_id);
+        }
 
         $last_cron_job_time = get_setting("last_cron_job_time");
         $current_time = strtotime(get_current_utc_time());
@@ -80,6 +147,9 @@ class Cron extends App_Controller {
             $payload["reason"] = "The 5-minute gate blocked this run. The previous cron ran less than 5 minutes ago.";
             $payload["result"] = "SKIPPED";
             $this->diagnostic->log($run_id, "cron_gate", "warning", $payload["reason"]);
+            if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+                Cron_performance_tracker::log_run("main_cron", "manual", gmdate('Y-m-d H:i:s'), 0, "skipped_by_gate", $payload["reason"]);
+            }
             $this->finish_action_payload($payload, $started, $run_id);
             echo json_encode($payload);
             return;
@@ -128,6 +198,12 @@ class Cron extends App_Controller {
             $payload["reason"] = "Cron failed: " . $e->getMessage();
             $this->diagnostic->log($run_id, "cron_run", "error", $payload["reason"]);
             $this->Settings_model->save_setting("last_cron_result", "failed");
+        }
+
+        $duration_ms = round((microtime(true) - $started) * 1000, 2);
+        $final_status = ($payload["result"] === "SUCCESS") ? "ok" : (($payload["result"] === "SKIPPED") ? "skipped_by_gate" : "failed");
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            Cron_performance_tracker::log_run("main_cron", "manual", gmdate('Y-m-d H:i:s'), $duration_ms, $final_status, $payload["reason"], $payload["created"], memory_get_peak_usage(), $payload["failed"] ? $payload["reason"] : null);
         }
 
         $this->finish_action_payload($payload, $started, $run_id);
@@ -457,13 +533,20 @@ class Cron extends App_Controller {
         ini_set("max_execution_time", 300);
 
         // Pre-gate: check task deadline 2-hour reminders
-        $this->check_task_deadline_2_hour_reminders_pre_gate();
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            Cron_performance_tracker::track_job("pre_gate_2h_reminders", "scheduler", function() {
+                return $this->check_task_deadline_2_hour_reminders_pre_gate();
+            });
+        } else {
+            $this->check_task_deadline_2_hour_reminders_pre_gate();
+        }
 
         $last_cron_job_time = get_setting("last_cron_job_time");
         $current_time = strtotime(get_current_utc_time());
 
         if ($last_cron_job_time == "" || ($current_time > ($last_cron_job_time * 1 + 300))) {
             $run_id = $this->diagnostic->new_run_id("sched");
+            $sched_start = microtime(true);
             try {
                 $result = $this->cron_job->run(array(
                     "diagnostic" => false,
@@ -479,16 +562,27 @@ class Cron extends App_Controller {
                 $this->Settings_model->save_setting("last_cron_result", "success");
                 $this->Settings_model->save_setting("last_cron_clones_created", $created);
                 $this->Settings_model->save_setting("last_cron_skip_reason", get_array_value($hourly, "skipped_reason"));
+                $sched_dur = round((microtime(true) - $sched_start) * 1000, 2);
+                if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+                    Cron_performance_tracker::log_run("main_cron", "scheduler", gmdate("Y-m-d H:i:s"), $sched_dur, "ok", null, $created, memory_get_peak_usage());
+                }
                 echo "Cron job executed.";
             } catch (\Throwable $e) {
                 $this->Settings_model->save_setting("last_cron_result", "failed");
                 $this->diagnostic->log($run_id, "cron_run", "error", "Scheduled cron failed: " . $e->getMessage());
+                $sched_dur = round((microtime(true) - $sched_start) * 1000, 2);
+                if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+                    Cron_performance_tracker::log_run("main_cron", "scheduler", gmdate("Y-m-d H:i:s"), $sched_dur, "failed", null, 0, memory_get_peak_usage(), $e->getMessage());
+                }
                 echo "Cron job failed.";
             }
         } else {
             if (get_setting("last_cron_result") !== "skipped") {
                 $this->Settings_model->save_setting("last_cron_result", "skipped");
                 $this->Settings_model->save_setting("last_cron_skip_reason", "Cron job skipped (ran less than 5 minutes ago).");
+            }
+            if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+                Cron_performance_tracker::log_run("main_cron", "scheduler", gmdate("Y-m-d H:i:s"), 0, "skipped_by_gate", "5-minute gate closed (ran less than 5 minutes ago)");
             }
             echo "Cron job skipped (ran less than 5 minutes ago).";
         }

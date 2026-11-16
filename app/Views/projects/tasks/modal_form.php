@@ -131,12 +131,24 @@
                     <label for="status_id" class=" col-md-3"><?php echo app_lang('status'); ?></label>
                     <div class="col-md-9">
                         <?php
+                        $changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
+                        $task_status = array();
+                        // Preserve current Changes label (never offered as a new selectable choice).
+                        if ($model_info->status_id && $changes_status_id && (int) $model_info->status_id === $changes_status_id) {
+                            $task_status[$changes_status_id] = app_lang("changes");
+                        }
+
                         foreach ($statuses as $status) {
+                            if ((int) $status->id === $changes_status_id || $status->key_name === "changes") {
+                                continue; // Never offer Changes to select
+                            }
                             $task_status[$status->id] = $status->key_name ? app_lang($status->key_name) : $status->title;
                         }
 
                         if ($is_clone) {
-                            echo form_dropdown("status_id", $task_status, 1, "class='select2'");
+                            $first_status_id = array_key_first($task_status) ?: 1;
+                            echo form_dropdown("status_id", $task_status, $first_status_id, "class='select2'");
                         } else {
                             echo form_dropdown("status_id", $task_status, array($model_info->status_id), "class='select2'");
                         }

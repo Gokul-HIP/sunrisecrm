@@ -5,7 +5,14 @@ $quick_filters_dropdown = array(
     array("id" => "recently_updated", "text" => app_lang("recently_updated"))
 );
 
+$review_workflow_enabled = get_setting("task_review_workflow_enabled");
+$in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+$changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+
 foreach ($task_statuses as $task_status) {
+    if (!$review_workflow_enabled && ((int) $task_status->id === $changes_status_id || $task_status->key_name === "changes")) {
+        continue;
+    }
     $quick_filters_dropdown[] = array("id" => $task_status->id, "text" => $task_status->key_name ? app_lang("recently_moved_to") . " " . app_lang($task_status->key_name) : app_lang("recently_moved_to") . " " . $task_status->title);
 }
 

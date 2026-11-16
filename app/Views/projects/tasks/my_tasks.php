@@ -57,7 +57,15 @@ if ($preview_task_id) {
 }
 
 $statuses = array();
+$in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+$changes_status_id = function_exists('get_changes_task_status_id') ? (int) get_changes_task_status_id() : 0;
+$review_workflow_enabled = get_setting("task_review_workflow_enabled");
+
 foreach ($task_statuses as $status) {
+    if (!$review_workflow_enabled && ($status->id == $changes_status_id || $status->key_name === "changes")) {
+        continue; // Changes is not offered when review workflow is disabled
+    }
+
     $is_selected = false;
 
     if (isset($selected_status_id) && $selected_status_id) {

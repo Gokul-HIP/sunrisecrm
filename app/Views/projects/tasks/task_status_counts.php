@@ -12,6 +12,12 @@
             <span class="task-points-summary-label"><?php echo app_lang("in_review"); ?></span>
             <span class="task-in-review-count">0</span>
         </div>
+        <?php if (get_setting("task_review_workflow_enabled")) { ?>
+        <div class="task-points-summary-item">
+            <span class="task-points-summary-label"><?php echo app_lang("changes"); ?></span>
+            <span class="task-changes-count">0</span>
+        </div>
+        <?php } ?>
         <div class="task-points-summary-item">
             <span class="task-points-summary-label"><?php echo app_lang("done"); ?></span>
             <span class="task-done-count">0</span>

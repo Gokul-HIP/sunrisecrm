@@ -22,6 +22,23 @@ class Cron_job {
         }
     }
 
+    /**
+     * Phase 15 tracker is optional. Phase 16 cron must run cleanly without
+     * Cron_performance_tracker.php / Phase 15 tables present.
+     */
+    private function track_cron_job($job, $trigger_source, $callback) {
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            return \App\Libraries\Cron_performance_tracker::track_job($job, $trigger_source, $callback);
+        }
+        return $callback();
+    }
+
+    private function log_cron_run($job, $trigger_source, $started_at, $duration_ms, $status, $skip_reason = null, $created = null, $memory = null, $error = null) {
+        if (class_exists('\App\Libraries\Cron_performance_tracker')) {
+            \App\Libraries\Cron_performance_tracker::log_run($job, $trigger_source, $started_at, $duration_ms, $status, $skip_reason, $created, $memory, $error);
+        }
+    }
+
     function init_runtime($options = array()) {
         $this->today = get_today_date();
         $this->ci = $this->ci ? $this->ci : new App_Controller();
@@ -65,24 +82,31 @@ class Cron_job {
         $this->init_runtime($options);
 
         $this->cron_debug("Scheduled cron run started. today={$this->today} utc=" . get_current_utc_time(), "cron_run", "info");
+        $trigger_source = $this->diagnostic ? "manual" : "scheduler";
 
         // 2-hour task deadline reminders are checked pre-gate in Cron controller every minute
         $hourly = $this->call_hourly_jobs($options);
 
         try {
-            $this->run_imap();
+            $this->track_cron_job("run_imap", $trigger_source, function() {
+                $this->run_imap();
+            });
         } catch (\Exception $e) {
             $this->cron_debug("IMAP job failed: " . $e->getMessage(), "cron_run", "error");
         }
 
         try {
-            $this->get_google_calendar_events();
+            $this->track_cron_job("get_google_calendar_events", $trigger_source, function() {
+                $this->get_google_calendar_events();
+            });
         } catch (\Exception $e) {
             $this->cron_debug("Google calendar job failed: " . $e->getMessage(), "cron_run", "error");
         }
 
         try {
-            $this->close_inactive_tickets();
+            $this->track_cron_job("close_inactive_tickets", $trigger_source, function() {
+                $this->close_inactive_tickets();
+            });
         } catch (\Exception $e) {
             $this->cron_debug("Close inactive tickets failed: " . $e->getMessage(), "cron_run", "error");
         }
@@ -99,6 +123,7 @@ class Cron_job {
         $last_hourly_job_time = get_setting('last_hourly_job_time');
         $wait_needed = 3600;
         $elapsed = $last_hourly_job_time ? ($this->current_time - (int) $last_hourly_job_time) : "never";
+        $trigger_source = $this->diagnostic ? "manual" : "scheduler";
         $result = array(
             "hourly_gate_open" => (bool) $hourly_ok,
             "last_hourly_job_time" => $last_hourly_job_time,
@@ -114,40 +139,52 @@ class Cron_job {
 
 
             try {
-                $this->create_recurring_invoices();
+                $this->track_cron_job("create_recurring_invoices", $trigger_source, function() {
+                    $this->create_recurring_invoices();
+                });
             } catch (\Exception $e) {
                 echo $e;
             }
 
             try {
-                $this->create_recurring_expenses();
+                $this->track_cron_job("create_recurring_expenses", $trigger_source, function() {
+                    $this->create_recurring_expenses();
+                });
             } catch (\Exception $e) {
                 echo $e;
             }
 
             try {
-                $this->send_invoice_due_pre_reminder();
-            } catch (\Exception $e) {
-                echo $e;
-            }
-
-
-            try {
-                $this->send_invoice_due_after_reminder();
-            } catch (\Exception $e) {
-                echo $e;
-            }
-
-
-            try {
-                $this->send_recurring_invoice_creation_reminder();
+                $this->track_cron_job("send_invoice_due_pre_reminder", $trigger_source, function() {
+                    $this->send_invoice_due_pre_reminder();
+                });
             } catch (\Exception $e) {
                 echo $e;
             }
 
 
             try {
-                $result["recurring"] = $this->create_recurring_tasks($options);
+                $this->track_cron_job("send_invoice_due_after_reminder", $trigger_source, function() {
+                    $this->send_invoice_due_after_reminder();
+                });
+            } catch (\Exception $e) {
+                echo $e;
+            }
+
+
+            try {
+                $this->track_cron_job("send_recurring_invoice_creation_reminder", $trigger_source, function() {
+                    $this->send_recurring_invoice_creation_reminder();
+                });
+            } catch (\Exception $e) {
+                echo $e;
+            }
+
+
+            try {
+                $result["recurring"] = $this->track_cron_job("create_recurring_tasks", $trigger_source, function() use ($options) {
+                    return $this->create_recurring_tasks($options);
+                });
             } catch (\Exception $e) {
                 $this->cron_debug("Recurring tasks failed: " . $e->getMessage(), "recurring_tasks", "error");
                 $result["recurring"] = array(
@@ -158,21 +195,35 @@ class Cron_job {
             }
 
             try {
-                $this->send_task_reminder_notifications();
+                $this->track_cron_job("send_task_reminder_notifications", $trigger_source, function() {
+                    $this->send_task_reminder_notifications();
+                });
             } catch (\Exception $e) {
                 echo $e;
             }
 
             try {
-                $this->create_recurring_reminders();
+                $this->track_cron_job("create_recurring_reminders", $trigger_source, function() {
+                    $this->create_recurring_reminders();
+                });
             } catch (\Exception $e) {
                 echo $e;
             }
 
             try {
-                $this->create_subscription_invoices();
+                $this->track_cron_job("create_subscription_invoices", $trigger_source, function() {
+                    $this->create_subscription_invoices();
+                });
             } catch (\Exception $e) {
                 echo $e;
+            }
+
+            try {
+                $this->track_cron_job("hourly_cleanup", $trigger_source, function() {
+                    return $this->clean_performance_and_cron_logs();
+                });
+            } catch (\Exception $e) {
+                $this->cron_debug("Hourly retention cleanup failed: " . $e->getMessage(), "hourly_gate", "warning");
             }
 
             $this->ci->Settings_model->save_setting("last_hourly_job_time", $this->current_time);
@@ -180,9 +231,35 @@ class Cron_job {
         } else {
             $result["skipped_reason"] = "Hourly gate is closed. Recurring-task creation waits until one hour has passed since the last hourly job.";
             $this->cron_debug($result["skipped_reason"], "hourly_gate", "warning");
+            $this->log_cron_run("create_recurring_tasks", $trigger_source, gmdate('Y-m-d H:i:s'), 0, 'skipped_by_gate', $result["skipped_reason"]);
         }
 
         return $result;
+    }
+
+    public function clean_performance_and_cron_logs() {
+        // Phase 15 tables only — no-op when Phase 15 is not deployed.
+        if (!class_exists('\App\Libraries\Cron_performance_tracker')) {
+            return 0;
+        }
+
+        $db = db_connect('default');
+        $cron_table = $db->prefixTable('cron_run_log');
+        $load_table = $db->prefixTable('request_load_minute');
+        $slow_table = $db->prefixTable('slow_queries');
+
+        foreach (array($cron_table, $load_table, $slow_table) as $table) {
+            $exists = $db->query("SHOW TABLES LIKE " . $db->escape($table))->getRow();
+            if (!$exists) {
+                return 0;
+            }
+        }
+
+        $db->query("DELETE FROM `$cron_table` WHERE `started_at` < UTC_TIMESTAMP() - INTERVAL 30 DAY");
+        $db->query("DELETE FROM `$load_table` WHERE `minute` < UTC_TIMESTAMP() - INTERVAL 14 DAY");
+        $db->query("DELETE FROM `$slow_table` WHERE `logged_at` < UTC_TIMESTAMP() - INTERVAL 14 DAY");
+
+        return 1;
     }
 
     private function _is_hourly_job_runnable() {

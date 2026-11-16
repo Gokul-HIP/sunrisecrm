@@ -49,6 +49,11 @@ Events::on('pre_system', static function () {
     //load php hooks library
     require_once(APPPATH . "ThirdParty/PHP-Hooks/php-hooks.php");
 
+    // Initialize request performance tracking
+    if (class_exists('\App\Libraries\Request_performance_tracker')) {
+        \App\Libraries\Request_performance_tracker::init();
+    }
+
     helper('plugin');
 
     define('PLUGINPATH', ROOTPATH . 'plugins/'); //define plugin path

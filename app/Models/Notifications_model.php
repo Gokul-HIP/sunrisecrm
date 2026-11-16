@@ -125,8 +125,13 @@ class Notifications_model extends Crud_model {
                     )) ";
         }
 
-        //find task assigner / creator for 2-hour pre reminder
-        if ($task_id && in_array($event, array("project_task_deadline_2_hours_pre_reminder", "project_task_deadline_pre_reminder"))) {
+        //find task assigner / creator for pre reminders
+        if ($task_id && in_array($event, array(
+            "project_task_deadline_2_hours_pre_reminder",
+            "project_task_deadline_1_hour_pre_reminder",
+            "project_task_deadline_30_mins_pre_reminder",
+            "project_task_deadline_pre_reminder"
+        ))) {
             $assigner_id = $this->_get_task_assigner_id($task_id);
             if ($assigner_id) {
                 $where .= " OR $users_table.id=$assigner_id ";
@@ -601,7 +606,12 @@ class Notifications_model extends Crud_model {
                 $assigner_id = $this->_get_task_assigner_id($task_id);
                 $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, array($assigner_id), $user_id);
             }
-        } else if ($task_id && in_array($event, array("project_task_deadline_2_hours_pre_reminder", "project_task_deadline_pre_reminder"))) {
+        } else if ($task_id && in_array($event, array(
+            "project_task_deadline_2_hours_pre_reminder",
+            "project_task_deadline_1_hour_pre_reminder",
+            "project_task_deadline_30_mins_pre_reminder",
+            "project_task_deadline_pre_reminder"
+        ))) {
             $recipient_ids = array();
             if ($task_info && $task_info->assigned_to) {
                 $recipient_ids[] = (int) $task_info->assigned_to;
@@ -618,6 +628,19 @@ class Notifications_model extends Crud_model {
             if ($assigner_id) {
                 $recipient_ids[] = (int) $assigner_id;
             }
+            $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, $recipient_ids, $user_id);
+        } else if ($task_id && $event === "project_task_sent_for_review") {
+            $creator_id = 0;
+            if ($task_info && $task_info->created_by) {
+                $creator_id = (int) $task_info->created_by;
+            } else {
+                $creator_id = (int) $this->_get_task_assigner_id($task_id);
+            }
+            $recipient_ids = $creator_id ? array($creator_id) : array();
+            $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, $recipient_ids, $user_id);
+        } else if ($task_id && $event === "project_task_changes_requested") {
+            $assignee_id = ($task_info && $task_info->assigned_to) ? (int) $task_info->assigned_to : 0;
+            $recipient_ids = $assignee_id ? array($assignee_id) : array();
             $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, $recipient_ids, $user_id);
         } else if ($project_id && in_array($event, array("project_member_added", "project_member_deleted"))) {
             $this->_limit_notification_recipients_to_project_members($web_notify_to, $email_notify_to, $project_id, $user_id);
@@ -1163,7 +1186,12 @@ class Notifications_model extends Crud_model {
         AND (
             FIND_IN_SET($user_id, $notifications_table.notify_to) != 0
             OR (
-                $notifications_table.event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                $notifications_table.event IN (
+                    'project_task_deadline_2_hours_pre_reminder',
+                    'project_task_deadline_1_hour_pre_reminder',
+                    'project_task_deadline_30_mins_pre_reminder',
+                    'project_task_deadline_pre_reminder'
+                )
                 AND (
                     COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
                     OR $tasks_table.created_by = $user_id
@@ -1181,13 +1209,24 @@ class Notifications_model extends Crud_model {
         $payloads = array();
 
         foreach ($rows as $row) {
-            $is_reminder = ($row->event === "project_task_deadline_2_hours_pre_reminder");
+            $is_reminder = in_array($row->event, array(
+                "project_task_deadline_2_hours_pre_reminder",
+                "project_task_deadline_1_hour_pre_reminder",
+                "project_task_deadline_30_mins_pre_reminder"
+            ));
 
             if ($is_reminder) {
                 $task_name = $row->task_title ? trim($row->task_title) : "Task";
                 $title = "#{$row->task_id} - {$task_name}";
                 $proj_prefix = $row->project_title ? "[" . trim($row->project_title) . "] " : "";
-                $message = $proj_prefix . "Reminder: Task deadline is approaching in 2 hours.";
+                if ($row->event === "project_task_deadline_30_mins_pre_reminder") {
+                    $stage_text = "in 30 minutes";
+                } else if ($row->event === "project_task_deadline_1_hour_pre_reminder") {
+                    $stage_text = "in 1 hour";
+                } else {
+                    $stage_text = "in 2 hours";
+                }
+                $message = $proj_prefix . "Reminder: Task deadline is approaching {$stage_text}.";
             } else {
                 $message = app_lang("notification_" . $row->event);
                 if ($row->to_user_name) {
@@ -1412,6 +1451,8 @@ class Notifications_model extends Crud_model {
                 'project_task_reopened', 'project_task_commented',
                 'project_task_updated',
                 'project_task_deadline_2_hours_pre_reminder',
+                'project_task_deadline_1_hour_pre_reminder',
+                'project_task_deadline_30_mins_pre_reminder',
                 'project_task_deadline_pre_reminder',
                 'project_member_added', 'project_member_deleted'
             )
@@ -1431,7 +1472,12 @@ class Notifications_model extends Crud_model {
                 AND NULLIF($notifications_table.to_user_id, 0) = $user_id
             )
             OR (
-                $notifications_table.event IN ('project_task_deadline_2_hours_pre_reminder', 'project_task_deadline_pre_reminder')
+                $notifications_table.event IN (
+                    'project_task_deadline_2_hours_pre_reminder',
+                    'project_task_deadline_1_hour_pre_reminder',
+                    'project_task_deadline_30_mins_pre_reminder',
+                    'project_task_deadline_pre_reminder'
+                )
                 AND (
                     FIND_IN_SET($user_id, $notifications_table.notify_to)
                     OR COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
