@@ -1,6 +1,6 @@
 /**
- * Phase 21/21C — Timesheets Details grouped view + toolbar-driven Excel/Print.
- * Excel/Print POST live toolbar filters to timesheet_grouped_export (task created date).
+ * Phase 22 — Timesheets Details grouped view: Member → Project → Task → entries.
+ * Excel/Print still POST live toolbar filters to timesheet_grouped_export.
  */
 (function (window, $) {
     "use strict";
@@ -9,7 +9,6 @@
         return $("<div>").text(s == null ? "" : String(s)).html();
     }
 
-    /** Datepicker shows locale format; API needs Y-m-d. Prefer moment + getJsDateFormat when available. */
     function convertDateToYMD(date) {
         if (!date) {
             return "";
@@ -18,13 +17,12 @@
             return date;
         }
         if (window.moment && typeof getJsDateFormat === "function") {
-            var momentFmt = getJsDateFormat().toUpperCase().replace(/YYYY/g, "YYYY").replace(/DD/g, "DD").replace(/MM/g, "MM");
+            var momentFmt = getJsDateFormat().toUpperCase();
             var parsed = moment(date, momentFmt, true);
             if (parsed.isValid()) {
                 return parsed.format("YYYY-MM-DD");
             }
         }
-        // Fallback: same logic as assets/js/app.js convertDateToYMD
         var dateFormat = (window.AppHelper && AppHelper.settings && AppHelper.settings.dateFormat) ? AppHelper.settings.dateFormat : "Y-m-d";
         dateFormat = String(dateFormat).toLowerCase();
         var separator = dateFormat.charAt(1);
@@ -38,7 +36,6 @@
         else if (dateFormatArray[1] === "d") dayIndex = 1;
         var dateValue = String(date).split(separator);
         if (dateValue.length < 3) {
-            // Last resort: split on common separators
             dateValue = String(date).split(/[.\-/]/);
             if (dateValue.length === 3 && dateValue[2].length === 4) {
                 return dateValue[2] + "-" + dateValue[1] + "-" + dateValue[0];
@@ -56,7 +53,7 @@
         this.$loading = this.$root.find("[data-tg-loading]");
         this.$empty = this.$root.find("[data-tg-empty]");
         this.mode = "grouped";
-        this.cache = { members: {}, tasks: {}, entries: {} };
+        this.cache = { projects: {}, tasks: {}, entries: {} };
         this.bind();
     }
 
@@ -74,19 +71,19 @@
         this.$root.on("click", "[data-tg-filters-toggle]", function () {
             self.$root.find("[data-tg-filters]").toggleClass("is-collapsed");
         });
+        this.$root.on("click", "[data-tg-member-toggle]", function (e) {
+            e.preventDefault();
+            self.toggleMember($(this).closest("[data-member-id]").first());
+        });
         this.$root.on("click", "[data-tg-project-toggle]", function (e) {
             e.preventDefault();
-            self.toggleProject($(this).closest("[data-project-id]"));
+            self.toggleProject($(this).closest(".tg-project").first());
         });
-        this.$root.on("keydown", "[data-tg-project-toggle],[data-tg-member-toggle],[data-tg-entries-toggle]", function (e) {
+        this.$root.on("keydown", "[data-tg-member-toggle],[data-tg-project-toggle],[data-tg-entries-toggle]", function (e) {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 $(this).trigger("click");
             }
-        });
-        this.$root.on("click", "[data-tg-member-toggle]", function (e) {
-            e.preventDefault();
-            self.toggleMember($(this).closest("[data-member-id]"));
         });
         this.$root.on("click", "[data-tg-entries-toggle]", function (e) {
             e.preventDefault();
@@ -95,13 +92,12 @@
         this.$root.on("click", "[data-tg-apply]", function () {
             self.reload();
         });
-        this.$root.on("keydown", "[data-tg-search]", function (e) {
+        this.$root.on("keydown", "[name='tg_search']", function (e) {
             if (e.key === "Enter") {
                 e.preventDefault();
                 self.reload();
             }
         });
-        // Phase 21C: Excel/Print use live toolbar values (Apply not required)
         this.$root.on("click", "[data-tg-export]", function () {
             self.exportFile($(this).data("tg-export") || "xlsx");
         });
@@ -144,7 +140,6 @@
             $("#timesheet-table-pane").removeClass("is-hidden");
             this.$caption.addClass("is-hidden");
             this.$root.find("[data-tg-grouped-only]").hide();
-            // Ensure DataTable columns redraw if first show
             if ($.fn.DataTable && $.fn.DataTable.isDataTable("#all-project-timesheet-table")) {
                 $("#all-project-timesheet-table").DataTable().columns.adjust();
             }
@@ -164,7 +159,6 @@
 
     TimesheetGrouped.prototype.updateCaption = function () {
         var f = this.filters();
-        // Caption shows the same locale values the user sees in the inputs
         var from = this.$root.find("[name='tg_start_date']").val() || f.start_date || "—";
         var to = this.$root.find("[name='tg_end_date']").val() || f.end_date || "—";
         var tpl = this.opts.captionTemplate || "Tasks created between {from} and {to}. Time shows all time logged on these tasks.";
@@ -173,7 +167,7 @@
 
     TimesheetGrouped.prototype.reload = function () {
         var self = this;
-        this.cache = { members: {}, tasks: {}, entries: {} };
+        this.cache = { projects: {}, tasks: {}, entries: {} };
         this.updateCaption();
         this.$list.empty();
         this.$empty.hide();
@@ -183,7 +177,7 @@
             this.opts.onFiltersApplied(filters);
         }
         $.ajax({
-            url: this.opts.projectsUrl,
+            url: this.opts.membersRootUrl || this.opts.projectsUrl,
             type: "POST",
             dataType: "json",
             data: filters,
@@ -198,8 +192,8 @@
                     return;
                 }
                 self.$empty.hide();
-                res.data.forEach(function (p) {
-                    self.$list.append(self.renderProject(p));
+                res.data.forEach(function (m) {
+                    self.$list.append(self.renderMemberRoot(m));
                 });
                 if (window.feather) {
                     feather.replace();
@@ -216,24 +210,103 @@
         });
     };
 
-    TimesheetGrouped.prototype.renderProject = function (p) {
-        var id = p.project_id;
-        var html = ''
-            + '<article class="tg-project" data-project-id="' + id + '">'
-            + '  <button type="button" class="tg-row" data-tg-project-toggle aria-expanded="false" aria-controls="tg-proj-panel-' + id + '" id="tg-proj-btn-' + id + '">'
+    TimesheetGrouped.prototype.renderMemberRoot = function (m) {
+        var uid = m.user_id;
+        var avatar = m.avatar
+            ? '<img class="tg-avatar tg-avatar-lg" src="' + esc(m.avatar) + '" alt="">'
+            : '<span class="tg-avatar tg-avatar-lg" style="background:#ddd;display:inline-block;"></span>';
+        return ''
+            + '<article class="tg-member tg-member-root" data-member-id="' + uid + '">'
+            + '  <button type="button" class="tg-row tg-row-member" data-tg-member-toggle aria-expanded="false" aria-controls="tg-mem-panel-' + uid + '" id="tg-mem-btn-' + uid + '">'
+            + '    <span class="tg-chevron" aria-hidden="true"><i data-feather="chevron-right" class="icon-16"></i></span>'
+            + avatar
+            + '    <span class="tg-title">' + esc(String(m.name || "").trim()) + '</span>'
+            + '    <span class="tg-meta">'
+            + '      <span class="tg-chip" data-chip="projects">' + esc(m.project_count) + ' projects</span>'
+            + '      <span class="tg-chip" data-chip="tasks">' + esc(m.task_count) + ' tasks</span>'
+            + '    </span>'
+            + '    <span class="tg-nums">'
+            + '      <span>' + esc(m.total_time) + '</span>'
+            + '      <span class="tg-muted">' + esc(m.points_earned_label) + ' pts</span>'
+            + '    </span>'
+            + '  </button>'
+            + '  <div class="tg-panel" id="tg-mem-panel-' + uid + '" role="region" hidden></div>'
+            + '</article>';
+    };
+
+    TimesheetGrouped.prototype.toggleMember = function ($mem) {
+        var self = this;
+        var $btn = $mem.find("[data-tg-member-toggle]").first();
+        var $panel = $mem.find("> .tg-panel");
+        var open = $btn.attr("aria-expanded") === "true";
+        if (open) {
+            $btn.attr("aria-expanded", "false");
+            $panel.removeClass("is-open").attr("hidden", true);
+            $mem.removeClass("is-open");
+            return;
+        }
+        $btn.attr("aria-expanded", "true");
+        $panel.addClass("is-open").removeAttr("hidden");
+        $mem.addClass("is-open");
+        var uid = $mem.data("member-id");
+        if (this.cache.projects[uid] !== undefined) {
+            $panel.html(this.cache.projects[uid]);
+            if (window.feather) feather.replace();
+            return;
+        }
+        $panel.html('<div class="tg-loading"><div class="spinner-border"></div></div>');
+        var data = this.filters();
+        data.user_id = uid;
+        $.ajax({
+            url: this.opts.memberProjectsUrl || this.opts.membersUrl,
+            type: "POST",
+            dataType: "json",
+            data: data,
+            success: function (res) {
+                if (!res || !res.success) {
+                    $panel.html('<div class="tg-empty">Unable to load projects</div>');
+                    return;
+                }
+                if (typeof res.project_count !== "undefined") {
+                    $mem.find('[data-chip="projects"]').text(res.project_count + " projects");
+                }
+                if (typeof res.task_count !== "undefined") {
+                    $mem.find('[data-chip="tasks"]').text(res.task_count + " tasks");
+                }
+                var html = "";
+                (res.data || []).forEach(function (p) {
+                    html += self.renderProjectUnderMember(uid, p);
+                });
+                if (!html) {
+                    html = '<div class="tg-empty">No projects</div>';
+                }
+                self.cache.projects[uid] = html;
+                $panel.html(html);
+                if (window.feather) feather.replace();
+            },
+            error: function () {
+                $panel.html('<div class="tg-empty">Unable to load projects</div>');
+            }
+        });
+    };
+
+    TimesheetGrouped.prototype.renderProjectUnderMember = function (memberId, p) {
+        var pid = p.project_id;
+        return ''
+            + '<div class="tg-project tg-project-nested" data-project-id="' + pid + '" data-member-id="' + memberId + '">'
+            + '  <button type="button" class="tg-row tg-row-project" data-tg-project-toggle aria-expanded="false" aria-controls="tg-proj-panel-' + memberId + '-' + pid + '">'
             + '    <span class="tg-chevron" aria-hidden="true"><i data-feather="chevron-right" class="icon-16"></i></span>'
             + '    <span class="tg-title">' + esc(String(p.project_title || "").trim())
             + (p.client_name ? '<span class="tg-sub">' + esc(String(p.client_name).trim()) + '</span>' : '')
             + '</span>'
-            + '    <span class="tg-meta">'
-            + '      <span class="tg-chip" data-chip="tasks">' + esc(p.task_count) + ' tasks</span>'
-            + '      <span class="tg-chip" data-chip="members">' + esc(p.member_count) + ' members</span>'
+            + '    <span class="tg-meta"><span class="tg-chip" data-chip="tasks">' + esc(p.task_count) + ' tasks</span></span>'
+            + '    <span class="tg-nums">'
+            + '      <span>' + esc(p.total_time) + '</span>'
+            + '      <span class="tg-muted">' + esc(p.points_earned_label) + ' pts</span>'
             + '    </span>'
-            + '    <span class="tg-nums"><span>' + esc(p.total_time) + '</span></span>'
             + '  </button>'
-            + '  <div class="tg-panel" id="tg-proj-panel-' + id + '" role="region" hidden></div>'
-            + '</article>';
-        return html;
+            + '  <div class="tg-panel" id="tg-proj-panel-' + memberId + '-' + pid + '" role="region" hidden></div>'
+            + '</div>';
     };
 
     TimesheetGrouped.prototype.toggleProject = function ($proj) {
@@ -251,85 +324,8 @@
         $panel.addClass("is-open").removeAttr("hidden");
         $proj.addClass("is-open");
         var pid = $proj.data("project-id");
-        if (this.cache.members[pid]) {
-            $panel.html(this.cache.members[pid]);
-            if (window.feather) feather.replace();
-            return;
-        }
-        $panel.html('<div class="tg-loading"><div class="spinner-border"></div></div>');
-        var data = this.filters();
-        data.project_id = pid;
-        $.ajax({
-            url: this.opts.membersUrl,
-            type: "POST",
-            dataType: "json",
-            data: data,
-            success: function (res) {
-                if (!res || !res.success) {
-                    $panel.html('<div class="tg-empty">Unable to load members</div>');
-                    return;
-                }
-                // Sync chips with expanded counts
-                if (typeof res.member_count !== "undefined") {
-                    $proj.find('[data-chip="members"]').text(res.member_count + " members");
-                }
-                if (typeof res.task_count !== "undefined") {
-                    $proj.find('[data-chip="tasks"]').text(res.task_count + " tasks");
-                }
-                var html = "";
-                (res.data || []).forEach(function (m) {
-                    html += self.renderMember(pid, m);
-                });
-                if (!html) {
-                    html = '<div class="tg-empty">No members</div>';
-                }
-                self.cache.members[pid] = html;
-                $panel.html(html);
-                if (window.feather) feather.replace();
-            },
-            error: function () {
-                $panel.html('<div class="tg-empty">Unable to load members</div>');
-            }
-        });
-    };
-
-    TimesheetGrouped.prototype.renderMember = function (projectId, m) {
-        var uid = m.user_id;
-        var key = projectId + ":" + uid;
-        var avatar = m.avatar
-            ? '<img class="tg-avatar" src="' + esc(m.avatar) + '" alt="">'
-            : '<span class="tg-avatar" style="background:#ddd;display:inline-block;"></span>';
-        return ''
-            + '<div class="tg-member" data-project-id="' + projectId + '" data-member-id="' + uid + '">'
-            + '  <button type="button" class="tg-row" data-tg-member-toggle aria-expanded="false" aria-controls="tg-mem-panel-' + projectId + '-' + uid + '">'
-            + '    <span class="tg-chevron" aria-hidden="true"><i data-feather="chevron-right" class="icon-16"></i></span>'
-            + avatar
-            + '    <span class="tg-title">' + esc(String(m.name || "").trim()) + '</span>'
-            + '    <span class="tg-meta"><span class="tg-chip">' + esc(m.task_count) + ' tasks</span></span>'
-            + '    <span class="tg-nums">'
-            + '      <span>' + esc(m.total_time) + '</span>'
-            + '      <span class="tg-muted">' + esc(m.points_earned_label) + ' pts</span>'
-            + '    </span>'
-            + '  </button>'
-            + '  <div class="tg-panel" id="tg-mem-panel-' + projectId + '-' + uid + '" role="region" hidden></div>'
-            + '</div>';
-    };
-
-    TimesheetGrouped.prototype.toggleMember = function ($mem) {
-        var self = this;
-        var $btn = $mem.find("[data-tg-member-toggle]").first();
-        var $panel = $mem.find("> .tg-panel");
-        var open = $btn.attr("aria-expanded") === "true";
-        if (open) {
-            $btn.attr("aria-expanded", "false");
-            $panel.removeClass("is-open").attr("hidden", true);
-            return;
-        }
-        $btn.attr("aria-expanded", "true");
-        $panel.addClass("is-open").removeAttr("hidden");
-        var pid = $mem.data("project-id");
-        var uid = $mem.data("member-id");
-        var key = pid + ":" + uid;
+        var uid = $proj.data("member-id");
+        var key = uid + ":" + pid;
         if (this.cache.tasks[key]) {
             $panel.html(this.cache.tasks[key]);
             if (window.feather) feather.replace();
@@ -356,8 +352,7 @@
                 if (!html) {
                     html = '<div class="tg-empty">No tasks</div>';
                 }
-                // Sync member chip
-                $mem.find(".tg-chip").first().text((res.data || []).length + " tasks");
+                $proj.find('[data-chip="tasks"]').first().text((res.data || []).length + " tasks");
                 self.cache.tasks[key] = html;
                 $panel.html(html);
                 if (window.feather) feather.replace();
@@ -464,12 +459,23 @@
         return html;
     };
 
+    // Expand only currently visible level: members, or projects of open members — never auto-load all tasks
     TimesheetGrouped.prototype.expandAllVisible = function () {
         var self = this;
-        this.$list.find(".tg-project").each(function () {
-            var $p = $(this);
-            if ($p.find("[data-tg-project-toggle]").attr("aria-expanded") !== "true") {
-                self.toggleProject($p);
+        var $openMembers = this.$list.find(".tg-member-root.is-open");
+        if ($openMembers.length) {
+            $openMembers.find(".tg-project-nested").each(function () {
+                var $p = $(this);
+                if ($p.find("[data-tg-project-toggle]").attr("aria-expanded") !== "true") {
+                    self.toggleProject($p);
+                }
+            });
+            return;
+        }
+        this.$list.find(".tg-member-root").each(function () {
+            var $m = $(this);
+            if ($m.find("[data-tg-member-toggle]").attr("aria-expanded") !== "true") {
+                self.toggleMember($m);
             }
         });
     };
@@ -478,8 +484,8 @@
         this.$list.find("[aria-expanded='true']").each(function () {
             var $el = $(this);
             $el.attr("aria-expanded", "false");
-            $el.closest(".tg-project, .tg-member, .tg-task").find("> .tg-panel, > .tg-entries").removeClass("is-open").attr("hidden", true).filter(".tg-entries").empty();
-            $el.closest(".tg-project").removeClass("is-open");
+            $el.closest(".tg-member-root, .tg-project-nested, .tg-task").find("> .tg-panel, > .tg-entries").removeClass("is-open").attr("hidden", true).filter(".tg-entries").empty();
+            $el.closest(".tg-member-root, .tg-project-nested").removeClass("is-open");
         });
     };
 

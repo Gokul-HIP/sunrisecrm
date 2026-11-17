@@ -2438,7 +2438,293 @@ class Projects extends Security_Controller {
     }
 
     /**
-     * Phase 21 Level 2 — members for one project (batched).
+     * Phase 22 Level 1 — member cards (one aggregate query + batched points/users).
+     */
+    function timesheet_grouped_root_members() {
+        $this->access_only_team_members();
+        if (!$this->can_view_timesheet(0, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = $this->_timesheet_grouped_filter_options();
+        $allowed = $this->_get_members_to_manage_timesheet();
+        $allowed_map = null;
+        if (is_array($allowed)) {
+            $allowed_map = array_fill_keys(array_map("intval", $allowed), true);
+        }
+
+        $rows = $this->Timesheets_model->get_grouped_members_by_task_created($options);
+        $user_ids = array();
+        foreach ($rows as $row) {
+            $uid = (int) $row->user_id;
+            if ($uid <= 0) {
+                continue;
+            }
+            if ($allowed_map !== null && !isset($allowed_map[$uid])) {
+                continue;
+            }
+            $user_ids[$uid] = $uid;
+        }
+
+        // Points: one query — each member's own award shares on filtered tasks (never double-count)
+        $points_by_user = array();
+        if ($user_ids) {
+            $db = db_connect("default");
+            $awards_table = $db->prefixTable("task_point_awards");
+            $tasks_table = $db->prefixTable("tasks");
+            $projects_table = $db->prefixTable("projects");
+            $where = " a.deleted=0 AND t.deleted=0 AND p.deleted=0 AND a.user_id IN (" . implode(",", $user_ids) . ") ";
+            $from = get_array_value($options, "created_from");
+            $to = get_array_value($options, "created_to");
+            if ($from && $to) {
+                $where .= " AND t.created_date BETWEEN " . $db->escape($from) . " AND " . $db->escape($to);
+            } else if ($from) {
+                $where .= " AND t.created_date >= " . $db->escape($from);
+            } else if ($to) {
+                $where .= " AND t.created_date <= " . $db->escape($to);
+            }
+            $project_id = (int) get_array_value($options, "project_id");
+            if ($project_id > 0) {
+                $where .= " AND t.project_id=$project_id";
+            }
+            $client_id = (int) get_array_value($options, "client_id");
+            if ($client_id > 0) {
+                $where .= " AND p.client_id=$client_id";
+            }
+            $sql = "SELECT a.user_id, SUM(a.earned_points) AS pts
+                    FROM $awards_table a
+                    INNER JOIN $tasks_table t ON t.id=a.task_id
+                    INNER JOIN $projects_table p ON p.id=t.project_id
+                    WHERE $where
+                    GROUP BY a.user_id";
+            foreach ($db->query($sql)->getResult() as $pr) {
+                $points_by_user[(int) $pr->user_id] = (float) $pr->pts;
+            }
+        }
+
+        $users_map = array();
+        if ($user_ids) {
+            $db = db_connect("default");
+            $users_table = $db->prefixTable("users");
+            foreach ($db->query("SELECT id, first_name, last_name, image FROM $users_table WHERE id IN (" . implode(",", $user_ids) . ")")->getResult() as $u) {
+                $users_map[(int) $u->id] = $u;
+            }
+        }
+
+        $data = array();
+        foreach ($rows as $row) {
+            $uid = (int) $row->user_id;
+            if ($uid <= 0 || ($allowed_map !== null && !isset($allowed_map[$uid]))) {
+                continue;
+            }
+            $u = get_array_value($users_map, $uid);
+            $name = $u ? $this->_tg_trim($u->first_name . " " . $u->last_name) : ("#" . $uid);
+            $seconds = (int) $row->total_seconds;
+            if ($seconds < 0) {
+                $seconds = 0;
+            }
+            $pts = isset($points_by_user[$uid]) ? $points_by_user[$uid] : 0.0;
+            $data[] = array(
+                "user_id" => $uid,
+                "name" => $name,
+                "avatar" => $u ? get_avatar($u->image) : get_avatar(""),
+                "project_count" => (int) $row->project_count,
+                "task_count" => (int) $row->task_count,
+                "total_seconds" => $seconds,
+                "total_time" => convert_seconds_to_time_format($seconds),
+                "points_earned" => $pts,
+                "points_earned_label" => function_exists("format_task_point_value") ? format_task_point_value($pts) : (string) $pts,
+            );
+        }
+
+        usort($data, function ($a, $b) {
+            return strcasecmp($a["name"], $b["name"]);
+        });
+
+        // Unassigned bucket last (only when not member-filtered)
+        $member_filter = (int) get_array_value($options, "member_id");
+        if ($member_filter <= 0 && $allowed_map === null) {
+            $un = $this->Timesheets_model->get_grouped_unassigned_stats_by_task_created($options);
+            if ($un && (int) $un->task_count > 0) {
+                $seconds = (int) $un->total_seconds;
+                if ($seconds < 0) {
+                    $seconds = 0;
+                }
+                $data[] = array(
+                    "user_id" => 0,
+                    "name" => app_lang("unassigned") ?: "Unassigned",
+                    "avatar" => get_avatar(""),
+                    "project_count" => (int) $un->project_count,
+                    "task_count" => (int) $un->task_count,
+                    "total_seconds" => $seconds,
+                    "total_time" => convert_seconds_to_time_format($seconds),
+                    "points_earned" => 0,
+                    "points_earned_label" => function_exists("format_task_point_value") ? format_task_point_value(0) : "0",
+                );
+            }
+        }
+
+        echo json_encode(array("success" => true, "data" => $data));
+    }
+
+    /**
+     * Phase 22 Level 2 — projects for one member (reuses project aggregate with member_id).
+     */
+    function timesheet_grouped_member_projects() {
+        $this->access_only_team_members();
+        $user_id = (int) $this->_tg_input("user_id");
+        if (!$this->can_view_timesheet(0, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = $this->_timesheet_grouped_filter_options();
+        $allowed = $this->_get_members_to_manage_timesheet();
+        if (is_array($allowed)) {
+            $allowed_ids = array_map("intval", $allowed);
+            if ($user_id > 0 && !in_array($user_id, $allowed_ids, true)) {
+                echo json_encode(array("success" => true, "data" => array(), "project_count" => 0, "task_count" => 0));
+                return;
+            }
+        }
+
+        // Unassigned: tasks with no participants, grouped by project
+        if ($user_id === 0) {
+            $options["member_id"] = null;
+            // Load tasks and filter to unassigned only
+            $tasks = $this->Timesheets_model->get_grouped_tasks_for_project($options);
+            $by_project = array();
+            $task_ids = array();
+            foreach ($tasks as $task) {
+                $participants = function_exists("get_task_participants") ? get_task_participants($task) : array();
+                if ($participants) {
+                    continue;
+                }
+                $pid = (int) $task->project_id;
+                if (!isset($by_project[$pid])) {
+                    $by_project[$pid] = array(
+                        "project_id" => $pid,
+                        "project_title" => $this->_tg_trim(isset($task->project_title) ? $task->project_title : ""),
+                        "client_name" => $this->_tg_trim(isset($task->client_name) ? $task->client_name : ""),
+                        "task_ids" => array(),
+                    );
+                }
+                $by_project[$pid]["task_ids"][(int) $task->id] = (int) $task->id;
+                $task_ids[(int) $task->id] = (int) $task->id;
+            }
+            $time_rows = $this->Timesheets_model->get_time_seconds_by_task_and_user(array_keys($task_ids), 0);
+            $time_by_task = array();
+            foreach ($time_rows as $tr) {
+                $tid = (int) $tr->task_id;
+                $time_by_task[$tid] = (isset($time_by_task[$tid]) ? $time_by_task[$tid] : 0) + (int) $tr->total_seconds;
+            }
+            $data = array();
+            $total_tasks = 0;
+            foreach ($by_project as $pid => $info) {
+                $seconds = 0;
+                foreach ($info["task_ids"] as $tid) {
+                    $seconds += isset($time_by_task[$tid]) ? (int) $time_by_task[$tid] : 0;
+                }
+                if ($seconds < 0) {
+                    $seconds = 0;
+                }
+                $tc = count($info["task_ids"]);
+                $total_tasks += $tc;
+                $data[] = array(
+                    "project_id" => $pid,
+                    "project_title" => $info["project_title"],
+                    "client_name" => $info["client_name"],
+                    "task_count" => $tc,
+                    "total_seconds" => $seconds,
+                    "total_time" => convert_seconds_to_time_format($seconds),
+                    "points_earned" => 0,
+                    "points_earned_label" => function_exists("format_task_point_value") ? format_task_point_value(0) : "0",
+                );
+            }
+            usort($data, function ($a, $b) {
+                return strcasecmp($a["project_title"], $b["project_title"]);
+            });
+            echo json_encode(array("success" => true, "data" => $data, "project_count" => count($data), "task_count" => $total_tasks));
+            return;
+        }
+
+        $options["member_id"] = $user_id;
+        $rows = $this->Timesheets_model->get_grouped_projects_by_task_created($options);
+
+        // Points per project for this member (one query)
+        $points_by_project = array();
+        $db = db_connect("default");
+        $awards_table = $db->prefixTable("task_point_awards");
+        $tasks_table = $db->prefixTable("tasks");
+        $projects_table = $db->prefixTable("projects");
+        $where = " a.deleted=0 AND t.deleted=0 AND p.deleted=0 AND a.user_id=$user_id ";
+        $from = get_array_value($options, "created_from");
+        $to = get_array_value($options, "created_to");
+        if ($from && $to) {
+            $where .= " AND t.created_date BETWEEN " . $db->escape($from) . " AND " . $db->escape($to);
+        } else if ($from) {
+            $where .= " AND t.created_date >= " . $db->escape($from);
+        } else if ($to) {
+            $where .= " AND t.created_date <= " . $db->escape($to);
+        }
+        $project_filter = (int) get_array_value($options, "project_id");
+        if ($project_filter > 0) {
+            $where .= " AND t.project_id=$project_filter";
+        }
+        $client_id = (int) get_array_value($options, "client_id");
+        if ($client_id > 0) {
+            $where .= " AND p.client_id=$client_id";
+        }
+        $psql = "SELECT t.project_id, SUM(a.earned_points) AS pts
+                 FROM $awards_table a
+                 INNER JOIN $tasks_table t ON t.id=a.task_id
+                 INNER JOIN $projects_table p ON p.id=t.project_id
+                 WHERE $where
+                 GROUP BY t.project_id";
+        foreach ($db->query($psql)->getResult() as $pr) {
+            $points_by_project[(int) $pr->project_id] = (float) $pr->pts;
+        }
+
+        $data = array();
+        $total_tasks = 0;
+        foreach ($rows as $row) {
+            $seconds = (int) $row->total_seconds;
+            if ($seconds < 0) {
+                $seconds = 0;
+            }
+            $pid = (int) $row->project_id;
+            $pts = isset($points_by_project[$pid]) ? $points_by_project[$pid] : 0.0;
+            $tc = (int) $row->task_count;
+            $total_tasks += $tc;
+            $data[] = array(
+                "project_id" => $pid,
+                "project_title" => $this->_tg_trim($row->project_title),
+                "client_name" => $row->client_name ? $this->_tg_trim($row->client_name) : "",
+                "task_count" => $tc,
+                "total_seconds" => $seconds,
+                "total_time" => convert_seconds_to_time_format($seconds),
+                "points_earned" => $pts,
+                "points_earned_label" => function_exists("format_task_point_value") ? format_task_point_value($pts) : (string) $pts,
+            );
+        }
+
+        echo json_encode(array(
+            "success" => true,
+            "data" => $data,
+            "project_count" => count($data),
+            "task_count" => $total_tasks,
+        ));
+    }
+
+    /**
+     * Phase 21 Level 2 — members for one project (batched). Kept for drift comparison.
      */
     function timesheet_grouped_members() {
         $this->access_only_team_members();
@@ -2706,14 +2992,9 @@ class Projects extends Security_Controller {
             }
             $score_info = $this->_timesheet_grouped_score_text($full, $user_id, $award_obj);
             $archived = $score_info["archived"];
+            // Use batched award fields already on $full — avoid per-task award reload N+1
             $score_html = "-";
-            if ($user_id > 0 && $has_award && function_exists("get_task_points_badge_html")) {
-                $score_html = get_task_points_badge_html($full, array(
-                    "compact" => true,
-                    "show_reason" => true,
-                    "for_user_id" => $user_id,
-                ));
-            } else if ($user_id > 0) {
+            if ($user_id > 0 && $score_info["score"] !== "" && $score_info["score"] !== "-") {
                 $score_html = "<span class='badge mt0 task-points-badge'>" . htmlspecialchars($score_info["score"]) . "</span>";
             }
 
@@ -2907,6 +3188,10 @@ class Projects extends Security_Controller {
             unset($task_for_user->awarded_points, $task_for_user->awarded_original_points, $task_for_user->awarded_participants_count, $task_for_user->awarded_is_collaborator);
         }
 
+        // Mark pre-scoped so get_task_point_display skips award reload / sync_task_point_award N+1
+        if ($uid > 0) {
+            $task_for_user->_award_scoped_for = $uid;
+        }
         $score = function_exists("get_task_points_score_plain_text")
             ? get_task_points_score_plain_text($task_for_user, array("for_user_id" => $uid, "compact" => true))
             : "-";

@@ -148,7 +148,8 @@ html[data-color="1E202D"] .tg-wrap {
     gap: 10px;
 }
 
-.tg-project {
+/* Phase 22: member is the top-level card (stronger than nested project) */
+.tg-member-root {
     background: var(--tg-card);
     border: 1px solid var(--tg-border);
     border-radius: var(--tg-radius);
@@ -156,7 +157,47 @@ html[data-color="1E202D"] .tg-wrap {
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.tg-project.is-open {
+.tg-member-root.is-open {
+    border-color: rgba(212, 136, 15, .45);
+    box-shadow: 0 1px 0 var(--tg-accent-soft);
+}
+
+.tg-member-root > .tg-row-member {
+    grid-template-columns: 28px 40px minmax(0, 1.4fr) auto auto;
+}
+
+.tg-member-root.is-open > .tg-row-member {
+    background: var(--tg-open);
+}
+
+.tg-member-root .tg-title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tg-avatar-lg {
+    width: 36px;
+    height: 36px;
+}
+
+.tg-project,
+.tg-project-nested {
+    background: var(--tg-card);
+    border: 1px solid var(--tg-border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.tg-project-nested {
+    margin-top: 8px;
+    margin-left: 8px;
+    border-left: 3px solid rgba(212, 136, 15, .35);
+    background: transparent;
+}
+
+.tg-project.is-open,
+.tg-project-nested.is-open {
     border-color: rgba(212, 136, 15, .45);
     box-shadow: 0 1px 0 var(--tg-accent-soft);
 }
@@ -178,12 +219,19 @@ html[data-color="1E202D"] .tg-wrap {
     background: var(--tg-hover);
 }
 
-.tg-project > .tg-row {
+.tg-project > .tg-row,
+.tg-project-nested > .tg-row-project {
     grid-template-columns: 28px minmax(0, 1.4fr) auto auto;
 }
 
-.tg-project.is-open > .tg-row {
+.tg-project.is-open > .tg-row,
+.tg-project-nested.is-open > .tg-row-project {
     background: var(--tg-open);
+}
+
+.tg-project-nested .tg-title {
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .tg-chevron {
@@ -419,10 +467,20 @@ html[data-color="1E202D"] .tg-wrap {
 }
 
 @media (max-width: 1199px) {
-    .tg-project > .tg-row {
+    .tg-member-root > .tg-row-member {
+        grid-template-columns: 28px 40px minmax(0, 1fr);
+    }
+    .tg-member-root > .tg-row-member .tg-meta,
+    .tg-member-root > .tg-row-member .tg-nums {
+        grid-column: 3 / -1;
+        justify-content: flex-start;
+    }
+    .tg-project > .tg-row,
+    .tg-project-nested > .tg-row-project {
         grid-template-columns: 28px minmax(0, 1fr) auto;
     }
-    .tg-project > .tg-row .tg-nums {
+    .tg-project > .tg-row .tg-nums,
+    .tg-project-nested > .tg-row-project .tg-nums {
         grid-column: 2 / -1;
         justify-content: flex-start;
     }

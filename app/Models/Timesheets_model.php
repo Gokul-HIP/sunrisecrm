@@ -628,6 +628,167 @@ class Timesheets_model extends Crud_model {
     }
 
     /**
+     * Phase 22 Level 1: members who participate in filtered tasks (one aggregate query).
+     * Returns user_id, task_count, project_count, total_seconds (member's own time on those tasks).
+     * Unassigned bucket is NOT included — caller handles separately.
+     */
+    function get_grouped_members_by_task_created($options = array()) {
+        $tasks_table = $this->db->prefixTable('tasks');
+        $projects_table = $this->db->prefixTable('projects');
+        $clients_table = $this->db->prefixTable('clients');
+        $timesheet_table = $this->db->prefixTable('project_time');
+        $users_table = $this->db->prefixTable('users');
+
+        $where = " AND $tasks_table.deleted=0 AND $projects_table.deleted=0 ";
+        $created_from = $this->_get_clean_value($options, "created_from");
+        $created_to = $this->_get_clean_value($options, "created_to");
+        if ($created_from && $created_to) {
+            $where .= " AND $tasks_table.created_date BETWEEN '$created_from' AND '$created_to'";
+        } else if ($created_from) {
+            $where .= " AND $tasks_table.created_date >= '$created_from'";
+        } else if ($created_to) {
+            $where .= " AND $tasks_table.created_date <= '$created_to'";
+        }
+
+        $project_id = $this->_get_clean_value($options, "project_id");
+        if ($project_id) {
+            $where .= " AND $tasks_table.project_id=$project_id";
+        }
+        $client_id = $this->_get_clean_value($options, "client_id");
+        if ($client_id) {
+            $where .= " AND $projects_table.client_id=$client_id";
+        }
+
+        $member_id = (int) $this->_get_clean_value($options, "member_id");
+        if ($member_id > 0) {
+            $where .= " AND ($tasks_table.assigned_to=$member_id OR FIND_IN_SET('$member_id', $tasks_table.collaborators))";
+        }
+        $show_assigned_only = (int) $this->_get_clean_value($options, "show_assigned_tasks_only_user_id");
+        if ($show_assigned_only > 0) {
+            $where .= " AND ($tasks_table.assigned_to=$show_assigned_only OR FIND_IN_SET('$show_assigned_only', $tasks_table.collaborators))";
+        }
+
+        $search = get_array_value($options, "search");
+        if ($search) {
+            $search = $this->db->escapeLikeString($search);
+            $where .= " AND ("
+                . " $tasks_table.title LIKE '%$search%' ESCAPE '!' "
+                . " OR $projects_table.title LIKE '%$search%' ESCAPE '!' "
+                . " OR $clients_table.company_name LIKE '%$search%' ESCAPE '!' "
+                . " OR EXISTS ("
+                . "   SELECT 1 FROM $users_table u "
+                . "   WHERE u.deleted=0 AND ("
+                . "     u.id=$tasks_table.assigned_to OR FIND_IN_SET(u.id, $tasks_table.collaborators)"
+                . "   ) AND CONCAT(u.first_name,' ',u.last_name) LIKE '%$search%' ESCAPE '!'"
+                . " )"
+                . ")";
+        }
+
+        $dur_pt = $this->timesheet_duration_seconds_sql("pt");
+        $member_filter_join = "";
+        if ($member_id > 0) {
+            $member_filter_join = " AND part.user_id=$member_id ";
+        } else if ($show_assigned_only > 0) {
+            $member_filter_join = " AND part.user_id=$show_assigned_only ";
+        }
+
+        // Participants = assignee UNION collaborators
+        $participants = "(
+            SELECT t_a.id AS task_id, t_a.assigned_to AS user_id
+            FROM $tasks_table t_a
+            WHERE t_a.deleted=0 AND t_a.assigned_to > 0
+            UNION
+            SELECT t_c.id AS task_id, u_c.id AS user_id
+            FROM $tasks_table t_c
+            INNER JOIN $users_table u_c ON u_c.deleted=0 AND FIND_IN_SET(u_c.id, t_c.collaborators) > 0
+            WHERE t_c.deleted=0 AND t_c.collaborators IS NOT NULL AND t_c.collaborators != ''
+        )";
+
+        $sql = "SELECT part.user_id AS user_id,
+                       COUNT(DISTINCT $tasks_table.id) AS task_count,
+                       COUNT(DISTINCT $tasks_table.project_id) AS project_count,
+                       COALESCE(SUM(mt.total_seconds), 0) AS total_seconds
+                FROM $tasks_table
+                INNER JOIN $projects_table ON $projects_table.id = $tasks_table.project_id
+                LEFT JOIN $clients_table ON $clients_table.id = $projects_table.client_id
+                INNER JOIN $participants part ON part.task_id = $tasks_table.id $member_filter_join
+                LEFT JOIN (
+                    SELECT pt.task_id, pt.user_id, SUM($dur_pt) AS total_seconds
+                    FROM $timesheet_table pt
+                    WHERE pt.deleted=0 AND pt.status != 'open'
+                    GROUP BY pt.task_id, pt.user_id
+                ) mt ON mt.task_id = $tasks_table.id AND mt.user_id = part.user_id
+                WHERE 1=1 $where
+                GROUP BY part.user_id
+                ORDER BY part.user_id ASC";
+
+        return $this->db->query($sql)->getResult();
+    }
+
+    /**
+     * Phase 22: count unassigned tasks (no assignee, no collaborators) under same filters.
+     */
+    function get_grouped_unassigned_stats_by_task_created($options = array()) {
+        $tasks_table = $this->db->prefixTable('tasks');
+        $projects_table = $this->db->prefixTable('projects');
+        $clients_table = $this->db->prefixTable('clients');
+        $timesheet_table = $this->db->prefixTable('project_time');
+        $users_table = $this->db->prefixTable('users');
+
+        $where = " AND $tasks_table.deleted=0 AND $projects_table.deleted=0 "
+            . " AND (IFNULL($tasks_table.assigned_to,0)=0) "
+            . " AND (IFNULL($tasks_table.collaborators,'')='') ";
+        $created_from = $this->_get_clean_value($options, "created_from");
+        $created_to = $this->_get_clean_value($options, "created_to");
+        if ($created_from && $created_to) {
+            $where .= " AND $tasks_table.created_date BETWEEN '$created_from' AND '$created_to'";
+        } else if ($created_from) {
+            $where .= " AND $tasks_table.created_date >= '$created_from'";
+        } else if ($created_to) {
+            $where .= " AND $tasks_table.created_date <= '$created_to'";
+        }
+        $project_id = $this->_get_clean_value($options, "project_id");
+        if ($project_id) {
+            $where .= " AND $tasks_table.project_id=$project_id";
+        }
+        $client_id = $this->_get_clean_value($options, "client_id");
+        if ($client_id) {
+            $where .= " AND $projects_table.client_id=$client_id";
+        }
+        // Member filter / show_assigned: unassigned never matches a specific member
+        $member_id = (int) $this->_get_clean_value($options, "member_id");
+        $show_assigned_only = (int) $this->_get_clean_value($options, "show_assigned_tasks_only_user_id");
+        if ($member_id > 0 || $show_assigned_only > 0) {
+            return (object) array("task_count" => 0, "project_count" => 0, "total_seconds" => 0);
+        }
+        $search = get_array_value($options, "search");
+        if ($search) {
+            $search = $this->db->escapeLikeString($search);
+            $where .= " AND ("
+                . " $tasks_table.title LIKE '%$search%' ESCAPE '!' "
+                . " OR $projects_table.title LIKE '%$search%' ESCAPE '!' "
+                . " OR $clients_table.company_name LIKE '%$search%' ESCAPE '!' "
+                . ")";
+        }
+        $dur_pt = $this->timesheet_duration_seconds_sql("pt");
+        $sql = "SELECT COUNT(DISTINCT $tasks_table.id) AS task_count,
+                       COUNT(DISTINCT $tasks_table.project_id) AS project_count,
+                       COALESCE(SUM(mt.total_seconds), 0) AS total_seconds
+                FROM $tasks_table
+                INNER JOIN $projects_table ON $projects_table.id = $tasks_table.project_id
+                LEFT JOIN $clients_table ON $clients_table.id = $projects_table.client_id
+                LEFT JOIN (
+                    SELECT pt.task_id, SUM($dur_pt) AS total_seconds
+                    FROM $timesheet_table pt
+                    WHERE pt.deleted=0 AND pt.status != 'open'
+                    GROUP BY pt.task_id
+                ) mt ON mt.task_id = $tasks_table.id
+                WHERE 1=1 $where";
+        $row = $this->db->query($sql)->getRow();
+        return $row ? $row : (object) array("task_count" => 0, "project_count" => 0, "total_seconds" => 0);
+    }
+
+    /**
      * Phase 21: filtered tasks for one project (Level 2/3 source), one query.
      * When project_id is omitted/0, returns all projects matching the same Level-1 filters (Phase 21C export).
      */

@@ -106,8 +106,9 @@
 
         var tg = new TimesheetGrouped({
             root: "#timesheet-grouped-root",
-            projectsUrl: "<?php echo_uri('projects/timesheet_grouped_projects'); ?>",
-            membersUrl: "<?php echo_uri('projects/timesheet_grouped_members'); ?>",
+            // Phase 22: Member → Project → Task
+            membersRootUrl: "<?php echo_uri('projects/timesheet_grouped_root_members'); ?>",
+            memberProjectsUrl: "<?php echo_uri('projects/timesheet_grouped_member_projects'); ?>",
             tasksUrl: "<?php echo_uri('projects/timesheet_grouped_member_tasks'); ?>",
             entriesUrl: "<?php echo_uri('projects/timesheet_grouped_time_entries'); ?>",
             exportUrl: "<?php echo_uri('projects/timesheet_grouped_export'); ?>",

@@ -818,30 +818,35 @@ if (!function_exists('get_task_point_display')) {
 
         $for_user_id = (int) $for_user_id;
 
-        // Phase 21E: when a specific member is requested, always scope award fields to THAT member
+        // Phase 21E: when a specific member is requested, scope award fields to THAT member
         // (do not keep an assignee award from get_details joins).
+        // Phase 22: callers may pre-attach awards and set _award_scoped_for to skip N+1 reload.
         if ($for_user_id > 0) {
-            unset(
-                $task->awarded_points,
-                $task->awarded_original_points,
-                $task->point_reduction_percent,
-                $task->point_reduction_reason,
-                $task->points_completed_date,
-                $task->awarded_is_collaborator,
-                $task->awarded_participants_count
-            );
-            if (!empty($task->id) && function_exists("ensure_task_point_tables")) {
-                ensure_task_point_tables();
-                $member_award = model("App\Models\Task_point_awards_model")->get_by_task_and_user((int) $task->id, $for_user_id);
-                if ($member_award) {
-                    $task->awarded_points = $member_award->earned_points;
-                    $task->awarded_original_points = $member_award->original_points;
-                    $task->point_reduction_percent = $member_award->reduction_percent;
-                    $task->point_reduction_reason = $member_award->reduction_reason;
-                    $task->points_completed_date = $member_award->completed_date;
-                    $task->awarded_is_collaborator = $member_award->is_collaborator;
-                    $task->awarded_participants_count = $member_award->participants_count;
+            $already_scoped = isset($task->_award_scoped_for) && (int) $task->_award_scoped_for === $for_user_id;
+            if (!$already_scoped) {
+                unset(
+                    $task->awarded_points,
+                    $task->awarded_original_points,
+                    $task->point_reduction_percent,
+                    $task->point_reduction_reason,
+                    $task->points_completed_date,
+                    $task->awarded_is_collaborator,
+                    $task->awarded_participants_count
+                );
+                if (!empty($task->id) && function_exists("ensure_task_point_tables")) {
+                    ensure_task_point_tables();
+                    $member_award = model("App\Models\Task_point_awards_model")->get_by_task_and_user((int) $task->id, $for_user_id);
+                    if ($member_award) {
+                        $task->awarded_points = $member_award->earned_points;
+                        $task->awarded_original_points = $member_award->original_points;
+                        $task->point_reduction_percent = $member_award->reduction_percent;
+                        $task->point_reduction_reason = $member_award->reduction_reason;
+                        $task->points_completed_date = $member_award->completed_date;
+                        $task->awarded_is_collaborator = $member_award->is_collaborator;
+                        $task->awarded_participants_count = $member_award->participants_count;
+                    }
                 }
+                $task->_award_scoped_for = $for_user_id;
             }
         }
 
