@@ -1969,9 +1969,14 @@ class Projects extends Security_Controller {
             return $blank;
         }
 
-        // Score — same helper as Tasks page / Excel
+        // Phase 21E: Score — same helpers as Tasks page / Excel (member-scoped when logger known)
+        $for_user_id = isset($timesheet_row->user_id) ? (int) $timesheet_row->user_id : 0;
+        $score_opts = array("compact" => true, "show_reason" => true);
+        if ($for_user_id > 0) {
+            $score_opts["for_user_id"] = $for_user_id;
+        }
         $score = function_exists("get_task_points_badge_html")
-            ? get_task_points_badge_html($task, array("compact" => true, "show_reason" => true))
+            ? get_task_points_badge_html($task, $score_opts)
             : "-";
 
         $start_date = "-";
@@ -2013,7 +2018,7 @@ class Projects extends Security_Controller {
         }
 
         $archived = function_exists("get_task_gained_points_value")
-            ? format_task_point_value(get_task_gained_points_value($task))
+            ? format_task_point_value(get_task_gained_points_value($task, $for_user_id))
             : "0";
 
         return array(
@@ -2322,7 +2327,15 @@ class Projects extends Security_Controller {
     }
 
     /**
+     * Phase 21D: trim labels for Project / Client / Task / member display.
+     */
+    private function _tg_trim($value) {
+        return trim((string) $value);
+    }
+
+    /**
      * Phase 21: shared filter options for grouped timesheet Details.
+     * Own/specific timesheet permission restricts member_id so Level1/Excel match screen.
      */
     private function _timesheet_grouped_filter_options() {
         $options = array(
@@ -2336,6 +2349,21 @@ class Projects extends Security_Controller {
         $only = $this->show_assigned_tasks_only_user_id();
         if ($only) {
             $options["show_assigned_tasks_only_user_id"] = $only;
+        }
+
+        // Restrict to members the viewer may manage/see (own / specific)
+        $allowed = $this->_get_members_to_manage_timesheet();
+        if (is_array($allowed) && $allowed) {
+            $allowed_ids = array_values(array_unique(array_map("intval", $allowed)));
+            $options["allowed_member_ids"] = $allowed_ids;
+            $mid = (int) $options["member_id"];
+            if ($mid > 0 && !in_array($mid, $allowed_ids, true)) {
+                // Asking for a member outside permission → empty result set
+                $options["member_id"] = -1;
+            } else if ($mid <= 0 && count($allowed_ids) === 1) {
+                // Own-only: only this member's tasks (same as screen expand)
+                $options["member_id"] = $allowed_ids[0];
+            }
         }
         return $options;
     }
@@ -2397,8 +2425,8 @@ class Projects extends Security_Controller {
             }
             $data[] = array(
                 "project_id" => (int) $row->project_id,
-                "project_title" => $row->project_title,
-                "client_name" => $row->client_name ? $row->client_name : "",
+                "project_title" => $this->_tg_trim($row->project_title),
+                "client_name" => $row->client_name ? $this->_tg_trim($row->client_name) : "",
                 "task_count" => (int) $row->task_count,
                 "member_count" => (int) $member_count,
                 "total_seconds" => $seconds,
@@ -2442,10 +2470,11 @@ class Projects extends Security_Controller {
             $task_ids[$tid] = $tid;
             $participants = function_exists("get_task_participants") ? get_task_participants($task) : array();
             if (!$participants) {
-                $has_unassigned = true;
-                if ($member_filter > 0) {
+                // Own/specific timesheet viewers do not get the Unassigned bucket
+                if ($member_filter > 0 || $allowed_map !== null) {
                     continue;
                 }
+                $has_unassigned = true;
                 if (!isset($by_member[0])) {
                     $by_member[0] = array();
                 }
@@ -2536,7 +2565,7 @@ class Projects extends Security_Controller {
             $avatar = "";
             if ($uid > 0) {
                 $u = get_array_value($users_map, $uid);
-                $name = $u ? trim($u->first_name . " " . $u->last_name) : ("#" . $uid);
+                $name = $u ? $this->_tg_trim($u->first_name . " " . $u->last_name) : ("#" . $uid);
                 $avatar = $u ? get_avatar($u->image) : get_avatar("");
             }
             $data[] = array(
@@ -2562,14 +2591,20 @@ class Projects extends Security_Controller {
             return strcasecmp($a["name"], $b["name"]);
         });
 
-        // Fix Level-1 member_count accuracy: include unassigned bucket
+        // Only tasks visible under allowed members (no chip leak of others' tasks)
+        $visible_task_ids = array();
+        foreach ($by_member as $m_task_ids) {
+            foreach ($m_task_ids as $tid) {
+                $visible_task_ids[(int) $tid] = (int) $tid;
+            }
+        }
         $member_count = count($data);
 
         echo json_encode(array(
             "success" => true,
             "data" => $data,
             "member_count" => $member_count,
-            "task_count" => count($task_ids),
+            "task_count" => count($visible_task_ids),
         ));
     }
 
@@ -2657,17 +2692,29 @@ class Projects extends Security_Controller {
                 $full = $task;
             }
 
+            // Phase 21D: Archived score = this member's rise_task_point_awards.earned_points only (no sync)
+            $has_award = isset($full->awarded_points) && $full->awarded_points !== null && $full->awarded_points !== "";
+            $award_obj = null;
+            if ($has_award) {
+                $award_obj = (object) array(
+                    "earned_points" => $full->awarded_points,
+                    "original_points" => isset($full->awarded_original_points) ? $full->awarded_original_points : (isset($full->points) ? $full->points : 0),
+                    "reduction_percent" => isset($full->point_reduction_percent) ? $full->point_reduction_percent : 0,
+                    "participants_count" => isset($full->awarded_participants_count) ? $full->awarded_participants_count : 1,
+                    "is_collaborator" => !empty($full->awarded_is_collaborator) ? 1 : 0,
+                );
+            }
+            $score_info = $this->_timesheet_grouped_score_text($full, $user_id, $award_obj);
+            $archived = $score_info["archived"];
             $score_html = "-";
-            $archived = "0";
-            if ($user_id > 0 && function_exists("get_task_points_badge_html")) {
+            if ($user_id > 0 && $has_award && function_exists("get_task_points_badge_html")) {
                 $score_html = get_task_points_badge_html($full, array(
                     "compact" => true,
                     "show_reason" => true,
                     "for_user_id" => $user_id,
                 ));
-                $archived = function_exists("format_task_point_value")
-                    ? format_task_point_value(get_task_gained_points_value($full, $user_id))
-                    : "0";
+            } else if ($user_id > 0) {
+                $score_html = "<span class='badge mt0 task-points-badge'>" . htmlspecialchars($score_info["score"]) . "</span>";
             }
 
             $start_date = "-";
@@ -2702,7 +2749,7 @@ class Projects extends Security_Controller {
 
             $data[] = array(
                 "task_id" => $tid,
-                "title" => $full->title,
+                "title" => $this->_tg_trim($full->title),
                 "score_html" => $score_html,
                 "start_date" => $start_date,
                 "deadline" => $deadline,
@@ -2795,6 +2842,511 @@ class Projects extends Security_Controller {
         }
 
         echo json_encode(array("success" => true, "data" => $data));
+    }
+
+    /**
+     * Phase 21C: human filter summary for Excel title / Print header.
+     */
+    private function _timesheet_grouped_filter_label($options) {
+        $parts = array();
+        $from = get_array_value($options, "created_from");
+        $to = get_array_value($options, "created_to");
+        $fmt_d = function ($d) {
+            if (!$d) {
+                return "…";
+            }
+            $ts = strtotime($d);
+            return $ts ? date("d-m-Y", $ts) : $d;
+        };
+        if ($from || $to) {
+            $parts[] = "Tasks created " . $fmt_d($from) . " to " . $fmt_d($to);
+        }
+        $member_id = (int) get_array_value($options, "member_id");
+        if ($member_id > 0) {
+            $u = $this->Users_model->get_one($member_id);
+            $name = $u && $u->id ? $this->_tg_trim($u->first_name . " " . $u->last_name) : ("#" . $member_id);
+            $parts[] = "Member: " . $name;
+        }
+        $project_id = (int) get_array_value($options, "project_id");
+        if ($project_id > 0) {
+            $p = $this->Projects_model->get_one($project_id);
+            $parts[] = "Project: " . ($p && $p->title ? $this->_tg_trim($p->title) : ("#" . $project_id));
+        }
+        $client_id = (int) get_array_value($options, "client_id");
+        if ($client_id > 0) {
+            $c = $this->Clients_model->get_one($client_id);
+            $parts[] = "Client: " . ($c && $c->company_name ? $this->_tg_trim($c->company_name) : ("#" . $client_id));
+        }
+        $search = trim((string) get_array_value($options, "search"));
+        if ($search !== "") {
+            $parts[] = "Search: " . $search;
+        }
+        return $parts ? implode(" | ", $parts) : "All tasks";
+    }
+
+    /**
+     * Phase 21E: Score/Archived from the same helpers as Tasks page / Tasks Excel.
+     * When awards exist, text describes what was actually awarded (no post-hoc split).
+     */
+    private function _timesheet_grouped_score_text($task, $uid, $award = null) {
+        if ($uid <= 0) {
+            return array("score" => "-", "archived" => "0");
+        }
+
+        $task_for_user = is_object($task) ? clone $task : $task;
+        if ($award) {
+            $task_for_user->awarded_points = $award->earned_points;
+            $task_for_user->awarded_original_points = isset($award->original_points) ? $award->original_points : (isset($task->points) ? $task->points : 0);
+            $task_for_user->point_reduction_percent = isset($award->reduction_percent) ? $award->reduction_percent : 0;
+            $task_for_user->point_reduction_reason = isset($award->reduction_reason) ? $award->reduction_reason : "";
+            $task_for_user->points_completed_date = isset($award->completed_date) ? $award->completed_date : "";
+            $task_for_user->awarded_is_collaborator = !empty($award->is_collaborator) ? 1 : 0;
+            $task_for_user->awarded_participants_count = !empty($award->participants_count) ? (int) $award->participants_count : 1;
+        } else {
+            // No award for this member: keep awarded_* unset so display does not invent a split from current collabs on Done tasks
+            unset($task_for_user->awarded_points, $task_for_user->awarded_original_points, $task_for_user->awarded_participants_count, $task_for_user->awarded_is_collaborator);
+        }
+
+        $score = function_exists("get_task_points_score_plain_text")
+            ? get_task_points_score_plain_text($task_for_user, array("for_user_id" => $uid, "compact" => true))
+            : "-";
+        $archived = function_exists("format_task_point_value")
+            ? format_task_point_value($award ? $award->earned_points : 0)
+            : ($award ? (string) $award->earned_points : "0");
+        return array("score" => trim((string) $score), "archived" => $archived);
+    }
+
+    /**
+     * Phase 21C: flat rows matching Grouped screen (task created filter).
+     * One row per member×task×time-entry; zero-time tasks → one row with 00:00:00.
+     * Batched: tasks, time entries, awards, users — no per-row queries.
+     */
+    private function _timesheet_grouped_build_flat_rows($options) {
+        $member_filter = (int) get_array_value($options, "member_id");
+        if ($member_filter < 0) {
+            return array("rows" => array(), "total_seconds" => 0, "task_ids" => array(), "project_ids" => array());
+        }
+
+        $allowed = $this->_get_members_to_manage_timesheet();
+        $allowed_map = null;
+        if (is_array($allowed)) {
+            $allowed_map = array_fill_keys(array_map("intval", $allowed), true);
+            // Own/specific: never emit other members' rows (or unassigned)
+            if ($member_filter <= 0 && count($allowed_map) === 1) {
+                $member_filter = (int) array_key_first($allowed_map);
+            } else if ($member_filter > 0 && !isset($allowed_map[$member_filter])) {
+                return array("rows" => array(), "total_seconds" => 0, "task_ids" => array(), "project_ids" => array());
+            }
+        }
+
+        // Same task set as Grouped Level 1/3 (Timesheets_model), not Tasks_model->get_details
+        $task_options = array(
+            "created_from" => get_array_value($options, "created_from"),
+            "created_to" => get_array_value($options, "created_to"),
+            "project_id" => get_array_value($options, "project_id"),
+            "client_id" => get_array_value($options, "client_id"),
+            "member_id" => $member_filter > 0 ? $member_filter : null,
+            "search" => get_array_value($options, "search"),
+        );
+        $only = get_array_value($options, "show_assigned_tasks_only_user_id");
+        if ($only) {
+            $task_options["show_assigned_tasks_only_user_id"] = $only;
+        }
+
+        $tasks = $this->Timesheets_model->get_grouped_tasks_for_project($task_options);
+        if (!$tasks) {
+            return array("rows" => array(), "total_seconds" => 0, "task_ids" => array(), "project_ids" => array());
+        }
+
+        $task_ids = array();
+        $project_ids = array();
+        $tasks_by_id = array();
+        foreach ($tasks as $task) {
+            $tid = (int) $task->id;
+            $task_ids[$tid] = $tid;
+            $tasks_by_id[$tid] = $task;
+            if (!empty($task->project_id)) {
+                $project_ids[(int) $task->project_id] = (int) $task->project_id;
+            }
+        }
+
+        $db = db_connect("default");
+        $awards_by_task_user = array();
+        $id_list = implode(",", $task_ids);
+        $awards_table = $db->prefixTable("task_point_awards");
+        foreach ($db->query("SELECT * FROM $awards_table WHERE deleted=0 AND task_id IN ($id_list)")->getResult() as $ar) {
+            $awards_by_task_user[(int) $ar->task_id][(int) $ar->user_id] = $ar;
+        }
+
+        $entries = $this->Timesheets_model->get_time_entries_for_tasks(array_keys($task_ids), $member_filter > 0 ? $member_filter : 0);
+        $entries_by_task_user = array();
+        foreach ($entries as $en) {
+            $tid = (int) $en->task_id;
+            $uid = (int) $en->user_id;
+            if ($allowed_map !== null && !isset($allowed_map[$uid])) {
+                continue;
+            }
+            $entries_by_task_user[$tid][$uid][] = $en;
+        }
+
+        $member_ids = array();
+        $task_member_map = array();
+        foreach ($tasks_by_id as $tid => $task) {
+            $participants = function_exists("get_task_participants") ? get_task_participants($task) : array();
+            if (!$participants) {
+                // Unassigned only when viewer can see all members (not own/specific)
+                if ($member_filter > 0 || $allowed_map !== null) {
+                    continue;
+                }
+                $task_member_map[$tid][0] = true;
+                continue;
+            }
+            foreach ($participants as $uid) {
+                $uid = (int) $uid;
+                if ($member_filter > 0 && $uid !== $member_filter) {
+                    continue;
+                }
+                if ($allowed_map !== null && !isset($allowed_map[$uid])) {
+                    continue;
+                }
+                $task_member_map[$tid][$uid] = true;
+                if ($uid > 0) {
+                    $member_ids[$uid] = $uid;
+                }
+            }
+            // Also resolve collaborator names
+            if (!empty($task->collaborators)) {
+                foreach (explode(",", $task->collaborators) as $cid) {
+                    $cid = (int) $cid;
+                    if ($cid > 0) {
+                        $member_ids[$cid] = $cid;
+                    }
+                }
+            }
+            if (!empty($task->assigned_to)) {
+                $member_ids[(int) $task->assigned_to] = (int) $task->assigned_to;
+            }
+        }
+
+        $users_map = array();
+        if ($member_ids) {
+            $users_table = $db->prefixTable("users");
+            $u_list = implode(",", $member_ids);
+            foreach ($db->query("SELECT id, first_name, last_name, image, user_type FROM $users_table WHERE id IN ($u_list)")->getResult() as $u) {
+                $users_map[(int) $u->id] = $u;
+            }
+        }
+
+        $only_hours = get_setting("users_can_input_only_total_hours_instead_of_period");
+        $flat = array();
+        $total_seconds = 0;
+        $exported_task_ids = array();
+        $exported_project_ids = array();
+
+        foreach ($tasks_by_id as $tid => $task) {
+            if (empty($task_member_map[$tid])) {
+                continue;
+            }
+            $exported_task_ids[$tid] = $tid;
+            $exported_project_ids[(int) $task->project_id] = (int) $task->project_id;
+
+            $project_title = $this->_tg_trim(isset($task->project_title) ? $task->project_title : "");
+            $client_name = !empty($task->client_name) ? $this->_tg_trim($task->client_name) : "-";
+            $task_title = $this->_tg_trim($task->title);
+
+            $assigned_name = "-";
+            if (!empty($task->assigned_to_user)) {
+                $assigned_name = $this->_tg_trim($task->assigned_to_user);
+            } else if (!empty($task->assigned_to) && isset($users_map[(int) $task->assigned_to])) {
+                $au = $users_map[(int) $task->assigned_to];
+                $assigned_name = $this->_tg_trim($au->first_name . " " . $au->last_name);
+            }
+
+            $collab_names = "-";
+            if (!empty($task->collaborators)) {
+                $names = array();
+                foreach (explode(",", $task->collaborators) as $cid) {
+                    $cid = (int) $cid;
+                    if ($cid > 0 && isset($users_map[$cid])) {
+                        $names[] = $this->_tg_trim($users_map[$cid]->first_name . " " . $users_map[$cid]->last_name);
+                    }
+                }
+                if ($names) {
+                    $collab_names = implode(", ", $names);
+                }
+            }
+
+            $start_date = (!empty($task->start_date) && is_date_exists($task->start_date)) ? format_to_date($task->start_date, false) : "-";
+            $deadline = "-";
+            if (!empty($task->deadline) && is_date_exists($task->deadline)) {
+                $deadline = format_to_date($task->deadline, false);
+            }
+            $created_at = (!empty($task->created_date) && is_date_exists($task->created_date)) ? format_to_date($task->created_date, false) : "-";
+            $status = !empty($task->status_key_name) ? app_lang($task->status_key_name) : (isset($task->status_title) ? $task->status_title : "-");
+
+            foreach ($task_member_map[$tid] as $uid => $_) {
+                $uid = (int) $uid;
+                $member_name = app_lang("unassigned") ?: "Unassigned";
+                if ($uid > 0 && isset($users_map[$uid])) {
+                    $member_name = $this->_tg_trim($users_map[$uid]->first_name . " " . $users_map[$uid]->last_name);
+                }
+
+                $award = ($uid > 0 && isset($awards_by_task_user[$tid][$uid])) ? $awards_by_task_user[$tid][$uid] : null;
+                $score_info = $this->_timesheet_grouped_score_text($task, $uid, $award);
+                $score = $score_info["score"];
+                $archived = $score_info["archived"];
+
+                $member_entries = ($uid > 0 && isset($entries_by_task_user[$tid][$uid])) ? $entries_by_task_user[$tid][$uid] : array();
+                if ($uid === 0 && isset($entries_by_task_user[$tid])) {
+                    $member_entries = array();
+                    foreach ($entries_by_task_user[$tid] as $list) {
+                        foreach ($list as $en) {
+                            $member_entries[] = $en;
+                        }
+                    }
+                }
+
+                if (!$member_entries) {
+                    $flat[] = array(
+                        "member" => $member_name,
+                        "member_id" => $uid,
+                        "project" => $project_title,
+                        "project_id" => (int) $task->project_id,
+                        "client" => $client_name,
+                        "task" => $task_title,
+                        "task_id" => $tid,
+                        "date" => "",
+                        "end_time" => "",
+                        "total" => "00:00:00",
+                        "total_seconds" => 0,
+                        "hours" => "0",
+                        "note" => "",
+                        "id" => $tid,
+                        "score" => $score,
+                        "start_date" => $start_date,
+                        "deadline" => $deadline,
+                        "assigned_to" => $assigned_name,
+                        "collaborators" => $collab_names,
+                        "status" => $status,
+                        "created_at" => $created_at,
+                        "archived_score" => $archived,
+                        "sort_date" => "",
+                    );
+                    continue;
+                }
+
+                foreach ($member_entries as $en) {
+                    $secs = isset($en->duration_seconds) ? (int) $en->duration_seconds : 0;
+                    if ($secs < 0) {
+                        $secs = 0;
+                    }
+                    $total_seconds += $secs;
+                    $duration = convert_seconds_to_time_format($secs);
+                    $date_cell = $only_hours ? format_to_date($en->start_time) : format_to_datetime($en->start_time);
+                    $end_cell = $only_hours ? format_to_date($en->end_time) : format_to_datetime($en->end_time);
+                    $flat[] = array(
+                        "member" => $member_name,
+                        "member_id" => $uid,
+                        "project" => $project_title,
+                        "project_id" => (int) $task->project_id,
+                        "client" => $client_name,
+                        "task" => $task_title,
+                        "task_id" => $tid,
+                        "date" => $date_cell,
+                        "end_time" => $end_cell,
+                        "total" => $duration,
+                        "total_seconds" => $secs,
+                        "hours" => to_decimal_format(convert_time_string_to_decimal($duration)),
+                        "note" => $en->note ? $en->note : "",
+                        "id" => $tid,
+                        "score" => $score,
+                        "start_date" => $start_date,
+                        "deadline" => $deadline,
+                        "assigned_to" => $assigned_name,
+                        "collaborators" => $collab_names,
+                        "status" => $status,
+                        "created_at" => $created_at,
+                        "archived_score" => $archived,
+                        "sort_date" => $en->start_time,
+                    );
+                }
+            }
+        }
+
+        usort($flat, function ($a, $b) {
+            $c = strcasecmp($a["project"], $b["project"]);
+            if ($c) {
+                return $c;
+            }
+            $c = strcasecmp($a["member"], $b["member"]);
+            if ($c) {
+                return $c;
+            }
+            $c = strcasecmp($a["task"], $b["task"]);
+            if ($c) {
+                return $c;
+            }
+            return strcmp((string) $a["sort_date"], (string) $b["sort_date"]);
+        });
+
+        return array(
+            "rows" => $flat,
+            "total_seconds" => $total_seconds,
+            "task_ids" => array_values($exported_task_ids),
+            "project_ids" => array_values($exported_project_ids),
+        );
+    }
+
+    private function _timesheet_grouped_flat_to_datatable_row($r) {
+        return array(
+            $r["member"],
+            $r["project"],
+            $r["client"],
+            $r["task"],
+            $r["sort_date"] ?: "",
+            $r["date"] !== "" ? $r["date"] : "-",
+            $r["sort_date"] ?: "",
+            $r["end_time"] !== "" ? $r["end_time"] : "-",
+            $r["total"],
+            $r["hours"],
+            $r["note"],
+            $r["id"],
+            $r["score"],
+            $r["start_date"],
+            $r["deadline"],
+            $r["assigned_to"],
+            $r["collaborators"],
+            $r["status"],
+            $r["created_at"],
+            $r["archived_score"],
+            "", // options
+        );
+    }
+
+    /**
+     * Phase 21C: DataTable source — same flat rows as Excel/Print (toolbar = task created filters).
+     */
+    function timesheet_grouped_flat_list_data() {
+        $this->access_only_team_members();
+        if (!$this->can_view_timesheet(0, true)) {
+            echo json_encode(array("data" => array()));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        $options = $this->_timesheet_grouped_filter_options();
+        $built = $this->_timesheet_grouped_build_flat_rows($options);
+        $data = array();
+        foreach ($built["rows"] as $r) {
+            $data[] = $this->_timesheet_grouped_flat_to_datatable_row($r);
+        }
+        echo json_encode(array(
+            "data" => $data,
+            "recordsTotal" => count($data),
+            "recordsFiltered" => count($data),
+            "filter_label" => $this->_timesheet_grouped_filter_label($options),
+            "total_seconds" => $built["total_seconds"],
+            "total_time" => convert_seconds_to_time_format($built["total_seconds"]),
+            "task_count" => count($built["task_ids"]),
+            "project_count" => count($built["project_ids"]),
+        ));
+    }
+
+    /**
+     * Phase 21C: Excel (.xlsx) or Print HTML from current toolbar filters.
+     */
+    function timesheet_grouped_export() {
+        $this->access_only_team_members();
+        if (!$this->can_view_timesheet(0, true)) {
+            app_redirect("forbidden");
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $format = strtolower((string) ($this->_tg_input("format") ?: "xlsx"));
+        $options = $this->_timesheet_grouped_filter_options();
+        $built = $this->_timesheet_grouped_build_flat_rows($options);
+        $label = $this->_timesheet_grouped_filter_label($options);
+        $headers = array(
+            app_lang("member"),
+            app_lang("project"),
+            app_lang("client"),
+            app_lang("task"),
+            app_lang("date"),
+            app_lang("end_time"),
+            app_lang("total"),
+            app_lang("hours"),
+            app_lang("note"),
+            app_lang("id"),
+            app_lang("selected_month_task_points"),
+            app_lang("start_date"),
+            app_lang("deadline"),
+            app_lang("assigned_to"),
+            app_lang("collaborators"),
+            app_lang("status"),
+            app_lang("created_at"),
+            app_lang("gained_points"),
+        );
+
+        if ($format === "print") {
+            $html = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>" . htmlspecialchars($label) . "</title>";
+            $html .= "<style>body{font-family:sans-serif;font-size:12px} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:4px 6px;text-align:left} th{background:#f5f5f5} .num{text-align:right;font-variant-numeric:tabular-nums} h1{font-size:14px}</style></head><body>";
+            $html .= "<h1>" . htmlspecialchars($label) . "</h1><table><thead><tr>";
+            foreach ($headers as $h) {
+                $html .= "<th>" . htmlspecialchars($h) . "</th>";
+            }
+            $html .= "</tr></thead><tbody>";
+            foreach ($built["rows"] as $r) {
+                $html .= "<tr>";
+                $cells = array($r["member"], $r["project"], $r["client"], $r["task"], $r["date"], $r["end_time"], $r["total"], $r["hours"], $r["note"], $r["id"], $r["score"], $r["start_date"], $r["deadline"], $r["assigned_to"], $r["collaborators"], $r["status"], $r["created_at"], $r["archived_score"]);
+                foreach ($cells as $i => $c) {
+                    $cls = ($i === 6 || $i === 7) ? " class='num'" : "";
+                    $html .= "<td$cls>" . htmlspecialchars((string) $c) . "</td>";
+                }
+                $html .= "</tr>";
+            }
+            $total_label = convert_seconds_to_time_format($built["total_seconds"]);
+            $html .= "</tbody><tfoot><tr><th colspan='6'>Total</th><th class='num'>" . htmlspecialchars($total_label) . "</th><th colspan='11'></th></tr></tfoot></table>";
+            $html .= "<script>window.onload=function(){window.print();}</script></body></html>";
+            echo $html;
+            return;
+        }
+
+        // xlsx via PhpSpreadsheet
+        require_once(APPPATH . "ThirdParty/PHPOffice-PhpSpreadsheet/vendor/autoload.php");
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle("Timesheets");
+        $sheet->setCellValue("A1", $label);
+        $sheet->mergeCells("A1:R1");
+        $col = 1;
+        foreach ($headers as $h) {
+            $sheet->setCellValueByColumnAndRow($col, 2, $h);
+            $col++;
+        }
+        $rowNum = 3;
+        foreach ($built["rows"] as $r) {
+            $cells = array($r["member"], $r["project"], $r["client"], $r["task"], $r["date"], $r["end_time"], $r["total"], $r["hours"], $r["note"], $r["id"], $r["score"], $r["start_date"], $r["deadline"], $r["assigned_to"], $r["collaborators"], $r["status"], $r["created_at"], $r["archived_score"]);
+            $col = 1;
+            foreach ($cells as $c) {
+                $sheet->setCellValueByColumnAndRow($col, $rowNum, $c);
+                $col++;
+            }
+            $rowNum++;
+        }
+        // Single Total row — sum of exported duration only (never Score/Archived)
+        $sheet->setCellValueByColumnAndRow(1, $rowNum, "Total");
+        $sheet->setCellValueByColumnAndRow(7, $rowNum, convert_seconds_to_time_format($built["total_seconds"]));
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filename = "timesheets_" . date("Ymd_His") . ".xlsx";
+        header("Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        header("Content-Disposition: attachment; filename=\"" . $filename . "\"");
+        header("Cache-Control: max-age=0");
+        $writer->save("php://output");
+        exit();
     }
 
     /* load all timesheets summary view */

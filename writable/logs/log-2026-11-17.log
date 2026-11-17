@@ -5,3 +5,15 @@ in FCPATH\tests\test_phase18b_award_freeze.php on line 84.
 CRITICAL - 2026-11-17 13:30:58 --> Call to a member function getPost() on null
 in APPPATH\Controllers\Projects.php on line 2395.
  1 FCPATH\tests\test_phase21_timesheet_grouped.php(143): App\Controllers\Projects->timesheet_grouped_members()
+CRITICAL - 2026-11-17 14:10:43 --> Could not open "\\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\writable/phase21c_test_export.xlsx" for reading.
+in APPPATH\ThirdParty\PHPOffice-PhpSpreadsheet\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\Shared\File.php on line 153.
+ 1 APPPATH\ThirdParty\PHPOffice-PhpSpreadsheet\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\IOFactory.php(129): PhpOffice\PhpSpreadsheet\Shared\File::assertFile('FCPATH\\writable\\phase21c_test_export.xlsx')
+ 2 APPPATH\ThirdParty\PHPOffice-PhpSpreadsheet\vendor\phpoffice\phpspreadsheet\src\PhpSpreadsheet\IOFactory.php(100): PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile('FCPATH\\writable\\phase21c_test_export.xlsx', null)
+ 3 FCPATH\tests\test_phase21c_export.php(223): PhpOffice\PhpSpreadsheet\IOFactory::load('FCPATH\\writable\\phase21c_test_export.xlsx')
+CRITICAL - 2026-11-17 15:38:32 --> Cannot modify header information - headers already sent by (output started at \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\test_phase21d_trim_split_perms.php:53)
+in APPPATH\Helpers\general_helper.php on line 1953.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler(2, 'Cannot modify header information - headers already sent by (output started at \\\\WSL.LOCALHOST\\UBUNTU\\home\\gokul\\projects\\crm_sunrise\\tests\\test_phase21d_trim_split_perms.php:53)', 'APPPATH\\Helpers\\general_helper.php', 1953)
+ 2 APPPATH\Helpers\general_helper.php(1953): header('Location:http://127.0.0.1/index.php/signin')
+ 3 APPPATH\Controllers\Security_Controller.php(25): app_redirect('signin')
+ 4 APPPATH\Controllers\Projects.php(19): App\Controllers\Security_Controller->__construct()
+ 5 FCPATH\tests\test_phase21d_trim_split_perms.php(55): App\Controllers\Projects->__construct()

@@ -42,6 +42,7 @@ $lang["table"] = "Table";
 $lang["expand_all"] = "Expand all";
 $lang["collapse_all"] = "Collapse all";
 $lang["excel_exports_by_entry_date"] = "Excel exports time entries by entry date";
+$lang["excel_exports_current_filters"] = "Exports match the current toolbar filters";
 $lang["timesheet_grouped_caption"] = "Tasks created between {from} and {to}. Time shows all time logged on these tasks.";
 $lang["no_tasks_created_in_this_range"] = "No tasks created in this range";
 $lang["unassigned"] = "Unassigned";

@@ -629,19 +629,23 @@ class Timesheets_model extends Crud_model {
 
     /**
      * Phase 21: filtered tasks for one project (Level 2/3 source), one query.
+     * When project_id is omitted/0, returns all projects matching the same Level-1 filters (Phase 21C export).
      */
     function get_grouped_tasks_for_project($options = array()) {
         $tasks_table = $this->db->prefixTable('tasks');
         $projects_table = $this->db->prefixTable('projects');
+        $clients_table = $this->db->prefixTable('clients');
         $users_table = $this->db->prefixTable('users');
         $task_status_table = $this->db->prefixTable('task_status');
 
         $project_id = (int) $this->_get_clean_value($options, "project_id");
-        if (!$project_id) {
-            return array();
+
+        // Same base filters as get_grouped_projects_by_task_created (screen Level 1)
+        $where = " AND $tasks_table.deleted=0 AND $projects_table.deleted=0 ";
+        if ($project_id > 0) {
+            $where .= " AND $tasks_table.project_id=$project_id ";
         }
 
-        $where = " AND $tasks_table.deleted=0 AND $tasks_table.project_id=$project_id ";
         $created_from = $this->_get_clean_value($options, "created_from");
         $created_to = $this->_get_clean_value($options, "created_to");
         if ($created_from && $created_to) {
@@ -650,6 +654,11 @@ class Timesheets_model extends Crud_model {
             $where .= " AND $tasks_table.created_date >= '$created_from'";
         } else if ($created_to) {
             $where .= " AND $tasks_table.created_date <= '$created_to'";
+        }
+
+        $client_id = $this->_get_clean_value($options, "client_id");
+        if ($client_id) {
+            $where .= " AND $projects_table.client_id=$client_id";
         }
 
         $member_id = (int) $this->_get_clean_value($options, "member_id");
@@ -664,7 +673,22 @@ class Timesheets_model extends Crud_model {
         $search = get_array_value($options, "search");
         if ($search) {
             $search = $this->db->escapeLikeString($search);
-            $where .= " AND $tasks_table.title LIKE '%$search%' ESCAPE '!' ";
+            if ($project_id > 0) {
+                $where .= " AND $tasks_table.title LIKE '%$search%' ESCAPE '!' ";
+            } else {
+                // Match Level 1 search (task / project / client / member name)
+                $where .= " AND ("
+                    . " $tasks_table.title LIKE '%$search%' ESCAPE '!' "
+                    . " OR $projects_table.title LIKE '%$search%' ESCAPE '!' "
+                    . " OR $clients_table.company_name LIKE '%$search%' ESCAPE '!' "
+                    . " OR EXISTS ("
+                    . "   SELECT 1 FROM $users_table u "
+                    . "   WHERE u.deleted=0 AND ("
+                    . "     u.id=$tasks_table.assigned_to OR FIND_IN_SET(u.id, $tasks_table.collaborators)"
+                    . "   ) AND CONCAT(u.first_name,' ',u.last_name) LIKE '%$search%' ESCAPE '!'"
+                    . " )"
+                    . ")";
+            }
         }
 
         $sql = "SELECT $tasks_table.*,
@@ -674,14 +698,52 @@ class Timesheets_model extends Crud_model {
                        CONCAT($users_table.first_name, ' ', $users_table.last_name) AS assigned_to_user,
                        $users_table.image AS assigned_to_avatar,
                        $users_table.user_type AS user_type,
-                       $projects_table.title AS project_title
+                       $projects_table.title AS project_title,
+                       $clients_table.company_name AS client_name
                 FROM $tasks_table
+                INNER JOIN $projects_table ON $projects_table.id = $tasks_table.project_id
+                LEFT JOIN $clients_table ON $clients_table.id = $projects_table.client_id
                 LEFT JOIN $task_status_table ON $task_status_table.id = $tasks_table.status_id
                 LEFT JOIN $users_table ON $users_table.id = $tasks_table.assigned_to
-                LEFT JOIN $projects_table ON $projects_table.id = $tasks_table.project_id
                 WHERE 1=1 $where
-                ORDER BY $tasks_table.title ASC";
+                ORDER BY $projects_table.title ASC, $tasks_table.title ASC";
 
+        return $this->db->query($sql)->getResult();
+    }
+
+    /**
+     * Phase 21C: all closed time entries for task ids (optional user filter), one query.
+     */
+    function get_time_entries_for_tasks($task_ids = array(), $user_id = 0) {
+        $timesheet_table = $this->db->prefixTable('project_time');
+        $users_table = $this->db->prefixTable('users');
+        $ids = array();
+        foreach ((array) $task_ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        if (!$ids) {
+            return array();
+        }
+        $id_list = implode(",", $ids);
+        $user_where = "";
+        $user_id = (int) $user_id;
+        if ($user_id > 0) {
+            $user_where = " AND $timesheet_table.user_id=$user_id ";
+        }
+        $dur = $this->timesheet_duration_seconds_sql($timesheet_table);
+        $sql = "SELECT $timesheet_table.*,
+                       ($dur) AS duration_seconds,
+                       CONCAT($users_table.first_name, ' ', $users_table.last_name) AS logged_by_user,
+                       $users_table.image AS logged_by_avatar
+                FROM $timesheet_table
+                LEFT JOIN $users_table ON $users_table.id = $timesheet_table.user_id
+                WHERE $timesheet_table.deleted=0 AND $timesheet_table.status != 'open'
+                  AND $timesheet_table.task_id IN ($id_list)
+                  $user_where
+                ORDER BY $timesheet_table.task_id ASC, $timesheet_table.user_id ASC, $timesheet_table.start_time ASC";
         return $this->db->query($sql)->getResult();
     }
 

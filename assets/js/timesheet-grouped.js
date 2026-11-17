@@ -1,6 +1,6 @@
 /**
- * Phase 21 — Timesheets Details grouped view (Project → Member → Task → entries).
- * Excel/Print remain on the classic DataTable; this module does not alter export.
+ * Phase 21/21C — Timesheets Details grouped view + toolbar-driven Excel/Print.
+ * Excel/Print POST live toolbar filters to timesheet_grouped_export (task created date).
  */
 (function (window, $) {
     "use strict";
@@ -101,6 +101,33 @@
                 self.reload();
             }
         });
+        // Phase 21C: Excel/Print use live toolbar values (Apply not required)
+        this.$root.on("click", "[data-tg-export]", function () {
+            self.exportFile($(this).data("tg-export") || "xlsx");
+        });
+    };
+
+    TimesheetGrouped.prototype.exportFile = function (format) {
+        var url = this.opts.exportUrl;
+        if (!url) {
+            return;
+        }
+        var filters = this.filters();
+        var $form = $("<form>").attr({
+            method: "POST",
+            action: url,
+            target: format === "print" ? "_blank" : "_self"
+        }).css("display", "none");
+        var fields = $.extend({}, filters, { format: format || "xlsx" });
+        if (window.AppHelper && AppHelper.csrfTokenName && AppHelper.csrfHash) {
+            fields[AppHelper.csrfTokenName] = AppHelper.csrfHash;
+        }
+        $.each(fields, function (k, v) {
+            $form.append($("<input>").attr({ type: "hidden", name: k, value: v == null ? "" : v }));
+        });
+        $("body").append($form);
+        $form.trigger("submit");
+        setTimeout(function () { $form.remove(); }, 2000);
     };
 
     TimesheetGrouped.prototype.setMode = function (mode) {
@@ -151,11 +178,15 @@
         this.$list.empty();
         this.$empty.hide();
         this.$loading.show();
+        var filters = this.filters();
+        if (typeof this.opts.onFiltersApplied === "function") {
+            this.opts.onFiltersApplied(filters);
+        }
         $.ajax({
             url: this.opts.projectsUrl,
             type: "POST",
             dataType: "json",
-            data: this.filters(),
+            data: filters,
             success: function (res) {
                 self.$loading.hide();
                 if (!res || !res.success) {
@@ -191,8 +222,8 @@
             + '<article class="tg-project" data-project-id="' + id + '">'
             + '  <button type="button" class="tg-row" data-tg-project-toggle aria-expanded="false" aria-controls="tg-proj-panel-' + id + '" id="tg-proj-btn-' + id + '">'
             + '    <span class="tg-chevron" aria-hidden="true"><i data-feather="chevron-right" class="icon-16"></i></span>'
-            + '    <span class="tg-title">' + esc(p.project_title)
-            + (p.client_name ? '<span class="tg-sub">' + esc(p.client_name) + '</span>' : '')
+            + '    <span class="tg-title">' + esc(String(p.project_title || "").trim())
+            + (p.client_name ? '<span class="tg-sub">' + esc(String(p.client_name).trim()) + '</span>' : '')
             + '</span>'
             + '    <span class="tg-meta">'
             + '      <span class="tg-chip" data-chip="tasks">' + esc(p.task_count) + ' tasks</span>'
@@ -273,7 +304,7 @@
             + '  <button type="button" class="tg-row" data-tg-member-toggle aria-expanded="false" aria-controls="tg-mem-panel-' + projectId + '-' + uid + '">'
             + '    <span class="tg-chevron" aria-hidden="true"><i data-feather="chevron-right" class="icon-16"></i></span>'
             + avatar
-            + '    <span class="tg-title">' + esc(m.name) + '</span>'
+            + '    <span class="tg-title">' + esc(String(m.name || "").trim()) + '</span>'
             + '    <span class="tg-meta"><span class="tg-chip">' + esc(m.task_count) + ' tasks</span></span>'
             + '    <span class="tg-nums">'
             + '      <span>' + esc(m.total_time) + '</span>'
@@ -349,7 +380,7 @@
         return ''
             + '<div class="tg-task" data-task-id="' + t.task_id + '" data-project-id="' + projectId + '" data-member-id="' + userId + '">'
             + '  <div class="tg-task-grid">'
-            + '    <div><div class="tg-label">Task</div><div class="tg-task-title">' + esc(t.title) + '</div></div>'
+            + '    <div><div class="tg-label">Task</div><div class="tg-task-title">' + esc(String(t.title || "").trim()) + '</div></div>'
             + '    <div><div class="tg-label">Score</div><div class="tg-score">' + (t.score_html || "-") + '</div></div>'
             + '    <div><div class="tg-label">Start</div>' + esc(t.start_date) + '</div>'
             + '    <div><div class="tg-label">Deadline</div><span class="tg-deadline' + overdue + '">' + (t.deadline || "-") + '</span></div>'

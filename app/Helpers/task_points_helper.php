@@ -768,21 +768,24 @@ if (!function_exists('get_task_gained_points_value')) {
         }
 
         $for_user_id = (int) $for_user_id;
-        if ($for_user_id > 0 && (!isset($task->awarded_points) || $task->awarded_points === null || $task->awarded_points === "")) {
-            // Let get_task_point_display load the member-scoped award
-            $display = get_task_point_display($task, $for_user_id);
-            if (!empty($display["is_completed"])) {
-                return (float) $display["earned_points"];
-            }
-            return 0;
-        }
-
         if (isset($task->awarded_points) && $task->awarded_points !== null && $task->awarded_points !== "") {
             return (float) $task->awarded_points;
         }
 
+        if ($for_user_id > 0) {
+            // Phase 21E: archived/gained for a member is only their award row (not a borrowed/synced amount)
+            if (!empty($task->id) && function_exists("ensure_task_point_tables")) {
+                ensure_task_point_tables();
+                $member_award = model("App\Models\Task_point_awards_model")->get_by_task_and_user((int) $task->id, $for_user_id);
+                if ($member_award) {
+                    return (float) $member_award->earned_points;
+                }
+            }
+            return 0;
+        }
+
         $display = get_task_point_display($task, $for_user_id);
-        if (!empty($display["is_completed"])) {
+        if (!empty($display["is_completed"]) && empty($display["no_member_award"])) {
             return (float) $display["earned_points"];
         }
 
@@ -815,8 +818,18 @@ if (!function_exists('get_task_point_display')) {
 
         $for_user_id = (int) $for_user_id;
 
-        // When a specific member is requested and award fields are not already scoped, load that member's award
-        if ($for_user_id > 0 && (!isset($task->awarded_points) || $task->awarded_points === null || $task->awarded_points === "")) {
+        // Phase 21E: when a specific member is requested, always scope award fields to THAT member
+        // (do not keep an assignee award from get_details joins).
+        if ($for_user_id > 0) {
+            unset(
+                $task->awarded_points,
+                $task->awarded_original_points,
+                $task->point_reduction_percent,
+                $task->point_reduction_reason,
+                $task->points_completed_date,
+                $task->awarded_is_collaborator,
+                $task->awarded_participants_count
+            );
             if (!empty($task->id) && function_exists("ensure_task_point_tables")) {
                 ensure_task_point_tables();
                 $member_award = model("App\Models\Task_point_awards_model")->get_by_task_and_user((int) $task->id, $for_user_id);
@@ -845,21 +858,35 @@ if (!function_exists('get_task_point_display')) {
             $display["completed_date"] = isset($task->points_completed_date) ? $task->points_completed_date : "";
             $display["total_task_points"] = $original_points;
 
+            // Phase 21E: when an award exists, Score describes what was ACTUALLY awarded.
+            // Do NOT re-derive a split from collaborators added after completion.
             $participants_count = !empty($task->awarded_participants_count) ? (int) $task->awarded_participants_count : 1;
-            $is_collab = $participants_count > 1 || !empty($task->awarded_is_collaborator);
-            if (!$is_collab && !empty($task->collaborators)) {
-                $p = get_task_participants($task);
-                if (count($p) > 1) {
-                    $is_collab = true;
-                    $participants_count = count($p);
-                }
+            if ($participants_count < 1) {
+                $participants_count = 1;
             }
+            $is_collab = $participants_count > 1 || !empty($task->awarded_is_collaborator);
             $display["is_collab"] = $is_collab;
-            $display["participants_count"] = $participants_count;
+            $display["participants_count"] = $is_collab ? max(2, $participants_count) : 1;
             return $display;
         }
 
         if (is_task_status_done($task) && !empty($task->status_changed_at) && $task->status_changed_at !== "0000-00-00 00:00:00") {
+            // Phase 21E: member-scoped display must not borrow another user's award via sync_task_point_award()
+            if ($for_user_id > 0) {
+                // Member award already attempted above; none for this user.
+                // Show task points as solo (no invented split from collaborators added later).
+                $calc = calculate_task_point_result($task, $task->status_changed_at);
+                $display["earned_points"] = $calc["earned_points"];
+                $display["reduction_percent"] = $calc["reduction_percent"];
+                $display["reduction_reason"] = $calc["reduction_reason"];
+                $display["is_reduced"] = $calc["is_reduced"];
+                $display["is_completed"] = true;
+                $display["is_collab"] = false;
+                $display["participants_count"] = 1;
+                $display["no_member_award"] = true;
+                return $display;
+            }
+
             $award = sync_task_point_award($task);
             if ($award) {
                 $display["original_points"] = (float) $award->original_points;
@@ -871,17 +898,24 @@ if (!function_exists('get_task_point_display')) {
                 $display["completed_date"] = $award->completed_date;
                 $display["total_task_points"] = $original_points;
                 $participants_count = !empty($award->participants_count) ? (int) $award->participants_count : 1;
-                $display["is_collab"] = $participants_count > 1 || !empty($award->is_collaborator);
-                $display["participants_count"] = $participants_count;
+                if ($participants_count < 1) {
+                    $participants_count = 1;
+                }
+                $is_collab = $participants_count > 1 || !empty($award->is_collaborator);
+                $display["is_collab"] = $is_collab;
+                $display["participants_count"] = $is_collab ? max(2, $participants_count) : 1;
                 return $display;
             }
 
+            // Done but no award row at all: do not invent a live split from current collaborators
             $calc = calculate_task_point_result($task, $task->status_changed_at);
             $display["earned_points"] = $calc["earned_points"];
             $display["reduction_percent"] = $calc["reduction_percent"];
             $display["reduction_reason"] = $calc["reduction_reason"];
             $display["is_reduced"] = $calc["is_reduced"];
             $display["is_completed"] = true;
+            $display["is_collab"] = false;
+            $display["participants_count"] = 1;
             return $display;
         }
 
@@ -947,6 +981,48 @@ if (!function_exists('get_task_point_display')) {
         $display["is_reduced"] = $calc["is_reduced"];
         $display["is_preview"] = $calc["is_preview"] && $calc["is_reduced"];
         return $display;
+    }
+
+}
+
+if (!function_exists('get_task_points_score_plain_text')) {
+
+    /**
+     * Phase 21E: single plain Score text for Tasks page Excel, timesheet Excel/Print, and comparisons.
+     * Same rules as the badge: when awards exist, describe what was actually awarded.
+     */
+    function get_task_points_score_plain_text($task, $options = array()) {
+        $for_user_id = (int) get_array_value($options, "for_user_id");
+        $compact = get_array_value($options, "compact");
+        if ($compact === null) {
+            $compact = true;
+        }
+        $display = get_task_point_display($task, $for_user_id);
+
+        $original = format_task_point_value($display["original_points"]);
+        $earned = format_task_point_value($display["earned_points"]);
+        $is_collab = !empty($display["is_collab"]) && !empty($display["participants_count"]) && $display["participants_count"] > 1;
+        $participants_count = $is_collab ? (int) $display["participants_count"] : 1;
+
+        if (!empty($display["is_held"]) && !empty($display["held_label"])) {
+            $text = $display["held_label"];
+        } else if (!empty($display["projection"]["queue_label_short"])) {
+            $text = $display["projection"]["queue_label_short"];
+        } else {
+            $text = $original;
+            if (!empty($display["is_reduced"])) {
+                $text .= " → " . $earned;
+                if ($compact && !empty($display["reduction_percent"])) {
+                    $text .= " -" . (int) $display["reduction_percent"] . "%";
+                }
+            }
+        }
+
+        if ($is_collab) {
+            $text .= " (1 of " . $participants_count . ")";
+        }
+
+        return trim($text);
     }
 
 }
