@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Phase 21 Timesheet Grouped Fixture</title>
+<link rel="stylesheet" href="../../../assets/css/timesheet-grouped.css"/>
+<style>
+  body { margin: 0; font-family: "Open Sans", system-ui, sans-serif; background: #eef1fa; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="page tg-wrap" id="root">
+  <div class="tg-toolbar">
+    <div class="tg-switch"><button class="is-active">Grouped</button><button>Table</button></div>
+    <div class="tg-filters">
+      <input class="form-control" value="2026-10-18"/><input class="form-control" value="2026-11-17"/>
+      <input class="form-control tg-search" placeholder="Search"/>
+    </div>
+    <div class="tg-actions">
+      <button class="tg-btn">Expand all</button>
+      <button class="tg-btn">Collapse all</button>
+      <span class="tg-excel-tip"><span class="tg-tip-icon">i</span> Excel exports time entries by entry date</span>
+    </div>
+  </div>
+  <div class="tg-caption">Tasks created between 2026-10-18 and 2026-11-17. Time shows all time logged on these tasks.</div>
+
+  <!-- state: collapsed -->
+  <div class="tg-list" id="state-collapsed">
+    <article class="tg-project">
+      <button type="button" class="tg-row" aria-expanded="false">
+        <span class="tg-chevron">›</span>
+        <span class="tg-title">Sunrise CRM<span class="tg-sub">Acme Client</span></span>
+        <span class="tg-meta"><span class="tg-chip">95 tasks</span><span class="tg-chip">10 members</span></span>
+        <span class="tg-nums"><span>128:40:00</span></span>
+      </button>
+    </article>
+    <article class="tg-project">
+      <button type="button" class="tg-row" aria-expanded="false">
+        <span class="tg-chevron">›</span>
+        <span class="tg-title">Marketing Site<span class="tg-sub">Beta Co</span></span>
+        <span class="tg-meta"><span class="tg-chip">40 tasks</span><span class="tg-chip">6 members</span></span>
+        <span class="tg-nums"><span>44:12:00</span></span>
+      </button>
+    </article>
+  </div>
+
+  <!-- state: project expanded -->
+  <div class="tg-list" id="state-project" style="display:none">
+    <article class="tg-project is-open">
+      <button type="button" class="tg-row" aria-expanded="true">
+        <span class="tg-chevron">›</span>
+        <span class="tg-title">Sunrise CRM<span class="tg-sub">Acme Client</span></span>
+        <span class="tg-meta"><span class="tg-chip">95 tasks</span><span class="tg-chip">10 members</span></span>
+        <span class="tg-nums"><span>128:40:00</span></span>
+      </button>
+      <div class="tg-panel is-open">
+        <div class="tg-member">
+          <button type="button" class="tg-row" aria-expanded="false">
+            <span class="tg-chevron">›</span>
+            <img class="tg-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect fill='%23d4880f' width='32' height='32'/%3E%3C/svg%3E" alt=""/>
+            <span class="tg-title">Alex Member</span>
+            <span class="tg-meta"><span class="tg-chip">12 tasks</span></span>
+            <span class="tg-nums"><span>18:20:00</span><span class="tg-muted">24.5 pts</span></span>
+          </button>
+        </div>
+        <div class="tg-member">
+          <button type="button" class="tg-row" aria-expanded="false">
+            <span class="tg-chevron">›</span>
+            <img class="tg-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect fill='%232b8fd6' width='32' height='32'/%3E%3C/svg%3E" alt=""/>
+            <span class="tg-title">Sam Collaborator</span>
+            <span class="tg-meta"><span class="tg-chip">8 tasks</span></span>
+            <span class="tg-nums"><span>11:05:00</span><span class="tg-muted">16 pts</span></span>
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- state: member expanded -->
+  <div class="tg-list" id="state-member" style="display:none">
+    <article class="tg-project is-open">
+      <button type="button" class="tg-row" aria-expanded="true">
+        <span class="tg-chevron">›</span>
+        <span class="tg-title">Sunrise CRM<span class="tg-sub">Acme Client</span></span>
+        <span class="tg-meta"><span class="tg-chip">95 tasks</span><span class="tg-chip">10 members</span></span>
+        <span class="tg-nums"><span>128:40:00</span></span>
+      </button>
+      <div class="tg-panel is-open">
+        <div class="tg-member">
+          <button type="button" class="tg-row" aria-expanded="true">
+            <span class="tg-chevron">›</span>
+            <img class="tg-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect fill='%23d4880f' width='32' height='32'/%3E%3C/svg%3E" alt=""/>
+            <span class="tg-title">Alex Member</span>
+            <span class="tg-meta"><span class="tg-chip">2 tasks</span></span>
+            <span class="tg-nums"><span>03:10:00</span><span class="tg-muted">7.5 pts</span></span>
+          </button>
+          <div class="tg-panel is-open">
+            <div class="tg-task">
+              <div class="tg-task-grid">
+                <div><div class="tg-label">Task</div><div class="tg-task-title">Implement grouped timesheets</div></div>
+                <div><div class="tg-label">Score</div><div class="tg-score"><span class="badge">2.5 (1 of 2)</span></div></div>
+                <div><div class="tg-label">Start</div>01-11-2026</div>
+                <div><div class="tg-label">Deadline</div><span class="tg-deadline is-overdue">10-11-2026</span></div>
+                <div><div class="tg-label">Collaborators</div><div class="tg-avatar-stack"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle fill='%232b8fd6' cx='11' cy='11' r='11'/%3E%3C/svg%3E" title="Sam" alt=""/></div></div>
+                <div><div class="tg-label">Created</div>01-11-2026</div>
+                <div><div class="tg-label">Archived</div><span class="tg-nums">2.5</span></div>
+                <div><div class="tg-label">Time</div><span class="tg-nums">02:00:00</span></div>
+                <div class="tg-task-actions"><a class="tg-link-btn" href="#">Open task</a><button class="tg-link-btn">Time entries (2)</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- state: entries open -->
+  <div class="tg-list" id="state-entries" style="display:none">
+    <article class="tg-project is-open">
+      <button type="button" class="tg-row" aria-expanded="true">
+        <span class="tg-chevron">›</span>
+        <span class="tg-title">Sunrise CRM<span class="tg-sub">Acme Client</span></span>
+        <span class="tg-meta"><span class="tg-chip">95 tasks</span><span class="tg-chip">10 members</span></span>
+        <span class="tg-nums"><span>128:40:00</span></span>
+      </button>
+      <div class="tg-panel is-open">
+        <div class="tg-member">
+          <button type="button" class="tg-row" aria-expanded="true">
+            <span class="tg-chevron">›</span>
+            <img class="tg-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect fill='%23d4880f' width='32' height='32'/%3E%3C/svg%3E" alt=""/>
+            <span class="tg-title">Alex Member</span>
+            <span class="tg-meta"><span class="tg-chip">1 tasks</span></span>
+            <span class="tg-nums"><span>02:00:00</span><span class="tg-muted">2.5 pts</span></span>
+          </button>
+          <div class="tg-panel is-open">
+            <div class="tg-task">
+              <div class="tg-task-grid">
+                <div><div class="tg-label">Task</div><div class="tg-task-title">Implement grouped timesheets</div></div>
+                <div><div class="tg-label">Score</div>2.5 (1 of 2)</div>
+                <div><div class="tg-label">Start</div>01-11-2026</div>
+                <div><div class="tg-label">Deadline</div>15-11-2026</div>
+                <div><div class="tg-label">Collaborators</div>—</div>
+                <div><div class="tg-label">Created</div>01-11-2026</div>
+                <div><div class="tg-label">Archived</div>2.5</div>
+                <div><div class="tg-label">Time</div>02:00:00</div>
+                <div class="tg-task-actions"><a class="tg-link-btn" href="#">Open task</a><button class="tg-link-btn" aria-expanded="true">Time entries (2)</button></div>
+              </div>
+              <div class="tg-entries">
+                <table class="tg-entries-table">
+                  <thead><tr><th>Date</th><th>End time</th><th class="tg-num">Total</th><th>Note</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td data-label="Date">12-11-2026 10:00 AM</td><td data-label="End time">12-11-2026 11:00 AM</td><td class="tg-num" data-label="Total">01:00:00</td><td data-label="Note">Scaffold</td><td></td></tr>
+                    <tr><td data-label="Date">13-11-2026 02:00 PM</td><td data-label="End time">13-11-2026 03:00 PM</td><td class="tg-num" data-label="Total">01:00:00</td><td data-label="Note">Polish</td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const state = params.get('state') || 'collapsed';
+  ['collapsed','project','member','entries'].forEach(s => {
+    const el = document.getElementById('state-' + s);
+    if (el) el.style.display = (s === state) ? 'flex' : 'none';
+  });
+</script>
+</body>
+</html>

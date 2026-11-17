@@ -1,7 +1,7 @@
 <div id="page-content" class="page-wrapper clearfix">
     <div class="card">
         <div class="page-title clearfix">
-            <h1><?php echo app_lang('team_members'); ?></h1>
+            <h1><?php echo app_lang('employees'); ?></h1>
             <div class="title-button-group">
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-default btn-sm active me-0"  title="<?php echo app_lang('list_view'); ?>"><i data-feather="menu" class="icon-16"></i></button>

@@ -2,6 +2,9 @@
 
 $show_in_kanban = get_setting("show_in_kanban");
 $show_in_kanban_items = explode(',', $show_in_kanban);
+if (!isset($open_timers_by_task)) {
+    $open_timers_by_task = array();
+}
 
 foreach ($tasks as $task) {
     $task_labels = "";
@@ -116,8 +119,16 @@ foreach ($tasks as $task) {
         $parent_task = "<div class='mt5 text-truncate text-off'>" . $parent_task_id . $task->parent_task_title . "</div>";
     }
 
+    $running_timer_dot = "";
+    if (!empty($open_timers_by_task) && function_exists("get_task_running_timer_list_indicator_html")) {
+        $timers_for_task = get_array_value($open_timers_by_task, (int) $task->id);
+        if ($timers_for_task) {
+            $running_timer_dot = get_task_running_timer_list_indicator_html($timers_for_task);
+        }
+    }
+
     echo modal_anchor(get_uri("projects/task_view"), "<span class='avatar'>" .
             "<img src='" . get_avatar($task->assigned_to_avatar) . "'>" .
-            "</span>" . $sub_task_icon . $task_id . $task->title . $toggle_sub_task_icon . $batch_operation_checkbox . $task_points_html . "<div class='clearfix'>" . $start_date . $end_date . "</div>" . $project_name . $client_name . $kanban_custom_fields_data .
+            "</span>" . $sub_task_icon . $task_id . $task->title . $running_timer_dot . $toggle_sub_task_icon . $batch_operation_checkbox . $task_points_html . "<div class='clearfix'>" . $start_date . $end_date . "</div>" . $project_name . $client_name . $kanban_custom_fields_data .
             $task_labels . $task_checklist_status . $sub_task_status . "<div class='clearfix'></div>" . $parent_task, array("class" => "kanban-item d-block $disable_dragging $unread_comments_class", "data-status_id" => $task->status_id,  "data-id" => $task->id, "data-project_id" => $task->project_id, "data-sort" => $task->new_sort, "data-post-id" => $task->id, "title" => app_lang('task_info') . " #$task->id", "data-modal-lg" => "1"));
 }

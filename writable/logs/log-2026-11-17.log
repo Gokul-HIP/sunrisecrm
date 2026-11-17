@@ -1,0 +1,7 @@
+CRITICAL - 2026-11-17 12:39:54 --> App\Models\Tasks_model::ci_save(): Argument #1 ($data) could not be passed by reference
+in FCPATH\tests\test_phase18b_award_freeze.php on line 84.
+ 1 FCPATH\tests\test_phase18b_award_freeze.php(225): route_create('P18B ontime flag1 12:39:54', '2026-11-17', '13:39:54')
+ 2 FCPATH\tests\test_phase18b_award_freeze.php(294): run_ontime_wait_matrix(1)
+CRITICAL - 2026-11-17 13:30:58 --> Call to a member function getPost() on null
+in APPPATH\Controllers\Projects.php on line 2395.
+ 1 FCPATH\tests\test_phase21_timesheet_grouped.php(143): App\Controllers\Projects->timesheet_grouped_members()

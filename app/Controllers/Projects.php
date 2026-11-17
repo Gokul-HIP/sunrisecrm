@@ -10,6 +10,10 @@ class Projects extends Security_Controller {
     protected $Pin_comments_model;
     protected $File_category_model;
     protected $Task_priority_model;
+    /** @var array<int, array> Phase 18 open timers keyed by task_id for the current list response */
+    protected $open_timers_by_task = array();
+    /** @var array<int, object> Phase 20 task rows for timesheet Details (batched) */
+    protected $timesheet_tasks_by_id = array();
 
     public function __construct() {
         parent::__construct();
@@ -1901,6 +1905,8 @@ class Projects extends Security_Controller {
             $list_data = array();
         }
 
+        $this->_load_tasks_for_timesheet_rows($list_data);
+
         $result_data = array();
         foreach ($list_data as $data) {
             $result_data[] = $this->_make_timesheet_row($data, $custom_fields);
@@ -1911,6 +1917,118 @@ class Projects extends Security_Controller {
         echo json_encode($result);
     }
 
+    /**
+     * Phase 20: one batched Tasks_model fetch for all task_ids on the timesheet page/export.
+     */
+    private function _load_tasks_for_timesheet_rows($list_data) {
+        $this->timesheet_tasks_by_id = array();
+        if (!is_iterable($list_data)) {
+            return;
+        }
+        $ids = array();
+        foreach ($list_data as $row) {
+            $tid = isset($row->task_id) ? (int) $row->task_id : 0;
+            if ($tid > 0) {
+                $ids[$tid] = $tid;
+            }
+        }
+        if (!$ids) {
+            return;
+        }
+
+        $options = array(
+            "task_ids" => implode(",", $ids),
+        );
+        // Same visibility rule as Tasks list: only assigned/collab tasks when restricted
+        $only = $this->show_assigned_tasks_only_user_id();
+        if ($only) {
+            $options["show_assigned_tasks_only_user_id"] = $only;
+        }
+
+        $result = $this->Tasks_model->get_details($options);
+        $tasks = is_object($result) && method_exists($result, "getResult") ? $result->getResult() : array();
+        foreach ($tasks as $task) {
+            $this->timesheet_tasks_by_id[(int) $task->id] = $task;
+        }
+    }
+
+    /**
+     * Task columns appended after existing timesheet cells (Phase 20).
+     * Blanks when no task / deleted / not permitted. Score/Archived reuse Tasks helpers.
+     * Never included in summation — only Total (time) is summed.
+     */
+    private function _make_timesheet_task_extra_columns($timesheet_row) {
+        $blank = array("-", "-", "-", "-", "-", "-", "-", "-", "-");
+        $task_id = isset($timesheet_row->task_id) ? (int) $timesheet_row->task_id : 0;
+        if (!$task_id) {
+            return $blank;
+        }
+        $task = get_array_value($this->timesheet_tasks_by_id, $task_id);
+        if (!$task) {
+            // deleted, or hidden by show_assigned_tasks_only
+            return $blank;
+        }
+
+        // Score — same helper as Tasks page / Excel
+        $score = function_exists("get_task_points_badge_html")
+            ? get_task_points_badge_html($task, array("compact" => true, "show_reason" => true))
+            : "-";
+
+        $start_date = "-";
+        if (!empty($task->start_date) && is_date_exists($task->start_date)) {
+            $start_date = format_to_date($task->start_date, false);
+        }
+
+        $deadline_text = "-";
+        if (!empty($task->deadline) && is_date_exists($task->deadline)) {
+            $deadline_text = format_task_deadline_with_end_time($task->deadline, isset($task->end_time) ? $task->end_time : "");
+            if (get_my_local_time("Y-m-d") > $task->deadline && (string) $task->status_id != "3") {
+                $deadline_text = "<span class='text-danger'>" . $deadline_text . "</span> ";
+            } else if (get_my_local_time("Y-m-d") == $task->deadline && (string) $task->status_id != "3") {
+                $deadline_text = "<span class='text-warning' title='" . app_lang("task_end_time_help_text") . "'>" . $deadline_text . "</span> ";
+            }
+        }
+
+        $assigned_to = "-";
+        if (!empty($task->assigned_to)) {
+            $image_url = get_avatar(isset($task->assigned_to_avatar) ? $task->assigned_to_avatar : "");
+            $assigned_to_user = "<span class='avatar avatar-xs mr10'><img src='$image_url' alt='...'></span> " . (isset($task->assigned_to_user) ? $task->assigned_to_user : "");
+            if (isset($task->user_type) && $task->user_type == "staff") {
+                $assigned_to = get_team_member_profile_link($task->assigned_to, $assigned_to_user);
+            } else {
+                $assigned_to = get_client_contact_profile_link($task->assigned_to, $assigned_to_user);
+            }
+        }
+
+        $collaborators = $this->_get_collaborators(isset($task->collaborator_list) ? $task->collaborator_list : "");
+        if (!$collaborators) {
+            $collaborators = "-";
+        }
+
+        $status = !empty($task->status_key_name) ? app_lang($task->status_key_name) : (isset($task->status_title) ? $task->status_title : "-");
+
+        $created_at = "-";
+        if (!empty($task->created_date) && is_date_exists($task->created_date)) {
+            $created_at = format_to_date($task->created_date, false);
+        }
+
+        $archived = function_exists("get_task_gained_points_value")
+            ? format_task_point_value(get_task_gained_points_value($task))
+            : "0";
+
+        return array(
+            $task->id,
+            $score,
+            $start_date,
+            $deadline_text,
+            $assigned_to,
+            $collaborators,
+            $status,
+            $created_at,
+            $archived,
+        );
+    }
+
     /* return a row of timesheet list  table */
 
     private function _timesheet_row_data($id) {
@@ -1918,6 +2036,7 @@ class Projects extends Security_Controller {
 
         $options = array("id" => $id, "custom_fields" => $custom_fields);
         $data = $this->Timesheets_model->get_details($options)->getRow();
+        $this->_load_tasks_for_timesheet_rows($data ? array($data) : array());
         return $this->_make_timesheet_row($data, $custom_fields);
     }
 
@@ -1930,7 +2049,10 @@ class Projects extends Security_Controller {
         $start_time = $data->start_time;
         $end_time = $data->end_time;
         $project_title = anchor(get_uri("projects/view/" . $data->project_id), $data->project_title);
-        $task_title = modal_anchor(get_uri("projects/task_view"), $data->task_title, array("title" => app_lang('task_info') . " #$data->task_id", "data-post-id" => $data->task_id, "data-modal-lg" => "1"));
+        $task_title = "-";
+        if (!empty($data->task_id) && !empty($data->task_title)) {
+            $task_title = modal_anchor(get_uri("projects/task_view"), $data->task_title, array("title" => app_lang('task_info') . " #$data->task_id", "data-post-id" => $data->task_id, "data-modal-lg" => "1"));
+        }
 
         $client_name = "-";
         if ($data->timesheet_client_company_name) {
@@ -1952,6 +2074,11 @@ class Projects extends Security_Controller {
             to_decimal_format(convert_time_string_to_decimal($duration)),
             $data->note
         );
+
+        // Phase 20: task meta to the right of existing timesheet columns (not in summation)
+        foreach ($this->_make_timesheet_task_extra_columns($data) as $extra) {
+            $row_data[] = $extra;
+        }
 
         foreach ($custom_fields as $field) {
             $cf_id = "cfv_" . $field->id;
@@ -2170,6 +2297,504 @@ class Projects extends Security_Controller {
         $view_data["custom_field_filters"] = $this->Custom_fields_model->get_custom_field_filters("timesheets", $this->login_user->is_admin, $this->login_user->user_type);
 
         return $this->template->rander("projects/timesheets/all_timesheets", $view_data);
+    }
+
+    /**
+     * Phase 21: read POST/GET safely (CLI tests may have no request service).
+     */
+    private function _tg_input($key) {
+        if ($this->request) {
+            $v = $this->request->getPost($key);
+            if ($v === null || $v === "") {
+                $v = $this->request->getGet($key);
+            }
+            if ($v !== null && $v !== "") {
+                return $v;
+            }
+        }
+        if (isset($_POST[$key]) && $_POST[$key] !== "") {
+            return $_POST[$key];
+        }
+        if (isset($_GET[$key]) && $_GET[$key] !== "") {
+            return $_GET[$key];
+        }
+        return "";
+    }
+
+    /**
+     * Phase 21: shared filter options for grouped timesheet Details.
+     */
+    private function _timesheet_grouped_filter_options() {
+        $options = array(
+            "created_from" => $this->_tg_input("start_date"),
+            "created_to" => $this->_tg_input("end_date"),
+            "project_id" => $this->_tg_input("project_id"),
+            "client_id" => $this->_tg_input("client_id"),
+            "member_id" => $this->_tg_input("user_id"),
+            "search" => $this->_tg_input("search"),
+        );
+        $only = $this->show_assigned_tasks_only_user_id();
+        if ($only) {
+            $options["show_assigned_tasks_only_user_id"] = $only;
+        }
+        return $options;
+    }
+
+    private function _timesheet_grouped_count_members_from_raw($assignee_ids, $collab_raw, $member_filter = 0) {
+        $ids = array();
+        if ($assignee_ids) {
+            foreach (explode(",", $assignee_ids) as $id) {
+                $id = (int) $id;
+                if ($id > 0) {
+                    $ids[$id] = $id;
+                }
+            }
+        }
+        if ($collab_raw) {
+            foreach (explode(",", $collab_raw) as $part) {
+                // collaborators stored as "1,2,3" possibly concatenated from multiple tasks
+                foreach (explode(",", $part) as $id) {
+                    $id = (int) trim($id);
+                    if ($id > 0) {
+                        $ids[$id] = $id;
+                    }
+                }
+            }
+        }
+        $member_filter = (int) $member_filter;
+        if ($member_filter > 0) {
+            return isset($ids[$member_filter]) ? 1 : 0;
+        }
+        return count($ids);
+    }
+
+    /**
+     * Phase 21 Level 1 — project cards (one aggregate query).
+     */
+    function timesheet_grouped_projects() {
+        $this->access_only_team_members();
+        if (!$this->can_view_timesheet(0, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = $this->_timesheet_grouped_filter_options();
+        $rows = $this->Timesheets_model->get_grouped_projects_by_task_created($options);
+        $member_filter = (int) get_array_value($options, "member_id");
+
+        $data = array();
+        foreach ($rows as $row) {
+            $member_count = $this->_timesheet_grouped_count_members_from_raw($row->assignee_ids, $row->collab_raw, $member_filter);
+            if ($member_filter <= 0 && !empty($row->unassigned_task_count) && (int) $row->unassigned_task_count > 0) {
+                $member_count += 1;
+            }
+            $seconds = (int) $row->total_seconds;
+            if ($seconds < 0) {
+                $seconds = 0;
+            }
+            $data[] = array(
+                "project_id" => (int) $row->project_id,
+                "project_title" => $row->project_title,
+                "client_name" => $row->client_name ? $row->client_name : "",
+                "task_count" => (int) $row->task_count,
+                "member_count" => (int) $member_count,
+                "total_seconds" => $seconds,
+                "total_time" => convert_seconds_to_time_format($seconds),
+            );
+        }
+
+        echo json_encode(array("success" => true, "data" => $data));
+    }
+
+    /**
+     * Phase 21 Level 2 — members for one project (batched).
+     */
+    function timesheet_grouped_members() {
+        $this->access_only_team_members();
+        $project_id = (int) $this->_tg_input("project_id");
+        if (!$project_id || !$this->can_view_timesheet($project_id, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = $this->_timesheet_grouped_filter_options();
+        $options["project_id"] = $project_id;
+        $tasks = $this->Timesheets_model->get_grouped_tasks_for_project($options);
+
+        $member_filter = (int) get_array_value($options, "member_id");
+        $allowed = $this->_get_members_to_manage_timesheet();
+        $allowed_map = null;
+        if (is_array($allowed)) {
+            $allowed_map = array_fill_keys(array_map("intval", $allowed), true);
+        }
+
+        $by_member = array(); // member_id => [task_ids]
+        $has_unassigned = false;
+        $task_ids = array();
+        foreach ($tasks as $task) {
+            $tid = (int) $task->id;
+            $task_ids[$tid] = $tid;
+            $participants = function_exists("get_task_participants") ? get_task_participants($task) : array();
+            if (!$participants) {
+                $has_unassigned = true;
+                if ($member_filter > 0) {
+                    continue;
+                }
+                if (!isset($by_member[0])) {
+                    $by_member[0] = array();
+                }
+                $by_member[0][$tid] = $tid;
+                continue;
+            }
+            foreach ($participants as $uid) {
+                $uid = (int) $uid;
+                if ($member_filter > 0 && $uid !== $member_filter) {
+                    continue;
+                }
+                if ($allowed_map !== null && !isset($allowed_map[$uid])) {
+                    continue;
+                }
+                if (!isset($by_member[$uid])) {
+                    $by_member[$uid] = array();
+                }
+                $by_member[$uid][$tid] = $tid;
+            }
+        }
+
+        $time_rows = $this->Timesheets_model->get_time_seconds_by_task_and_user(array_keys($task_ids));
+        $time_map = array(); // user_id => task_id => seconds
+        foreach ($time_rows as $tr) {
+            $uid = (int) $tr->user_id;
+            $tid = (int) $tr->task_id;
+            if (!isset($time_map[$uid])) {
+                $time_map[$uid] = array();
+            }
+            $time_map[$uid][$tid] = (int) $tr->total_seconds;
+        }
+
+        // Batch awards for earned points (not held)
+        $awards_by_user = array();
+        if ($task_ids) {
+            $db = db_connect("default");
+            $awards_table = $db->prefixTable("task_point_awards");
+            $id_list = implode(",", $task_ids);
+            $award_sql = "SELECT user_id, task_id, earned_points FROM $awards_table WHERE deleted=0 AND task_id IN ($id_list)";
+            foreach ($db->query($award_sql)->getResult() as $ar) {
+                $uid = (int) $ar->user_id;
+                if (!isset($awards_by_user[$uid])) {
+                    $awards_by_user[$uid] = array();
+                }
+                $awards_by_user[$uid][(int) $ar->task_id] = (float) $ar->earned_points;
+            }
+        }
+
+        $user_ids = array_keys($by_member);
+        $user_ids = array_filter($user_ids, function ($id) {
+            return (int) $id > 0;
+        });
+        $users_map = array();
+        if ($user_ids) {
+            $db = db_connect("default");
+            $users_table = $db->prefixTable("users");
+            $u_list = implode(",", array_map("intval", $user_ids));
+            $u_rows = $db->query("SELECT id, first_name, last_name, image FROM $users_table WHERE deleted=0 AND id IN ($u_list)")->getResult();
+            foreach ($u_rows as $u) {
+                $users_map[(int) $u->id] = $u;
+            }
+        }
+
+        $data = array();
+        foreach ($by_member as $uid => $m_task_ids) {
+            $uid = (int) $uid;
+            $seconds = 0;
+            $points = 0.0;
+            foreach ($m_task_ids as $tid) {
+                if ($uid > 0) {
+                    $seconds += isset($time_map[$uid][$tid]) ? (int) $time_map[$uid][$tid] : 0;
+                    $points += isset($awards_by_user[$uid][$tid]) ? (float) $awards_by_user[$uid][$tid] : 0.0;
+                } else {
+                    // Unassigned: all time on those tasks
+                    if (isset($time_map)) {
+                        foreach ($time_map as $logger => $tasks_time) {
+                            if (isset($tasks_time[$tid])) {
+                                $seconds += (int) $tasks_time[$tid];
+                            }
+                        }
+                    }
+                }
+            }
+            if ($seconds < 0) {
+                $seconds = 0;
+            }
+            $name = app_lang("unassigned") ?: "Unassigned";
+            $avatar = "";
+            if ($uid > 0) {
+                $u = get_array_value($users_map, $uid);
+                $name = $u ? trim($u->first_name . " " . $u->last_name) : ("#" . $uid);
+                $avatar = $u ? get_avatar($u->image) : get_avatar("");
+            }
+            $data[] = array(
+                "user_id" => $uid,
+                "name" => $name,
+                "avatar" => $avatar,
+                "task_count" => count($m_task_ids),
+                "total_seconds" => $seconds,
+                "total_time" => convert_seconds_to_time_format($seconds),
+                "points_earned" => $points,
+                "points_earned_label" => function_exists("format_task_point_value") ? format_task_point_value($points) : (string) $points,
+            );
+        }
+
+        // Stable sort: named members A-Z, Unassigned last
+        usort($data, function ($a, $b) {
+            if ($a["user_id"] === 0) {
+                return 1;
+            }
+            if ($b["user_id"] === 0) {
+                return -1;
+            }
+            return strcasecmp($a["name"], $b["name"]);
+        });
+
+        // Fix Level-1 member_count accuracy: include unassigned bucket
+        $member_count = count($data);
+
+        echo json_encode(array(
+            "success" => true,
+            "data" => $data,
+            "member_count" => $member_count,
+            "task_count" => count($task_ids),
+        ));
+    }
+
+    /**
+     * Phase 21 Level 3 — one member's tasks in a project (batched).
+     */
+    function timesheet_grouped_member_tasks() {
+        $this->access_only_team_members();
+        $project_id = (int) $this->_tg_input("project_id");
+        $user_id = (int) $this->_tg_input("user_id");
+        if (!$project_id || !$this->can_view_timesheet($project_id, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = $this->_timesheet_grouped_filter_options();
+        $options["project_id"] = $project_id;
+        // Restrict to this member's participation (user_id 0 = unassigned only)
+        if ($user_id > 0) {
+            $options["member_id"] = $user_id;
+        }
+        $tasks = $this->Timesheets_model->get_grouped_tasks_for_project($options);
+
+        $filtered = array();
+        $task_ids = array();
+        foreach ($tasks as $task) {
+            $participants = function_exists("get_task_participants") ? get_task_participants($task) : array();
+            if ($user_id > 0) {
+                if (!in_array($user_id, array_map("intval", $participants), true)) {
+                    continue;
+                }
+            } else {
+                if ($participants) {
+                    continue; // unassigned only
+                }
+            }
+            $filtered[] = $task;
+            $task_ids[(int) $task->id] = (int) $task->id;
+        }
+
+        // Enrich with Tasks_model (awards scoped to member) + collaborator_list in one batch
+        $enriched = array();
+        if ($task_ids) {
+            $td_options = array(
+                "task_ids" => implode(",", $task_ids),
+            );
+            if ($user_id > 0) {
+                $td_options["specific_user_id"] = $user_id;
+            }
+            $only = $this->show_assigned_tasks_only_user_id();
+            if ($only) {
+                $td_options["show_assigned_tasks_only_user_id"] = $only;
+            }
+            $result = $this->Tasks_model->get_details($td_options);
+            $rows = is_object($result) && method_exists($result, "getResult") ? $result->getResult() : array();
+            foreach ($rows as $row) {
+                $enriched[(int) $row->id] = $row;
+            }
+        }
+
+        $time_rows = $this->Timesheets_model->get_time_seconds_by_task_and_user(array_keys($task_ids), $user_id > 0 ? $user_id : 0);
+        $time_by_task = array();
+        foreach ($time_rows as $tr) {
+            $tid = (int) $tr->task_id;
+            if ($user_id > 0) {
+                $time_by_task[$tid] = (int) $tr->total_seconds;
+            } else {
+                $time_by_task[$tid] = (isset($time_by_task[$tid]) ? $time_by_task[$tid] : 0) + (int) $tr->total_seconds;
+            }
+        }
+
+        $can_manage = false;
+        if ($this->login_user->user_type === "staff" && ($this->login_user->is_admin || get_array_value($this->login_user->permissions, "timesheet_manage_permission"))) {
+            $can_manage = true;
+        }
+
+        $data = array();
+        foreach ($filtered as $task) {
+            $tid = (int) $task->id;
+            $full = get_array_value($enriched, $tid);
+            if (!$full) {
+                $full = $task;
+            }
+
+            $score_html = "-";
+            $archived = "0";
+            if ($user_id > 0 && function_exists("get_task_points_badge_html")) {
+                $score_html = get_task_points_badge_html($full, array(
+                    "compact" => true,
+                    "show_reason" => true,
+                    "for_user_id" => $user_id,
+                ));
+                $archived = function_exists("format_task_point_value")
+                    ? format_task_point_value(get_task_gained_points_value($full, $user_id))
+                    : "0";
+            }
+
+            $start_date = "-";
+            if (!empty($full->start_date) && is_date_exists($full->start_date)) {
+                $start_date = format_to_date($full->start_date, false);
+            }
+            $deadline = "-";
+            $deadline_overdue = false;
+            if (!empty($full->deadline) && is_date_exists($full->deadline)) {
+                $deadline = function_exists("format_task_deadline_with_end_time")
+                    ? format_task_deadline_with_end_time($full->deadline, isset($full->end_time) ? $full->end_time : "")
+                    : format_to_date($full->deadline, false);
+                $status_id = isset($full->status_id) ? (string) $full->status_id : "";
+                if (get_my_local_time("Y-m-d") > $full->deadline && $status_id != "3") {
+                    $deadline_overdue = true;
+                }
+            }
+            $created_at = "-";
+            if (!empty($full->created_date) && is_date_exists($full->created_date)) {
+                $created_at = format_to_date($full->created_date, false);
+            }
+
+            $collaborators_html = $this->_get_collaborators(isset($full->collaborator_list) ? $full->collaborator_list : "");
+            if (!$collaborators_html) {
+                $collaborators_html = "-";
+            }
+
+            $seconds = isset($time_by_task[$tid]) ? (int) $time_by_task[$tid] : 0;
+            if ($seconds < 0) {
+                $seconds = 0;
+            }
+
+            $data[] = array(
+                "task_id" => $tid,
+                "title" => $full->title,
+                "score_html" => $score_html,
+                "start_date" => $start_date,
+                "deadline" => $deadline,
+                "deadline_overdue" => $deadline_overdue,
+                "collaborators_html" => $collaborators_html,
+                "created_at" => $created_at,
+                "archived_score" => $archived,
+                "total_seconds" => $seconds,
+                "total_time" => convert_seconds_to_time_format($seconds),
+                "entry_count" => 0, // filled below
+            );
+        }
+
+        // Entry counts in one query
+        if ($task_ids) {
+            $db = db_connect("default");
+            $pt = $db->prefixTable("project_time");
+            $id_list = implode(",", $task_ids);
+            $entry_where = $user_id > 0 ? " AND user_id=$user_id " : "";
+            $ec_sql = "SELECT task_id, COUNT(*) AS cnt FROM $pt WHERE deleted=0 AND status != 'open' AND task_id IN ($id_list) $entry_where GROUP BY task_id";
+            $counts = array();
+            foreach ($db->query($ec_sql)->getResult() as $er) {
+                $counts[(int) $er->task_id] = (int) $er->cnt;
+            }
+            foreach ($data as &$row) {
+                $row["entry_count"] = isset($counts[$row["task_id"]]) ? $counts[$row["task_id"]] : 0;
+            }
+            unset($row);
+        }
+
+        echo json_encode(array("success" => true, "data" => $data, "can_manage" => $can_manage));
+    }
+
+    /**
+     * Phase 21 Level 4 — time entries for member+task (batched, existing edit/delete).
+     */
+    function timesheet_grouped_time_entries() {
+        $this->access_only_team_members();
+        $project_id = (int) $this->_tg_input("project_id");
+        $user_id = (int) $this->_tg_input("user_id");
+        $task_id = (int) $this->_tg_input("task_id");
+        if (!$project_id || !$task_id || !$this->can_view_timesheet($project_id, true)) {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $options = array(
+            "project_id" => $project_id,
+            "task_id" => $task_id,
+            "status" => "none_open",
+        );
+        if ($user_id > 0) {
+            $options["user_id"] = $user_id;
+        }
+        $members = $this->_get_members_to_manage_timesheet();
+        if ($members != "all" && $this->login_user->user_type == "staff") {
+            $options["allowed_members"] = $members;
+        }
+
+        $result = $this->Timesheets_model->get_details($options);
+        $list = is_object($result) && method_exists($result, "getResult") ? $result->getResult() : array();
+
+        $timesheet_manage_permission = get_array_value($this->login_user->permissions, "timesheet_manage_permission");
+        $can_manage = $this->login_user->user_type === "staff" && ($this->login_user->is_admin || $timesheet_manage_permission);
+        $only_hours = get_setting("users_can_input_only_total_hours_instead_of_period");
+
+        $data = array();
+        foreach ($list as $row) {
+            $duration = convert_seconds_to_time_format($row->hours ? (round(($row->hours * 60), 0) * 60) : (abs(strtotime($row->end_time) - strtotime($row->start_time))));
+            $options_html = "";
+            if ($can_manage) {
+                if ($row->user_id === $this->login_user->id && ($timesheet_manage_permission === "own_project_members_excluding_own" || $timesheet_manage_permission === "specific_excluding_own")) {
+                    $options_html = "";
+                } else {
+                    $options_html = modal_anchor(get_uri("projects/timelog_modal_form"), "<i data-feather='edit' class='icon-16'></i>", array("class" => "edit", "title" => app_lang('edit_timelog'), "data-post-id" => $row->id))
+                        . js_anchor("<i data-feather='x' class='icon-16'></i>", array('title' => app_lang('delete_timelog'), "class" => "delete", "data-id" => $row->id, "data-action-url" => get_uri("projects/delete_timelog"), "data-action" => "delete"));
+                }
+            }
+            $data[] = array(
+                "id" => (int) $row->id,
+                "date" => $only_hours ? format_to_date($row->start_time) : format_to_datetime($row->start_time),
+                "end_time" => $only_hours ? format_to_date($row->end_time) : format_to_datetime($row->end_time),
+                "total" => $duration,
+                "note" => $row->note ? $row->note : "",
+                "options_html" => $options_html,
+            );
+        }
+
+        echo json_encode(array("success" => true, "data" => $data));
     }
 
     /* load all timesheets summary view */
@@ -2637,6 +3262,8 @@ class Projects extends Security_Controller {
             "collab_earned_points" => (float) $summary["collab_earned"],
             "collab_overall_points_label" => $summary["collab_overall_label"],
             "collab_overall_points" => (float) $summary["collab_overall"],
+            "held_points_label" => isset($summary["held_points_label"]) ? $summary["held_points_label"] : "0",
+            "held_points" => isset($summary["held_points"]) ? (float) $summary["held_points"] : 0,
             "label" => $label_date ? date("F Y", $label_date) : $parsed["value"]
         ));
     }
@@ -2701,6 +3328,8 @@ class Projects extends Security_Controller {
             $options["status_id"] = $column_id;
             $options["limit"] = 100;
             $view_data["tasks"] = $this->Tasks_model->get_kanban_details($options)->getResult();
+            $this->_load_open_timers_for_task_list($view_data["tasks"]);
+            $view_data["open_timers_by_task"] = $this->open_timers_by_task;
 
             return $this->template->view('projects/tasks/kanban/kanban_column_items', $view_data);
         } else {
@@ -2738,6 +3367,17 @@ class Projects extends Security_Controller {
                     $tasks_list[$status_id] = $this->Tasks_model->get_kanban_details($options)->getResult();
                 }
             }
+
+            $flat = array();
+            foreach ($tasks_list as $col_tasks) {
+                if ($col_tasks) {
+                    foreach ($col_tasks as $t) {
+                        $flat[] = $t;
+                    }
+                }
+            }
+            $this->_load_open_timers_for_task_list($flat);
+            $view_data["open_timers_by_task"] = $this->open_timers_by_task;
 
             $view_data["columns"] = $columns;
             $view_data['column_tasks_count'] = $column_tasks_count;
@@ -2785,6 +3425,8 @@ class Projects extends Security_Controller {
             $options["status_id"] = $column_id;
             $options["limit"] = 100;
             $view_data["tasks"] = $this->Tasks_model->get_kanban_details($options)->getResult();
+            $this->_load_open_timers_for_task_list($view_data["tasks"]);
+            $view_data["open_timers_by_task"] = $this->open_timers_by_task;
 
             return $this->template->view('projects/tasks/kanban/kanban_column_items', $view_data);
         } else {
@@ -2818,6 +3460,16 @@ class Projects extends Security_Controller {
                 }
             }
 
+            $flat = array();
+            foreach ($tasks_list as $col_tasks) {
+                if ($col_tasks) {
+                    foreach ($col_tasks as $t) {
+                        $flat[] = $t;
+                    }
+                }
+            }
+            $this->_load_open_timers_for_task_list($flat);
+            $view_data["open_timers_by_task"] = $this->open_timers_by_task;
 
             $view_data["columns"] = $columns;
             $view_data['column_tasks_count'] = $column_tasks_count;
@@ -2913,6 +3565,12 @@ class Projects extends Security_Controller {
             $view_data['timer_status'] = "open";
         } else {
             $view_data['timer_status'] = "";
+        }
+
+        // Phase 18: show every open timer on this task to anyone who can open it
+        $view_data['running_timers'] = array();
+        if (get_setting("module_project_timesheet")) {
+            $view_data['running_timers'] = $this->Timesheets_model->get_open_timers_for_task($task_id);
         }
 
         $view_data['project_id'] = $model_info->project_id;
@@ -3336,6 +3994,9 @@ class Projects extends Security_Controller {
                 if (function_exists('apply_review_stamp_on_status_change')) {
                     apply_review_stamp_on_status_change($task_info, $status_id, $data, $now);
                 }
+                if (function_exists('apply_task_points_review_rules_on_status_change')) {
+                    apply_task_points_review_rules_on_status_change($task_info, $status_id, $data, $now);
+                }
             }
 
             $this->check_sub_tasks_statuses($status_id, $id);
@@ -3348,6 +4009,23 @@ class Projects extends Security_Controller {
 
         $save_id = $this->Tasks_model->ci_save($data, $id);
         if ($save_id) {
+            // Phase 17: create-as-In-review/Done needs task id before timer lock can run
+            if (!$id && function_exists("lock_task_points_review_rules")) {
+                $created_task = $this->Tasks_model->get_one($save_id);
+                if ($created_task && $created_task->id) {
+                    $created_in_review_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 0;
+                    $created_done_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+                    $created_status = (int) $created_task->status_id;
+                    if (($created_in_review_id && $created_status === $created_in_review_id)
+                        || ($created_done_id && $created_status === $created_done_id)) {
+                        $lock_data = array();
+                        lock_task_points_review_rules($created_task, $lock_data, $now);
+                        if (!empty($lock_data)) {
+                            $this->Tasks_model->ci_save($lock_data, $save_id);
+                        }
+                    }
+                }
+            }
 
             if ($is_clone && $main_task_id) {
                 //clone task checklist
@@ -3611,6 +4289,9 @@ class Projects extends Security_Controller {
             if (function_exists('apply_review_stamp_on_status_change')) {
                 apply_review_stamp_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
             }
+            if (function_exists('apply_task_points_review_rules_on_status_change')) {
+                apply_task_points_review_rules_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
+            }
         }
 
         $save_id = $this->Tasks_model->ci_save($data, $id);
@@ -3684,6 +4365,9 @@ class Projects extends Security_Controller {
                 $data["status_changed_at"] = get_current_utc_time();
                 if (function_exists('apply_review_stamp_on_status_change')) {
                     apply_review_stamp_on_status_change($task_info, $value, $data, $data["status_changed_at"]);
+                }
+                if (function_exists('apply_task_points_review_rules_on_status_change')) {
+                    apply_task_points_review_rules_on_status_change($task_info, $value, $data, $data["status_changed_at"]);
                 }
             }
 
@@ -3789,6 +4473,9 @@ class Projects extends Security_Controller {
                 $data["status_changed_at"] = get_current_utc_time();
                 if (function_exists('apply_review_stamp_on_status_change')) {
                     apply_review_stamp_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
+                }
+                if (function_exists('apply_task_points_review_rules_on_status_change')) {
+                    apply_task_points_review_rules_on_status_change($task_info, $status_id, $data, $data["status_changed_at"]);
                 }
             }
         }
@@ -3929,6 +4616,8 @@ class Projects extends Security_Controller {
             $list_data = array();
         }
 
+        $this->_load_open_timers_for_task_list($list_data);
+
         $result_data = array();
         foreach ($list_data as $data) {
             $result_data[] = $this->_make_task_row($data, $custom_fields);
@@ -4062,6 +4751,8 @@ class Projects extends Security_Controller {
             $list_data = array();
         }
 
+        $this->_load_open_timers_for_task_list($list_data);
+
         $result_data = array();
         foreach ($list_data as $data) {
             $result_data[] = $this->_make_task_row($data, $custom_fields);
@@ -4107,6 +4798,8 @@ class Projects extends Security_Controller {
         $result["collab_earned_points_label"] = $header_summary["collab_earned_label"];
         $result["total_earned_score"] = $total_earned_score;
         $result["total_earned_score_label"] = $header_summary["score_label"];
+        $result["held_points"] = isset($header_summary["held_points"]) ? (float) $header_summary["held_points"] : 0;
+        $result["held_points_label"] = isset($header_summary["held_points_label"]) ? $header_summary["held_points_label"] : "0";
 
         $result["total_given_points"] = $given;
         $result["total_gained_points"] = $gained;
@@ -4184,6 +4877,29 @@ class Projects extends Security_Controller {
         return $rows;
     }
 
+    /**
+     * Batch-load open timers for visible task ids (one query).
+     */
+    private function _load_open_timers_for_task_list($list_data) {
+        $this->open_timers_by_task = array();
+        if (!get_setting("module_project_timesheet") || !is_iterable($list_data)) {
+            return;
+        }
+        $ids = array();
+        foreach ($list_data as $data) {
+            if (isset($data->id)) {
+                $ids[] = (int) $data->id;
+            }
+        }
+        if (!$ids) {
+            return;
+        }
+        $rows = $this->Timesheets_model->get_open_timers_for_tasks($ids);
+        if (function_exists("index_open_timers_by_task_id")) {
+            $this->open_timers_by_task = index_open_timers_by_task_id($rows);
+        }
+    }
+
     /* return a row of task list table */
 
     private function _task_row_data($id) {
@@ -4193,6 +4909,7 @@ class Projects extends Security_Controller {
         $data = $this->Tasks_model->get_details($options)->getRow();
 
         $this->init_project_permission_checker($data->project_id);
+        $this->_load_open_timers_for_task_list(array($data));
 
         return $this->_make_task_row($data, $custom_fields);
     }
@@ -4222,6 +4939,11 @@ class Projects extends Security_Controller {
         }
 
         $title .= modal_anchor(get_uri("projects/task_view"), $data->title . $icon, array("title" => app_lang('task_info') . " #$data->id", "data-post-id" => $data->id, "class" => $unread_comments_class, "data-modal-lg" => "1"));
+
+        $open_timers = get_array_value($this->open_timers_by_task, (int) $data->id);
+        if ($open_timers && function_exists("get_task_running_timer_list_indicator_html")) {
+            $title .= get_task_running_timer_list_indicator_html($open_timers);
+        }
 
         $task_labels = make_labels_view_data($data->labels_list, true);
 
@@ -4892,6 +5614,9 @@ class Projects extends Security_Controller {
                             $data["status_changed_at"] = $now;
                             if (function_exists('apply_review_stamp_on_status_change')) {
                                 apply_review_stamp_on_status_change($task_info, $target_status_id, $data, $now);
+                            }
+                            if (function_exists('apply_task_points_review_rules_on_status_change')) {
+                                apply_task_points_review_rules_on_status_change($task_info, $target_status_id, $data, $now);
                             }
                         }
                     }
@@ -6821,6 +7546,8 @@ class Projects extends Security_Controller {
             $list_data = is_object($result) ? $result->getResult() : (is_array($result) ? get_array_value($result, "data") : array());
         }
 
+        $this->_load_open_timers_for_task_list($list_data);
+
         $result_data = array();
         foreach ($list_data as $data) {
             $result_data[] = $this->_make_task_in_review_row($data);
@@ -6837,6 +7564,11 @@ class Projects extends Security_Controller {
 
     private function _make_task_in_review_row($data) {
         $title = modal_anchor(get_uri("projects/task_view"), $data->title, array("title" => app_lang('task_info') . " #$data->id", "data-post-id" => $data->id));
+
+        $open_timers = get_array_value($this->open_timers_by_task, (int) $data->id);
+        if ($open_timers && function_exists("get_task_running_timer_list_indicator_html")) {
+            $title .= get_task_running_timer_list_indicator_html($open_timers);
+        }
 
         $project_title = anchor(get_uri("projects/view/" . $data->project_id), $data->project_title);
 
@@ -6861,11 +7593,31 @@ class Projects extends Security_Controller {
         }
 
         $points = isset($data->points) ? format_task_point_value($data->points) : "-";
+        $approve_attrs = ' data-id="' . $data->id . '"';
+        if (function_exists("get_task_projected_award_display")) {
+            $proj = get_task_projected_award_display($data);
+            $tooltip = !empty($proj["tooltip"]) ? htmlspecialchars($proj["tooltip"]) : "";
+            $reason_sub = !empty($proj["reason"])
+                ? '<div class="small text-off">' . htmlspecialchars($proj["reason"]) . '</div>'
+                : "";
+            $points = '<span title="' . $tooltip . '">' . htmlspecialchars($proj["queue_label_short"] ?? $proj["queue_label"])
+                . '</span>' . $reason_sub;
+            $assignee_name = !empty($data->assigned_to_user) ? $data->assigned_to_user : ($proj["assignee_name"] ?? "");
+            $approve_attrs .= ' data-award="' . htmlspecialchars($proj["award_label"]) . '"'
+                . ' data-original="' . htmlspecialchars($proj["original_label"]) . '"'
+                . ' data-assignee-name="' . htmlspecialchars($assignee_name) . '"'
+                . ' data-confirm-needed="' . (!empty($proj["confirm_needed"]) ? "1" : "0") . '"';
+        } else if (function_exists("get_task_held_points_display")) {
+            $held = get_task_held_points_display($data);
+            if (!empty($held["is_held"])) {
+                $points = htmlspecialchars($held["label"]);
+            }
+        }
 
         $actions = "";
         $can_action = $this->login_user->is_admin || ((int)$this->login_user->id === (int)$data->created_by);
         if ($can_action) {
-            $actions .= '<button type="button" class="btn btn-sm btn-success approve-review-task-btn mr5" data-id="' . $data->id . '"><i data-feather="check" class="icon-14"></i> ' . app_lang("approve") . '</button>';
+            $actions .= '<button type="button" class="btn btn-sm btn-success approve-review-task-btn mr5"' . $approve_attrs . '><i data-feather="check" class="icon-14"></i> ' . app_lang("approve") . '</button>';
             $actions .= '<button type="button" class="btn btn-sm btn-warning text-white request-changes-task-btn" data-id="' . $data->id . '"><i data-feather="refresh-cw" class="icon-14"></i> ' . app_lang("request_changes") . '</button>';
         }
 
@@ -6904,6 +7656,15 @@ class Projects extends Security_Controller {
             "status_changed_at" => $now
         );
 
+        // Phase 17C: lock timer/lateness before Done if In-review task missed the earlier lock
+        if (function_exists("ensure_task_points_review_rules_locked")) {
+            ensure_task_points_review_rules_locked($task_info);
+        }
+        if (function_exists("lock_task_points_review_rules") && function_exists("is_task_points_review_rules_applicable")
+            && is_task_points_review_rules_applicable($task_info)) {
+            lock_task_points_review_rules($task_info, $data, $now);
+        }
+
         $save_id = $this->Tasks_model->ci_save($data, $id);
         if ($save_id) {
             if (function_exists("sync_task_point_award")) {
@@ -6940,6 +7701,9 @@ class Projects extends Security_Controller {
         );
         if (function_exists('apply_review_stamp_on_status_change')) {
             apply_review_stamp_on_status_change($task_info, $changes_status_id, $data, $now);
+        }
+        if (function_exists('apply_task_points_review_rules_on_status_change')) {
+            apply_task_points_review_rules_on_status_change($task_info, $changes_status_id, $data, $now);
         }
 
         $comment = trim((string) $this->request->getPost('comment'));

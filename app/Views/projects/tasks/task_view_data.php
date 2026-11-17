@@ -156,6 +156,12 @@ $point_display = get_task_point_display($model_info);
 
                     <div class="col-md-12 mb15">
                         <?php
+                        if (!empty($running_timers)) {
+                            echo view("projects/tasks/task_running_timers", array(
+                                "running_timers" => $running_timers,
+                                "model_info" => $model_info
+                            ));
+                        }
                         if ($show_timer) {
                             echo view("projects/tasks/task_timer");
                         }

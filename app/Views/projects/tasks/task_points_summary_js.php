@@ -75,6 +75,7 @@
                 var soloOverall = json.solo_overall_points_label || "0";
                 var collabEarned = json.collab_earned_points_label || "0";
                 var collabOverall = json.collab_overall_points_label || "0";
+                var heldPoints = json.held_points_label || "0";
 
                 var $given = $summary.find(".task-points-given-value");
                 var $gained = $summary.find(".task-points-gained-value, .task-total-score-value");
@@ -92,6 +93,10 @@
 
                 $collabEarned.removeClass("points-zero points-low points-high").addClass(pointClass(json.collab_earned_points)).text(collabEarned);
                 $collabOverall.text(collabOverall);
+                var $held = $summary.find(".task-held-points-value");
+                if ($held.length) {
+                    $held.removeClass("points-zero points-low points-high").addClass(pointClass(json.held_points || 0)).text(heldPoints);
+                }
                 if (typeof json.todo_count !== "undefined") {
                     $(".task-todo-count").text(json.todo_count);
                     $(".task-in-progress-count").text(json.in_progress_count);

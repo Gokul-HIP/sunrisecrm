@@ -25,5 +25,9 @@
             <span class="task-points-summary-label"><?php echo app_lang("total_points"); ?></span>
             <span class="task-points-given-value points-zero">0</span>
         </div>
+        <div class="task-points-summary-item">
+            <span class="task-points-summary-label"><?php echo app_lang("held_points") ?: "Held points"; ?></span>
+            <span class="task-held-points-value points-zero">0</span>
+        </div>
     </div>
 </div>

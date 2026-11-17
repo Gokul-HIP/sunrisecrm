@@ -262,6 +262,11 @@ if (!function_exists('active_menu')) {
                     $found_controller_active_key = $key;
                 }
 
+                // Phase 19: Employees menu uses name "employees" but controller is team_members
+                if ($menu_name === "employees" && $controller_name === "team_members") {
+                    $found_controller_active_key = $key;
+                }
+
                 //compare with some special links
                 //if we use .htaccess, then there will be extra / before the uri_string
                 if ((substr($uri_string, 0, 25) === "projects/all_tasks_kanban" || substr($uri_string, 0, 26) === "/projects/all_tasks_kanban") && substr($menu_url, 0, 18) === "projects/all_tasks") {

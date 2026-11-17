@@ -89,7 +89,7 @@ class App_Controller extends Controller {
         $this->template = new Template();
 
         //load helpers
-        helper(array('url', 'file', 'form', 'language', 'general', 'date_time', 'app_files', 'widget', 'activity_logs', 'currency', 'task_points', 'notifications'));
+        helper(array('url', 'file', 'form', 'language', 'general', 'date_time', 'app_files', 'widget', 'activity_logs', 'currency', 'task_points', 'notifications', 'task_timer_visibility'));
         if (function_exists('ensure_deadline_2_hour_notification_settings')) {
             ensure_deadline_2_hour_notification_settings();
         }
@@ -103,6 +103,8 @@ class App_Controller extends Controller {
         $login_user_id = $this->Users_model->login_user_id();
 
         //assign settings from database (cached per-user for the current request)
+        // PHP resets statics each request, so a DB flag flip is visible on the next page load.
+        // Cache avoids repeat get_all_required_settings when helpers construct App_Controller again.
         static $settings_loaded_users = array();
         if (!isset($settings_loaded_users[$login_user_id])) {
             $settings = $this->Settings_model->get_all_required_settings($login_user_id)->getResult();

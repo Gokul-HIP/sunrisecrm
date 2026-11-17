@@ -32,8 +32,10 @@
                     <?php
                     echo view("projects/tasks/kanban/kanban_column_items", array(
                         "tasks" => $tasks,
-                        "can_edit_tasks" > $can_edit_tasks,
-                        "project_id" > $project_id
+                        "can_edit_tasks" => $can_edit_tasks,
+                        "project_id" => $project_id,
+                        "open_timers_by_task" => isset($open_timers_by_task) ? $open_timers_by_task : array(),
+                        "login_user" => isset($login_user) ? $login_user : null
                     ));
                     ?>
                 </div>

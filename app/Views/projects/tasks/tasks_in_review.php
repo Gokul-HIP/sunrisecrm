@@ -70,30 +70,46 @@
             }
         });
 
-        // Approve action
+        // Approve action — confirm when projected award is 0 or less than original
         $(document).on("click", ".approve-review-task-btn", function () {
-            var taskId = $(this).data("id");
+            var $btn = $(this);
+            var taskId = $btn.data("id");
             if (!taskId) return;
 
-            appLoader.show();
-            $.ajax({
-                url: "<?php echo_uri('projects/approve_task_review'); ?>/" + taskId,
-                type: "POST",
-                dataType: "json",
-                success: function (response) {
-                    appLoader.hide();
-                    if (response.success) {
-                        appAlert.success(response.message, {duration: 5000});
-                        $("#tasks-in-review-table").appTable({reload: true});
-                    } else {
-                        appAlert.error(response.message);
+            var doApprove = function () {
+                appLoader.show();
+                $.ajax({
+                    url: "<?php echo_uri('projects/approve_task_review'); ?>/" + taskId,
+                    type: "POST",
+                    dataType: "json",
+                    success: function (response) {
+                        appLoader.hide();
+                        if (response.success) {
+                            appAlert.success(response.message, {duration: 5000});
+                            $("#tasks-in-review-table").appTable({reload: true});
+                        } else {
+                            appAlert.error(response.message);
+                        }
+                    },
+                    error: function () {
+                        appLoader.hide();
+                        appAlert.error("<?php echo app_lang('error_occurred'); ?>");
                     }
-                },
-                error: function () {
-                    appLoader.hide();
-                    appAlert.error("<?php echo app_lang('error_occurred'); ?>");
+                });
+            };
+
+            var needsConfirm = String($btn.data("confirm-needed")) === "1";
+            if (needsConfirm) {
+                var award = $btn.data("award") || "0";
+                var original = $btn.data("original") || "0";
+                var name = $btn.data("assignee-name") || "";
+                var msg = "<?php echo app_lang('approve_award_confirm'); ?>";
+                msg = msg.replace("%s", award).replace("%s", original).replace("%s", name);
+                if (!confirm(msg)) {
+                    return;
                 }
-            });
+            }
+            doApprove();
         });
 
         // Open Request Changes modal

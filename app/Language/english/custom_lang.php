@@ -27,4 +27,23 @@ $lang["changes_status_can_only_be_set_via_review_queue"] = "Status 'Changes' can
 $lang["approve"] = "Approve";
 $lang["submitted_at"] = "Submitted at";
 
+$lang["held_points"] = "Held points";
+
+$lang["task_points_no_timer_zero"] = "No timer entry before review submission — 0 points.";
+
+$lang["task_points_change_penalty_applied"] = "Change penalty: %s round(s).";
+
+$lang["timer_running"] = "Timer running";
+
+$lang["employees"] = "Employees";
+
+$lang["grouped"] = "Grouped";
+$lang["table"] = "Table";
+$lang["expand_all"] = "Expand all";
+$lang["collapse_all"] = "Collapse all";
+$lang["excel_exports_by_entry_date"] = "Excel exports time entries by entry date";
+$lang["timesheet_grouped_caption"] = "Tasks created between {from} and {to}. Time shows all time logged on these tasks.";
+$lang["no_tasks_created_in_this_range"] = "No tasks created in this range";
+$lang["unassigned"] = "Unassigned";
+
 return $lang;

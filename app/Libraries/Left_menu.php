@@ -16,10 +16,15 @@ class Left_menu {
         $items_array = $this->_prepare_sidebar_menu_items($type);
 
         //remove used items
-        $default_left_menu_items = $this->_get_left_menu_from_setting($type);
+        $default_left_menu_items = $this->_normalize_employees_in_custom_left_menu($this->_get_left_menu_from_setting($type));
 
         foreach ($default_left_menu_items as $default_item) {
-            unset($items_array[get_array_value($default_item, "name")]);
+            $used_name = get_array_value($default_item, "name");
+            unset($items_array[$used_name]);
+            // Phase 19: old saved key
+            if ($used_name === "employees") {
+                unset($items_array["team_members"]);
+            }
         }
 
         //since all menu items will be added to the customization area when there is no item, don't show anything here
@@ -167,7 +172,7 @@ class Left_menu {
     function get_sortable_items($type = "default") {
         $items = "<div id='menu-item-list-2' class='js-left-menu-scrollbar add-column-drop text-center p15 menu-item-list sortable-items-container'>";
 
-        $default_left_menu_items = $this->_get_left_menu_from_setting($type);
+        $default_left_menu_items = $this->_normalize_employees_in_custom_left_menu($this->_get_left_menu_from_setting($type));
         if (count($default_left_menu_items)) {
             foreach ($default_left_menu_items as $item) {
                 $items .= $this->_get_item_data($item);
@@ -188,6 +193,8 @@ class Left_menu {
     function rander_left_menu($is_preview = false, $type = "default") {
         $final_left_menu_items = array();
         $custom_left_menu_items = $this->_get_left_menu_from_setting_for_rander($is_preview, $type);
+        // Phase 19: promote saved "team_members" under Team → top-level "employees" above Team
+        $custom_left_menu_items = $this->_normalize_employees_in_custom_left_menu($custom_left_menu_items);
 
         if ($custom_left_menu_items) {
             $left_menu_items = $this->_prepare_sidebar_menu_items($type);
@@ -195,10 +202,17 @@ class Left_menu {
 
             foreach ($custom_left_menu_items as $custom_left_menu_item) {
                 $item_value_array = $this->_get_item_array_value($custom_left_menu_item, $left_menu_items);
+                if (!$item_value_array) {
+                    continue; // permission removed the item
+                }
                 $is_sub_menu = get_array_value($custom_left_menu_item, "is_sub_menu");
 
                 if ($is_sub_menu) {
                     //this is a sub menu, move it to it's parent item
+                    // skip empty parent slots
+                    if ($last_final_menu_item === "" || !isset($final_left_menu_items[$last_final_menu_item])) {
+                        continue;
+                    }
                     $final_left_menu_items[$last_final_menu_item]["submenu"][] = $item_value_array;
                 } else {
                     $final_left_menu_items[] = $item_value_array;
@@ -206,6 +220,17 @@ class Left_menu {
                     $last_final_menu_item = key($final_left_menu_items);
                 }
             }
+
+            // Drop Team parent if customization left it with no visible submenu children
+            foreach ($final_left_menu_items as $k => $item) {
+                if (get_array_value($item, "name") === "team") {
+                    $sub = get_array_value($item, "submenu");
+                    if (!$sub || !is_array($sub) || !count($sub)) {
+                        unset($final_left_menu_items[$k]);
+                    }
+                }
+            }
+            $final_left_menu_items = array_values($final_left_menu_items);
         }
 
         if (count($final_left_menu_items)) {
@@ -259,6 +284,11 @@ class Left_menu {
         $open_in_new_tab = get_array_value($data_array, "open_in_new_tab");
         $item_value_array = array();
 
+        // Phase 19: saved menus may still store "team_members" — resolve to employees
+        if ($name === "team_members" && array_key_exists("employees", $left_menu_items)) {
+            $name = "employees";
+        }
+
         if ($url) { //custom menu item
             $item_value_array = array("name" => $name, "language_key" => $language_key, "url" => $url, "is_custom_menu_item" => true, "class" => "$icon", "open_in_new_tab" => $open_in_new_tab);
         } else if (array_key_exists($name, $left_menu_items)) { //default menu items
@@ -266,6 +296,58 @@ class Left_menu {
         }
 
         return $item_value_array;
+    }
+
+    /**
+     * Rewrite a saved custom left menu so team_members becomes top-level employees
+     * placed directly above Team, without disturbing other items' order.
+     */
+    private function _normalize_employees_in_custom_left_menu($items) {
+        if (!$items || !is_array($items)) {
+            return $items;
+        }
+
+        $has_employees = false;
+        $had_team_members = false;
+        $out = array();
+        foreach ($items as $item) {
+            $name = get_array_value($item, "name");
+            if ($name === "employees") {
+                $has_employees = true;
+                // ensure not marked as submenu
+                unset($item["is_sub_menu"]);
+                $out[] = $item;
+                continue;
+            }
+            if ($name === "team_members") {
+                $had_team_members = true;
+                continue; // drop; re-insert as employees above team
+            }
+            $out[] = $item;
+        }
+
+        if (!$has_employees && !$had_team_members) {
+            return $items; // layout never had team members — leave alone
+        }
+
+        if ($has_employees && !$had_team_members) {
+            return $out;
+        }
+
+        $employees_item = array("name" => "employees");
+        $final = array();
+        $inserted = false;
+        foreach ($out as $item) {
+            if (!$inserted && get_array_value($item, "name") === "team" && !get_array_value($item, "is_sub_menu")) {
+                $final[] = $employees_item;
+                $inserted = true;
+            }
+            $final[] = $item;
+        }
+        if (!$inserted) {
+            $final[] = $employees_item;
+        }
+        return $final;
     }
 
     private function _get_sidebar_menu_items($type = "") {
@@ -402,12 +484,12 @@ class Left_menu {
 
 
 
-            $team_submenu = array();
-
+            // Phase 19: Employees is a top-level item (same route/permissions as former Team members)
             if (get_array_value($this->ci->login_user->permissions, "hide_team_members_list") != "1") {
-                $team_submenu["team_members"] = array("name" => "team_members", "url" => "team_members", "class" => "users");
+                $sidebar_menu["employees"] = array("name" => "employees", "url" => "team_members", "class" => "users");
             }
 
+            $team_submenu = array();
 
             if (get_setting("module_attendance") == "1" && ($this->ci->login_user->is_admin || $access_timecard)) {
                 $team_submenu["attendance"] = array("name" => "attendance", "url" => "attendance", "class" => "clock");
@@ -434,8 +516,15 @@ class Left_menu {
             }
 
 
+            // Only show Team when at least one child remains (no empty parent)
             if (count($team_submenu)) {
-                $sidebar_menu["team"] = array("name" => "team", "url" => "team_members", "class" => "users", "submenu" => $team_submenu);
+                $first_team = reset($team_submenu);
+                $sidebar_menu["team"] = array(
+                    "name" => "team",
+                    "url" => get_array_value($first_team, "url") ?: "attendance",
+                    "class" => "clock",
+                    "submenu" => $team_submenu
+                );
             }
 
 

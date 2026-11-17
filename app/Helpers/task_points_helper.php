@@ -275,7 +275,7 @@ if (!function_exists('distribute_task_points_shares')) {
 
 if (!function_exists('calculate_task_point_result')) {
 
-    function calculate_task_point_result($task, $completed_at = "", $override_original_points = null) {
+    function calculate_task_point_result($task, $completed_at = "", $override_original_points = null, $options = array()) {
         $original_points = ($override_original_points !== null)
             ? (float) $override_original_points
             : (isset($task->points) ? (float) $task->points : 0);
@@ -294,23 +294,36 @@ if (!function_exists('calculate_task_point_result')) {
             return $result;
         }
 
-        // Lateness rule (Phase 16G):
-        // Use submitted_for_review_at ONLY when workflow is on AND a stamp is present.
-        // Stamps are kept only for In review -> Done; cleared on leave-In-review (non-Done),
-        // direct Done, and reopen — so direct Done always uses completed_at.
-        $use_submitted_for_lateness = get_setting("task_review_workflow_enabled")
-            && !empty($task->submitted_for_review_at)
-            && $task->submitted_for_review_at !== "0000-00-00 00:00:00";
-        if ($use_submitted_for_lateness) {
-            $completed_local = convert_date_utc_to_local($task->submitted_for_review_at, "Y-m-d H:i:s");
-            if (!$completed_at) {
+        // Phase 17: when review rules apply, lateness is locked to first_review_submitted_at
+        // (never cleared). Otherwise Phase 16G: submitted_for_review_at only when present.
+        $lateness_at = is_array($options) ? get_array_value($options, "lateness_at") : null;
+        $force_completed_at = is_array($options) ? get_array_value($options, "force_completed_at") : false;
+
+        if ($lateness_at) {
+            $completed_local = convert_date_utc_to_local($lateness_at, "Y-m-d H:i:s");
+        } else if (function_exists("is_task_points_review_rules_applicable")
+            && is_task_points_review_rules_applicable($task)
+            && !empty($task->first_review_submitted_at)
+            && $task->first_review_submitted_at !== "0000-00-00 00:00:00") {
+            $completed_local = convert_date_utc_to_local($task->first_review_submitted_at, "Y-m-d H:i:s");
+        } else {
+            // Lateness rule (Phase 16G):
+            // Use submitted_for_review_at ONLY when workflow is on AND a stamp is present.
+            $use_submitted_for_lateness = get_setting("task_review_workflow_enabled")
+                && !empty($task->submitted_for_review_at)
+                && $task->submitted_for_review_at !== "0000-00-00 00:00:00";
+            if ($use_submitted_for_lateness) {
+                $completed_local = convert_date_utc_to_local($task->submitted_for_review_at, "Y-m-d H:i:s");
+                if (!$completed_at) {
+                    $result["is_preview"] = true;
+                }
+            } else if ($completed_at || $force_completed_at) {
+                $use_at = $completed_at ?: get_current_utc_time();
+                $completed_local = convert_date_utc_to_local($use_at, "Y-m-d H:i:s");
+            } else {
+                $completed_local = get_my_local_time("Y-m-d H:i:s");
                 $result["is_preview"] = true;
             }
-        } else if ($completed_at) {
-            $completed_local = convert_date_utc_to_local($completed_at, "Y-m-d H:i:s");
-        } else {
-            $completed_local = get_my_local_time("Y-m-d H:i:s");
-            $result["is_preview"] = true;
         }
 
         $hours_late = (strtotime($completed_local) - strtotime($deadline_datetime)) / 3600;
@@ -549,6 +562,11 @@ if (!function_exists('get_user_task_points_header_summary')) {
         $solo_overall = $overall_row ? (float) $overall_row->solo_overall : 0.0;
         $collab_overall = $overall_row ? (float) $overall_row->collab_overall : 0.0;
 
+        $held_points = 0.0;
+        if (function_exists("sum_user_held_task_points")) {
+            $held_points = sum_user_held_task_points($user_id, $year, $month);
+        }
+
         return array(
             "score" => $score,
             "score_label" => format_task_point_value($score),
@@ -560,6 +578,8 @@ if (!function_exists('get_user_task_points_header_summary')) {
             "collab_earned_label" => format_task_point_value($collab_earned),
             "collab_overall" => $collab_overall,
             "collab_overall_label" => format_task_point_value($collab_overall),
+            "held_points" => $held_points,
+            "held_points_label" => format_task_point_value($held_points),
             "year" => $year,
             "month" => $month
         );
@@ -643,9 +663,38 @@ if (!function_exists('recalculate_task_point_awards')) {
         $total_points = isset($task->points) ? (float) $task->points : 0;
         $shares = distribute_task_points_shares($total_points, $participants, $assigned_to);
 
+        // Phase 17: when rules apply, use locked first-submission lateness + change penalty + timer
+        $rules_preview = null;
+        if (function_exists("is_task_points_review_rules_applicable") && is_task_points_review_rules_applicable($task)
+            && function_exists("calculate_task_participant_award_preview")) {
+            $rules_preview = calculate_task_participant_award_preview($task, $completed_at, false);
+        }
+
         foreach ($participants as $uid) {
             $share_info = $shares[$uid];
-            $calc = calculate_task_point_result($task, $completed_at, $share_info["share_original"]);
+            if ($rules_preview && isset($rules_preview["participants"][$uid])) {
+                $part = $rules_preview["participants"][$uid];
+                $earned = (float) $part["earned_points"];
+                $reduction_percent = (int) $part["reduction_percent"];
+                $reduction_reason = $part["reduction_reason"];
+                if (empty($part["timer_ok"])) {
+                    $reduction_percent = 100;
+                    $reduction_reason = app_lang("task_points_no_timer_zero") ?: "No timer entry before review submission — 0 points.";
+                } else if ((int) ($task->review_changes_count ?? 0) > 0 && $earned < (float) $share_info["share_original"]) {
+                    if ($reduction_reason) {
+                        $reduction_reason .= " ";
+                    }
+                    $reduction_reason .= sprintf(
+                        app_lang("task_points_change_penalty_applied") ?: "Change penalty: %s round(s).",
+                        (int) $task->review_changes_count
+                    );
+                }
+            } else {
+                $calc = calculate_task_point_result($task, $completed_at, $share_info["share_original"]);
+                $earned = $calc["earned_points"];
+                $reduction_percent = $calc["reduction_percent"];
+                $reduction_reason = $calc["reduction_reason"];
+            }
 
             $award_data = array(
                 "task_id" => $task->id,
@@ -653,9 +702,9 @@ if (!function_exists('recalculate_task_point_awards')) {
                 "is_collaborator" => $share_info["is_collab"] ? 1 : 0,
                 "participants_count" => $share_info["participants_count"],
                 "original_points" => $share_info["share_original"],
-                "earned_points" => $calc["earned_points"],
-                "reduction_percent" => $calc["reduction_percent"],
-                "reduction_reason" => $calc["reduction_reason"],
+                "earned_points" => $earned,
+                "reduction_percent" => $reduction_percent,
+                "reduction_reason" => $reduction_reason,
                 "deadline" => (!empty($task->deadline) && $task->deadline !== "0000-00-00") ? $task->deadline : null,
                 "completed_date" => $completed_date,
                 "completed_at" => $completed_at,
@@ -713,8 +762,18 @@ if (!function_exists('sync_task_point_award')) {
 
 if (!function_exists('get_task_gained_points_value')) {
 
-    function get_task_gained_points_value($task) {
+    function get_task_gained_points_value($task, $for_user_id = 0) {
         if (!$task) {
+            return 0;
+        }
+
+        $for_user_id = (int) $for_user_id;
+        if ($for_user_id > 0 && (!isset($task->awarded_points) || $task->awarded_points === null || $task->awarded_points === "")) {
+            // Let get_task_point_display load the member-scoped award
+            $display = get_task_point_display($task, $for_user_id);
+            if (!empty($display["is_completed"])) {
+                return (float) $display["earned_points"];
+            }
             return 0;
         }
 
@@ -722,7 +781,7 @@ if (!function_exists('get_task_gained_points_value')) {
             return (float) $task->awarded_points;
         }
 
-        $display = get_task_point_display($task);
+        $display = get_task_point_display($task, $for_user_id);
         if (!empty($display["is_completed"])) {
             return (float) $display["earned_points"];
         }
@@ -734,7 +793,7 @@ if (!function_exists('get_task_gained_points_value')) {
 
 if (!function_exists('get_task_point_display')) {
 
-    function get_task_point_display($task) {
+    function get_task_point_display($task, $for_user_id = 0) {
         $original_points = isset($task->points) ? (float) $task->points : 0;
         $display = array(
             "original_points" => $original_points,
@@ -752,6 +811,25 @@ if (!function_exists('get_task_point_display')) {
 
         if (!$task) {
             return $display;
+        }
+
+        $for_user_id = (int) $for_user_id;
+
+        // When a specific member is requested and award fields are not already scoped, load that member's award
+        if ($for_user_id > 0 && (!isset($task->awarded_points) || $task->awarded_points === null || $task->awarded_points === "")) {
+            if (!empty($task->id) && function_exists("ensure_task_point_tables")) {
+                ensure_task_point_tables();
+                $member_award = model("App\Models\Task_point_awards_model")->get_by_task_and_user((int) $task->id, $for_user_id);
+                if ($member_award) {
+                    $task->awarded_points = $member_award->earned_points;
+                    $task->awarded_original_points = $member_award->original_points;
+                    $task->point_reduction_percent = $member_award->reduction_percent;
+                    $task->point_reduction_reason = $member_award->reduction_reason;
+                    $task->points_completed_date = $member_award->completed_date;
+                    $task->awarded_is_collaborator = $member_award->is_collaborator;
+                    $task->awarded_participants_count = $member_award->participants_count;
+                }
+            }
         }
 
         $has_award = isset($task->awarded_points) && $task->awarded_points !== null && $task->awarded_points !== "";
@@ -807,6 +885,35 @@ if (!function_exists('get_task_point_display')) {
             return $display;
         }
 
+        // Phase 17 held / In review / Changes: locked projection (same as Approve), not "Completing now"
+        $in_review_or_changes = false;
+        if (function_exists("is_task_in_held_points_status") && is_task_in_held_points_status($task)) {
+            $in_review_or_changes = true;
+        } else {
+            $sid = isset($task->status_id) ? (int) $task->status_id : 0;
+            $ir = (int) get_in_review_task_status_id();
+            $ch = (int) get_changes_task_status_id();
+            $in_review_or_changes = ($ir && $sid === $ir) || ($ch && $sid === $ch);
+        }
+        if ($in_review_or_changes && function_exists("get_task_projected_award_display")) {
+            $proj = get_task_projected_award_display($task, $for_user_id);
+            $display["original_points"] = (float) $proj["original"];
+            $display["earned_points"] = (float) $proj["award"];
+            $display["is_reduced"] = $display["earned_points"] != $display["original_points"];
+            $display["is_preview"] = true;
+            $display["is_held"] = !empty($proj["rules_applicable"]);
+            $display["held_label"] = $proj["held_label"];
+            $display["reduction_reason"] = $proj["approval_label"] !== ""
+                ? $proj["approval_label"]
+                : $proj["queue_label"];
+            $display["projection"] = $proj;
+            $display["total_task_points"] = isset($task->points) ? (float) $task->points : 0;
+            $p_count = (int) $proj["participants_count"];
+            $display["is_collab"] = $p_count > 1;
+            $display["participants_count"] = $p_count > 1 ? $p_count : 1;
+            return $display;
+        }
+
         $participants = get_task_participants($task);
         $p_count = count($participants);
         $is_collab = $p_count > 1;
@@ -817,8 +924,12 @@ if (!function_exists('get_task_point_display')) {
         if ($split_eligible) {
             $assigned_to = isset($task->assigned_to) ? (int) $task->assigned_to : 0;
             $shares = distribute_task_points_shares($total_pts, $participants, $assigned_to);
-            $first_share = reset($shares);
-            $user_share_points = $first_share ? $first_share["share_original"] : round($total_pts / $p_count, 2);
+            if ($for_user_id > 0 && isset($shares[$for_user_id])) {
+                $user_share_points = $shares[$for_user_id]["share_original"];
+            } else {
+                $first_share = reset($shares);
+                $user_share_points = $first_share ? $first_share["share_original"] : round($total_pts / $p_count, 2);
+            }
         } else {
             $is_collab = false;
             $p_count = 1;
@@ -843,7 +954,8 @@ if (!function_exists('get_task_point_display')) {
 if (!function_exists('get_task_points_badge_html')) {
 
     function get_task_points_badge_html($task, $options = array()) {
-        $display = get_task_point_display($task);
+        $for_user_id = (int) get_array_value($options, "for_user_id");
+        $display = get_task_point_display($task, $for_user_id);
         $compact = get_array_value($options, "compact");
         $show_reason = get_array_value($options, "show_reason");
         if ($show_reason === null) {
@@ -855,12 +967,20 @@ if (!function_exists('get_task_points_badge_html')) {
         $is_collab = !empty($display["is_collab"]) && !empty($display["participants_count"]) && $display["participants_count"] > 1;
         $participants_count = $is_collab ? (int) $display["participants_count"] : 1;
 
-        $points_text = "<span class='task-points-given'>" . $original . "</span>";
-        if ($display["is_reduced"]) {
-            $points_text .= " <span class='task-points-earned'>→ " . $earned . "</span>";
+        if (!empty($display["is_held"]) && !empty($display["held_label"])) {
+            // Phase 17 held (rules on): same projected number Approve will award
+            $points_text = "<span class='task-points-held'>" . htmlspecialchars($display["held_label"]) . "</span>";
+        } else if (!empty($display["projection"]["queue_label_short"])) {
+            // In review / Changes with rules off: lateness-only projection (not Held)
+            $points_text = "<span class='task-points-held'>" . htmlspecialchars($display["projection"]["queue_label_short"]) . "</span>";
+        } else {
+            $points_text = "<span class='task-points-given'>" . $original . "</span>";
+            if ($display["is_reduced"]) {
+                $points_text .= " <span class='task-points-earned'>→ " . $earned . "</span>";
+            }
         }
 
-        if ($compact && $display["is_reduced"]) {
+        if ($compact && $display["is_reduced"] && empty($display["is_held"])) {
             $points_text .= " <span class='task-points-percent'>-" . (int) $display["reduction_percent"] . "%</span>";
         }
 
@@ -1068,3 +1188,5 @@ if (!function_exists('count_tasks_in_review')) {
     }
 
 }
+
+require_once __DIR__ . "/task_points_review_rules_helper.php";

@@ -163,7 +163,7 @@ class Crud_model extends Model {
                 if ($this->log_activity) {
                     // Internal task bookkeeping fields must not appear in the activity feed
                     if ($this->log_type === "task") {
-                        foreach (array("status_changed_at", "submitted_for_review_at", "points_edited", "activity_log_id") as $internal_field) {
+                        foreach (array("status_changed_at", "submitted_for_review_at", "points_edited", "activity_log_id", "first_review_submitted_at", "review_changes_count", "timer_lock_json", "points_rules_locked_at") as $internal_field) {
                             if (array_key_exists($internal_field, $data)) {
                                 unset($data[$internal_field]);
                             }

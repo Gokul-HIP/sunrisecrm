@@ -1,0 +1,55 @@
+{
+  "projectCount": 42,
+  "emptyVisible": false,
+  "emptyText": "",
+  "datepickerAttr": 1,
+  "TimesheetGrouped": "function",
+  "consoleErrors": [],
+  "failedNet": [],
+  "groupedResponses": [
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_projects",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[{\"project_id\":622,\"project_title\":\" Sunrise | October 2026 \",\"client_name\":\"Merit Medilinks\",\"task_count\":39,\"member_count\":11,\"total_seconds\":355360,\"total_time\":\"98:42:40\"},{\"project_id\":639,\"project_title\":\"Dheemahi | November 2026 \",\"client_name\":\"Dheemahi Child Neurology and Developmental Centre \",\"task_count\":6,\"member_count\":5,\"total_seconds\":6296,\"total_time\":\"01:44:56\"},{\"project_id\":602,\"project_title\":\"Dheemahi | September 2026\",\"client_name\":\"Dheemahi Child Neurology and Developmental Centre \",\"task_count\":7,\"member_count\":4,\"total_seconds\":51655,\"total_time\":\"14:20:55\"},{\"project_id\":640,\"project_title\":\"DPIS | November 2026\",\"client_name\":\"DPIS \",\"task_count\":13,\"member_count\":5,\"total_seconds\":14435,\"total_time\":\"04:00:35\"},{\"project_id\":612,\"project_"
+    },
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_members",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[{\"user_id\":30,\"name\":\"Abhijna  K\",\"avatar\":\"http:\\/\\/localhost:8080\\/assets\\/images\\/avatar.jpg\",\"task_count\":8,\"total_seconds\":17307,\"total_time\":\"04:48:27\",\"points_earned\":22,\"points_earned_label\":\"22\"},{\"user_id\":51,\"name\":\"Aditya Kulkarni\",\"avatar\":\"http:\\/\\/localhost:8080\\/files\\/profile_images\\/_file6a7bfe26ef9aa-avatar.png\",\"task_count\":4,\"total_seconds\":170734,\"total_time\":\"47:25:34\",\"points_earned\":9,\"points_earned_label\":\"9\"},{\"user_id\":12,\"name\":\"Bhoomika Mathad\",\"avatar\":\"http:\\/\\/localhost:8080\\/assets\\/images\\/avatar.jpg\",\"task_count\":2,\"total_seconds\":0,\"total_time\":\"00:00:00\",\"points_earned\":4,\"points_earned_label\":\"4\"},{\"user_id\":69,\"name\":\"Chandana  JN\",\"avatar\":\"http:\\/\\/localhost:8080\\/assets\\/images\\/avatar.jpg\",\"task_count\":3,\"total_seconds\":20"
+    },
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_member_tasks",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[{\"task_id\":25089,\"title\":\"26 October 2026 \\u2014 Sunrise Digital: Content Calendar Planning & Execution\",\"score_html\":\"<span class='badge clickable mt0 task-points-badge' title='Completed 24\\u201348 hours after the deadline. 20% deducted: 5 \\u2192 4 points.'><span class='task-points-given'>5<\\/span> <span class='task-points-earned'>\\u2192 4<\\/span> <span class='task-points-percent'>-20%<\\/span><\\/span>\",\"start_date\":\"26-10-2026\",\"deadline\":\"26-10-2026 07:00 PM\",\"deadline_overdue\":false,\"collaborators_html\":\"<a href=\\\"http:\\/\\/localhost:8080\\/index.php\\/team_members\\/view\\/30\\\" title=\\\"Abhijna  K\\\"><span class='avatar avatar-xs mr10'><img src='http:\\/\\/localhost:8080\\/assets\\/images\\/avatar.jpg' alt='...'><\\/span><\\/a><a href=\\\"http:\\/\\/localhost:8080\\/index.php\\/tea"
+    },
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_time_entries",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[]}"
+    },
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_projects",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[{\"project_id\":622,\"project_title\":\" Sunrise | October 2026 \",\"client_name\":\"Merit Medilinks\",\"task_count\":105,\"member_count\":12,\"total_seconds\":1440398,\"total_time\":\"400:06:38\"},{\"project_id\":477,\"project_title\":\"Dheemahi \",\"client_name\":\"Dheemahi Child Neurology and Developmental Centre \",\"task_count\":2,\"member_count\":2,\"total_seconds\":2081,\"total_time\":\"00:34:41\"},{\"project_id\":639,\"project_title\":\"Dheemahi | November 2026 \",\"client_name\":\"Dheemahi Child Neurology and Developmental Centre \",\"task_count\":6,\"member_count\":5,\"total_seconds\":6296,\"total_time\":\"01:44:56\"},{\"project_id\":602,\"project_title\":\"Dheemahi | September 2026\",\"client_name\":\"Dheemahi Child Neurology and Developmental Centre \",\"task_count\":14,\"member_count\":5,\"total_seconds\":75368,\"total_time\":\"20"
+    },
+    {
+      "url": "http://localhost:8080/index.php/projects/timesheet_grouped_projects",
+      "status": 200,
+      "bodyPreview": "{\"success\":true,\"data\":[{\"project_id\":622,\"project_title\":\" Sunrise | October 2026 \",\"client_name\":\"Merit Medilinks\",\"task_count\":20,\"member_count\":1,\"total_seconds\":92799,\"total_time\":\"25:46:39\"},{\"project_id\":640,\"project_title\":\"DPIS | November 2026\",\"client_name\":\"DPIS \",\"task_count\":1,\"member_count\":1,\"total_seconds\":4817,\"total_time\":\"01:20:17\"},{\"project_id\":612,\"project_title\":\"DPIS | October 2026 \",\"client_name\":\"DPIS \",\"task_count\":2,\"member_count\":1,\"total_seconds\":9851,\"total_time\":\"02:44:11\"},{\"project_id\":637,\"project_title\":\"HIP | November 2026\",\"client_name\":\"\",\"task_count\":1,\"member_count\":1,\"total_seconds\":1301,\"total_time\":\"00:21:41\"},{\"project_id\":626,\"project_title\":\"HIP | October 2026\",\"client_name\":\"\",\"task_count\":2,\"member_count\":1,\"total_seconds\":24719,\"total_time\""
+    }
+  ],
+  "screenshots": [
+    "filter_client_1440.png",
+    "filter_member_1440.png",
+    "after_date_apply_1440.png",
+    "table_mode_1440.png",
+    "expanded_project_1440.png",
+    "expanded_member_1440.png",
+    "grouped_390.png",
+    "first_load_390.png",
+    "filter_project_1440.png",
+    "first_load_1440.png",
+    "time_entries_open_1440.png",
+    "grouped_again_1440.png"
+  ]
+}

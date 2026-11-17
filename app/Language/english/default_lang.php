@@ -2455,4 +2455,20 @@ $lang["only_creator_or_admin_can_mark_task_done"] = "Only the task creator or an
 $lang["changes_status_can_only_be_set_via_review_queue"] = "Status 'Changes' can only be set from the review queue.";
 $lang["submitted_at"] = "Submitted at";
 
+$lang["held_points"] = "Held points";
+$lang["held_award_points"] = "Held %s of %s";
+$lang["will_award_points"] = "Will award %s of %s";
+$lang["on_approval_will_award"] = "On approval will award %s of %s";
+$lang["approve_award_confirm"] = "Approving will award %s of %s points to %s. Continue?";
+$lang["task_points_reason_overdue_72h"] = "Overdue more than 72h";
+$lang["task_points_reason_overdue_48h"] = "Overdue 24–48h";
+$lang["task_points_reason_overdue_24h"] = "Overdue within 24h";
+$lang["task_points_reason_no_timer"] = "No timer";
+$lang["task_points_reason_change_penalty"] = "%d change request(s): -%s";
+$lang["task_points_split_between"] = "split between %s";
+
+$lang["task_points_no_timer_zero"] = "No timer entry before review submission — 0 points.";
+
+$lang["task_points_change_penalty_applied"] = "Change penalty: %s round(s).";
+
 return $lang;

@@ -15,6 +15,10 @@ if (!function_exists('get_task_activity_log_hidden_fields')) {
             "status_changed_at",
             "points_edited",
             "activity_log_id",
+            "first_review_submitted_at",
+            "review_changes_count",
+            "timer_lock_json",
+            "points_rules_locked_at",
         );
     }
 
