@@ -4152,9 +4152,9 @@ class Projects extends Security_Controller {
             $options["project_member_id"] = $this->login_user->id; //don't show all tasks to non-admin users
         }
 
-        if (get_setting("task_review_workflow_enabled")) {
-            $options["exclude_review_tasks_for_assignee"] = true;
-        }
+        // Phase 23b: do NOT apply exclude_review_tasks_for_assignee on Kanban.
+        // Stamped In review tasks stay hidden on the Tasks list (intentional) but remain
+        // visible here and in global task search so assignees can still find them.
 
         $max_sort = $this->request->getPost('max_sort');
         $column_id = $this->request->getPost('kanban_column_id');

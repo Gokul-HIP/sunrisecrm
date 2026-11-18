@@ -46,5 +46,6 @@ $lang["excel_exports_current_filters"] = "Exports match the current toolbar filt
 $lang["timesheet_grouped_caption"] = "Tasks created between {from} and {to}. Time shows all time logged on these tasks.";
 $lang["no_tasks_created_in_this_range"] = "No tasks created in this range";
 $lang["unassigned"] = "Unassigned";
+$lang["filter_active"] = "Filter active";
 
 return $lang;

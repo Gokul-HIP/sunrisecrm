@@ -279,7 +279,9 @@ class Tasks_model extends Crud_model {
 
         $project_status = $this->_get_clean_value($options, "project_status");
         if ($project_status) {
-            $where .= " AND FIND_IN_SET($projects.status,'$project_status')";
+            // Phase 23b: LEFT JOIN projects — NULL status (project_id 0 / missing project) must not
+            // be dropped by FIND_IN_SET(NULL, 'open'). Keep no-project tasks visible.
+            $where .= " AND ($projects.id IS NULL OR FIND_IN_SET($projects.status,'$project_status'))";
         }
 
         $milestone_id = $this->_get_clean_value($options, "milestone_id");
@@ -325,16 +327,8 @@ class Tasks_model extends Crud_model {
             }
         }
 
-        // From–to filter by task created_date
-        $created_from = $this->_get_clean_value($options, "created_from");
-        $created_to = $this->_get_clean_value($options, "created_to");
-        if ($created_from && $created_to) {
-            $where .= " AND $tasks_table.created_date BETWEEN '$created_from' AND '$created_to'";
-        } else if ($created_from) {
-            $where .= " AND $tasks_table.created_date >= '$created_from'";
-        } else if ($created_to) {
-            $where .= " AND $tasks_table.created_date <= '$created_to'";
-        }
+        // From–to filter by task created_date (Phase 23: MySQL 8–safe, ignore zero dates)
+        $where .= $this->_created_date_filter_where($tasks_table, $options);
 
         $exclude_reminder_date = $this->_get_clean_value($options, "exclude_reminder_date");
         if ($exclude_reminder_date) {
@@ -379,7 +373,9 @@ class Tasks_model extends Crud_model {
         $extra_left_join = "";
         $project_member_id = $this->_get_clean_value($options, "project_member_id");
         if ($project_member_id) {
-            $where .= " AND $project_members_table.user_id=$project_member_id";
+            // Phase 23b: keep project-less tasks (project_id 0/NULL). LEFT JOIN alone +
+            // `pm.user_id=X` drops them because the join row is NULL.
+            $where .= " AND (IFNULL($tasks_table.project_id,0)=0 OR $project_members_table.user_id=$project_member_id)";
             $extra_left_join = " LEFT JOIN $project_members_table ON $tasks_table.project_id= $project_members_table.project_id AND $project_members_table.deleted=0 AND $project_members_table.user_id=$project_member_id";
         }
 
@@ -694,6 +690,45 @@ class Tasks_model extends Crud_model {
     }
 
     /**
+     * Phase 23: created_date from–to WHERE fragment.
+     * - Ignores invalid/zero dates in the filter params (MySQL 8 NO_ZERO_DATE safe).
+     * - Excludes task rows with created_date '0000-00-00' / NULL from matching a real range
+     *   (zero dates must never satisfy BETWEEN on strict MySQL 8).
+     * - Uses DATE() so DATETIME columns (if ever migrated) stay inclusive by calendar day.
+     */
+    private function _created_date_filter_where($tasks_table, $options) {
+        $created_from = $this->_get_clean_value($options, "created_from");
+        $created_to = $this->_get_clean_value($options, "created_to");
+        $valid = function ($d) {
+            $d = trim((string) $d);
+            if ($d === "" || $d === "0000-00-00" || $d === "0000-00-00 00:00:00") {
+                return false;
+            }
+            $ts = strtotime(substr($d, 0, 10));
+            return $ts !== false;
+        };
+        if ($created_from && !$valid($created_from)) {
+            $created_from = "";
+        }
+        if ($created_to && !$valid($created_to)) {
+            $created_to = "";
+        }
+        if (!$created_from && !$created_to) {
+            return "";
+        }
+
+        // DATE() keeps calendar-day inclusivity if the column is ever DATETIME.
+        // Zero-date legacy rows (0000-00-00) do not match real ranges (NULL/invalid on MySQL 8).
+        if ($created_from && $created_to) {
+            return " AND DATE($tasks_table.created_date) BETWEEN '$created_from' AND '$created_to'";
+        }
+        if ($created_from) {
+            return " AND DATE($tasks_table.created_date) >= '$created_from'";
+        }
+        return " AND DATE($tasks_table.created_date) <= '$created_to'";
+    }
+
+    /**
      * Build collaborator_list for paginated task rows without a per-row SQL subquery.
      * Output format matches the legacy GROUP_CONCAT used in get_details().
      */
@@ -903,7 +938,8 @@ class Tasks_model extends Crud_model {
 
         $project_status = $this->_get_clean_value($options, "project_status");
         if ($project_status) {
-            $where .= " AND FIND_IN_SET($projects.status,'$project_status')";
+            // Phase 23b: same null-safe open-project filter as get_details()
+            $where .= " AND ($projects.id IS NULL OR FIND_IN_SET($projects.status,'$project_status'))";
         }
 
         $assigned_to = $this->_get_clean_value($options, "assigned_to");
@@ -944,16 +980,8 @@ class Tasks_model extends Crud_model {
             }
         }
 
-        // From–to filter by task created_date (tasks page / kanban)
-        $created_from = $this->_get_clean_value($options, "created_from");
-        $created_to = $this->_get_clean_value($options, "created_to");
-        if ($created_from && $created_to) {
-            $where .= " AND $tasks_table.created_date BETWEEN '$created_from' AND '$created_to'";
-        } else if ($created_from) {
-            $where .= " AND $tasks_table.created_date >= '$created_from'";
-        } else if ($created_to) {
-            $where .= " AND $tasks_table.created_date <= '$created_to'";
-        }
+        // From–to filter by task created_date (tasks page / kanban; Phase 23 MySQL 8–safe)
+        $where .= $this->_created_date_filter_where($tasks_table, $options);
 
         $search = get_array_value($options, "search");
 
@@ -981,7 +1009,8 @@ class Tasks_model extends Crud_model {
         $extra_left_join = "";
         $project_member_id = $this->_get_clean_value($options, "project_member_id");
         if ($project_member_id) {
-            $where .= " AND $project_members_table.user_id=$project_member_id";
+            // Phase 23b: keep project-less tasks under project_member_id filter (see get_details)
+            $where .= " AND (IFNULL($tasks_table.project_id,0)=0 OR $project_members_table.user_id=$project_member_id)";
             $extra_left_join = " LEFT JOIN $project_members_table ON $tasks_table.project_id= $project_members_table.project_id AND $project_members_table.deleted=0 AND $project_members_table.user_id=$project_member_id";
         }
 
@@ -1138,7 +1167,7 @@ class Tasks_model extends Crud_model {
         $extra_left_join = "";
         $project_member_id = $this->_get_clean_value($options, "project_member_id");
         if ($project_member_id) {
-            $where .= " AND $project_members_table.user_id=$project_member_id";
+            $where .= " AND (IFNULL($tasks_table.project_id,0)=0 OR $project_members_table.user_id=$project_member_id)";
             $extra_left_join = " LEFT JOIN $project_members_table ON $tasks_table.project_id= $project_members_table.project_id AND $project_members_table.deleted=0 AND $project_members_table.user_id=$project_member_id";
         }
 

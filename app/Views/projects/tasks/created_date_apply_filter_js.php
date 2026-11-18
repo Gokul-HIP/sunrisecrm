@@ -3,16 +3,19 @@
      * From–to created_date filter with Apply button.
      * Dates can be chosen freely; filter runs only after Apply.
      * Until Apply (or after Clear), list/kanban stays unfiltered by created date.
+     *
+     * Phase 23: do NOT prefill today–today. Prefilling made Apply hide every task
+     * not created "today" (e.g. task 25906 created yesterday), while the buttons
+     * already looked like an active today–today filter.
      */
     window.initTasksCreatedDateApplyFilter = function (config) {
         var instanceId = config.instanceId,
                 $toolbar = config.$toolbar,
                 mode = config.mode || "table", // table | filters
                 today = moment().format("YYYY-MM-DD"),
-                todayLabel = moment().format("Do MMMM YYYY"),
                 emptyIcon = '<i data-feather="calendar" class="icon-16"></i>',
-                draftFrom = today,
-                draftTo = today,
+                draftFrom = "",
+                draftTo = "",
                 inputDateFormat = "YYYY-MM-DD";
 
         if (!$toolbar || !$toolbar.length || $("#" + instanceId + "-created-date-filter").length) {
@@ -73,13 +76,15 @@
 
         var $wrap = $(
                 '<div id="' + instanceId + '-created-date-filter" class="created-date-filter-wrap mr15 DTTT_container mb10">' +
+                '<span class="created-date-filter-label text-off mr5"><?php echo app_lang("created_date"); ?></span>' +
                 '<div class="input-daterange input-group">' +
-                '<button type="button" class="btn btn-default form-control created-from-btn" data-date="' + today + '">' + todayLabel + '</button>' +
+                '<button type="button" class="btn btn-default form-control created-from-btn" data-date="" title="<?php echo app_lang("start_date"); ?>">' + emptyIcon + '</button>' +
                 '<span class="input-group-addon">-</span>' +
-                '<button type="button" class="btn btn-default form-control created-to-btn" data-date="' + today + '">' + todayLabel + '</button>' +
+                '<button type="button" class="btn btn-default form-control created-to-btn" data-date="" title="<?php echo app_lang("end_date"); ?>">' + emptyIcon + '</button>' +
                 '</div>' +
                 '<button type="button" class="btn btn-primary created-date-apply-btn ml5"><?php echo app_lang("apply"); ?></button>' +
                 '<button type="button" class="btn btn-default created-date-clear-btn ml5"><?php echo app_lang("clear"); ?></button>' +
+                '<span class="created-date-filter-active-badge badge bg-primary ml5 hide"><?php echo app_lang("filter_active"); ?></span>' +
                 '</div>'
                 );
 
@@ -108,10 +113,16 @@
                 $toBtn = $wrap.find(".created-to-btn"),
                 inputs = $range.find("button.form-control").toArray();
 
+        var $activeBadge = $wrap.find(".created-date-filter-active-badge");
         var updateLabels = function () {
             $fromBtn.attr("data-date", draftFrom).html(draftFrom ? moment(draftFrom, inputDateFormat).format("Do MMMM YYYY") : emptyIcon);
             $toBtn.attr("data-date", draftTo).html(draftTo ? moment(draftTo, inputDateFormat).format("Do MMMM YYYY") : emptyIcon);
             feather.replace();
+        };
+        var syncActiveBadge = function () {
+            var settings = window.InstanceCollection && window.InstanceCollection[instanceId];
+            var active = !!(settings && settings.filterParams && settings.filterParams.created_from && settings.filterParams.created_to);
+            $activeBadge.toggleClass("hide", !active);
         };
 
         var reloadInstance = function () {
@@ -166,6 +177,7 @@
 
             settings.filterParams.created_from = draftFrom;
             settings.filterParams.created_to = draftTo;
+            syncActiveBadge();
             reloadInstance();
         });
 
@@ -178,13 +190,21 @@
                 return;
             }
 
-            draftFrom = today;
-            draftTo = today;
+            draftFrom = "";
+            draftTo = "";
             updateLabels();
 
             settings.filterParams.created_from = "";
             settings.filterParams.created_to = "";
+            syncActiveBadge();
             reloadInstance();
         });
+
+        // Keep badge in sync after external reloads
+        $(document).on("xhr.dt." + instanceId, function () {
+            syncActiveBadge();
+        });
+        updateLabels();
+        syncActiveBadge();
     };
 </script>

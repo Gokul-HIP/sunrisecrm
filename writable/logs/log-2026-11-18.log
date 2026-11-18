@@ -1,0 +1,16 @@
+CRITICAL - 2026-11-18 11:20:53 --> Call to a member function getPost() on null
+in APPPATH\Controllers\Projects.php on line 5477.
+ 1 FCPATH\tests\_tmp_phase23_probe_filters.php(49): App\Controllers\Projects->my_tasks_list_data()
+ 2 FCPATH\tests\_tmp_phase23_probe_filters.php(83): run_list(Object(App\Controllers\Projects), [...])
+CRITICAL - 2026-11-18 11:22:06 --> Undefined array key "recordsFiltered"
+in FCPATH\tests\_tmp_phase23_probe_filters.php on line 102.
+ 1 FCPATH\tests\_tmp_phase23_probe_filters.php(102): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "recordsFiltered"', 'FCPATH\\tests\\_tmp_phase23_probe_filters.php', 102)
+CRITICAL - 2026-11-18 01:17:13 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('projects/my_tasks_list_data', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
