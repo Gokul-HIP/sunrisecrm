@@ -1166,7 +1166,8 @@
 .tasks-ui .task-status-changed-at {
     font-size: 11px;
     line-height: 1.2;
-    color: var(--muted);
+    color: black;
+    font-weight: 900;
     white-space: nowrap;
 }
 
