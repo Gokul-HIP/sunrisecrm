@@ -212,6 +212,19 @@ if (get_setting("module_chat") && $can_chat) {
             setChatIcon("unread", totalMessages); //show close icon
         };
 
+        // Refresh inbox list in the chat popup when a new message arrives (polling path)
+        window.refreshMessageChatListIfOpen = function () {
+            if ($("#js-rise-chat-wrapper").hasClass("hide")) {
+                return;
+            }
+            // Only refresh the list view — leave an open conversation alone (activeChatChecker handles it)
+            if ($("#js-chat-messages-container").length) {
+                return;
+            }
+            if ($("#chat-inbox-tab-button").length || $(".js-message-row").length) {
+                loadChatTabs();
+            }
+        };
 
         window.triggerActiveChat = function (message_id) {
             getActiveChat(message_id);

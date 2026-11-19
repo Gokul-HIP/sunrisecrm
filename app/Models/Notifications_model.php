@@ -125,19 +125,8 @@ class Notifications_model extends Crud_model {
                     )) ";
         }
 
-        //find task assigner / creator for pre reminders
-        if ($task_id && in_array($event, array(
-            "project_task_deadline_2_hours_pre_reminder",
-            "project_task_deadline_1_hour_pre_reminder",
-            "project_task_deadline_30_mins_pre_reminder",
-            "project_task_deadline_pre_reminder"
-        ))) {
-            $assigner_id = $this->_get_task_assigner_id($task_id);
-            if ($assigner_id) {
-                $where .= " OR $users_table.id=$assigner_id ";
-            }
-        }
-
+        // Stage deadline reminders must respect notify_to_terms (including omitting task_creator).
+        // Do not force-add the assigner/creator here — task_creator is handled above when selected.
 
         //find  task_collaborators
         if (in_array("task_collaborators", $notify_to_terms) && $task_id) {
@@ -609,14 +598,14 @@ class Notifications_model extends Crud_model {
         } else if ($task_id && in_array($event, array(
             "project_task_deadline_2_hours_pre_reminder",
             "project_task_deadline_1_hour_pre_reminder",
-            "project_task_deadline_30_mins_pre_reminder",
-            "project_task_deadline_pre_reminder"
+            "project_task_deadline_30_mins_pre_reminder"
         ))) {
+            // Respect stored notify_to_terms only (assignee / collaborators / creator if selected)
             $recipient_ids = array();
-            if ($task_info && $task_info->assigned_to) {
+            if (in_array("task_assignee", $notify_to_terms) && $task_info && $task_info->assigned_to) {
                 $recipient_ids[] = (int) $task_info->assigned_to;
             }
-            if ($task_info && $task_info->collaborators) {
+            if (in_array("task_collaborators", $notify_to_terms) && $task_info && $task_info->collaborators) {
                 foreach (explode(",", $task_info->collaborators) as $collaborator_id) {
                     $collaborator_id = (int) trim($collaborator_id);
                     if ($collaborator_id) {
@@ -624,9 +613,14 @@ class Notifications_model extends Crud_model {
                     }
                 }
             }
-            $assigner_id = $this->_get_task_assigner_id($task_id);
-            if ($assigner_id) {
-                $recipient_ids[] = (int) $assigner_id;
+            if (in_array("task_creator", $notify_to_terms)) {
+                $creator_id = ($task_info && !empty($task_info->created_by)) ? (int) $task_info->created_by : 0;
+                if (!$creator_id) {
+                    $creator_id = (int) $this->_get_task_assigner_id($task_id);
+                }
+                if ($creator_id) {
+                    $recipient_ids[] = $creator_id;
+                }
             }
             $this->_limit_notification_recipients_to_users($web_notify_to, $email_notify_to, $to_user_id, $recipient_ids, $user_id);
         } else if ($task_id && $event === "project_task_sent_for_review") {
@@ -1193,8 +1187,8 @@ class Notifications_model extends Crud_model {
                     'project_task_deadline_pre_reminder'
                 )
                 AND (
-                    COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
-                    OR $tasks_table.created_by = $user_id
+                    FIND_IN_SET($user_id, $notifications_table.notify_to)
+                    OR COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
                     OR FIND_IN_SET($user_id, $tasks_table.collaborators)
                 )
             )
@@ -1481,7 +1475,6 @@ class Notifications_model extends Crud_model {
                 AND (
                     FIND_IN_SET($user_id, $notifications_table.notify_to)
                     OR COALESCE(NULLIF($notifications_table.to_user_id, 0), $tasks_table.assigned_to, 0) = $user_id
-                    OR $tasks_table.created_by = $user_id
                     OR FIND_IN_SET($user_id, $tasks_table.collaborators)
                 )
             )

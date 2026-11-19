@@ -10,9 +10,19 @@
 
                 //check read/unread class
                 $notification_class = "";
-                if ($notification->status === "unread") {
+                if ($notification->status === "unread"
+                    && (int) ($notification->last_to_user_id ?? 0) === (int) $login_user->id) {
                     $notification_class = "unread-notification";
                 }
+
+                $preview = function_exists("message_thread_preview_text")
+                    ? message_thread_preview_text(
+                        $notification->last_message ?? "",
+                        $notification->files ?? null,
+                        $notification->last_from_user_id ?? 0,
+                        $login_user->id
+                    )
+                    : "";
                 ?>
                 <a class="list-group-item d-flex <?php echo $notification_class; ?>" href="<?php echo get_uri("messages/inbox/" . $notification->main_message_id); ?>">
                     <div class="flex-shrink-0">
@@ -26,14 +36,7 @@
                             <span class="text-off float-end"><small><?php echo format_to_relative_time($notification->created_at); ?></small></span>
                         </div>
                         <div class="text-wrap-ellipsis">
-                            <?php
-                            $subject = $notification->subject;
-                            if ($notification->reply_subject) {
-                                $subject = $notification->reply_subject;
-                            }
-
-                            echo $subject;
-                            ?>
+                            <?php echo $preview; ?>
                         </div>
                     </div>
                 </a>

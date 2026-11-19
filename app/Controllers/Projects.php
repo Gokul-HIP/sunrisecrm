@@ -8486,6 +8486,18 @@ class Projects extends Security_Controller {
         }
 
         $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 0;
+
+        // Double-submit protection: already Done → do not re-award points or send another message
+        if ($done_status_id && (int) $task_info->status_id === $done_status_id) {
+            echo json_encode(array(
+                "success" => true,
+                "message" => app_lang("record_saved"),
+                "id" => (int) $task_info->id,
+                "already_approved" => true
+            ));
+            return true;
+        }
+
         $now = get_current_utc_time();
 
         $data = array(
@@ -8508,9 +8520,137 @@ class Projects extends Security_Controller {
                 sync_task_point_award($save_id);
             }
             log_notification("project_task_finished", array("project_id" => $task_info->project_id, "task_id" => $save_id));
-            echo json_encode(array("success" => true, "message" => app_lang("record_saved"), "id" => $save_id));
+
+            $response = array("success" => true, "message" => app_lang("record_saved"), "id" => $save_id);
+
+            // Optional message/files to assignee (never undo approval on failure)
+            $message_result = $this->_send_approval_message_to_assignee($task_info, $save_id);
+            if (!empty($message_result["warning"])) {
+                $response["message"] = $message_result["warning"];
+                $response["message_warning"] = $message_result["warning"];
+            }
+            if (!empty($message_result["message_id"])) {
+                $response["message_id"] = $message_result["message_id"];
+            }
+
+            echo json_encode($response);
         } else {
             echo json_encode(array("success" => false, "message" => app_lang("error_occurred")));
+        }
+    }
+
+    /**
+     * After Approve: optionally message the assignee via the normal Messages path.
+     * Never throws; never blocks/undoes approval.
+     *
+     * @param object $task_info Task row as loaded before approve
+     * @param int $task_id Saved task id
+     * @return array{warning?:string,message_id?:int,skipped?:bool}
+     */
+    private function _send_approval_message_to_assignee($task_info, $task_id) {
+        $approval_message = trim((string) $this->request->getPost("approval_message"));
+        $file_names = $this->request->getPost("file_names");
+        $has_files = is_array($file_names) && get_array_value($file_names, 0);
+
+        if ($approval_message === "" && !$has_files) {
+            return array("skipped" => true);
+        }
+
+        $assignee_id = (int) ($task_info->assigned_to ?? 0);
+        if ($assignee_id <= 0) {
+            return array("warning" => app_lang("approved_but_message_skipped_no_assignee"));
+        }
+        if ($assignee_id === (int) $this->login_user->id) {
+            return array("warning" => app_lang("approved_but_message_skipped_self"));
+        }
+
+        $assignee = $this->Users_model->get_one($assignee_id);
+        if (!$assignee || !(int) $assignee->id || (int) $assignee->deleted === 1) {
+            return array("warning" => app_lang("approved_but_message_skipped_deleted_assignee"));
+        }
+
+        try {
+            // Reject disallowed types the same way Messages does (dropzone validates; belt-and-suspenders here)
+            if ($has_files && is_array($file_names)) {
+                foreach ($file_names as $fname) {
+                    if ($fname && !is_valid_file_to_upload($fname)) {
+                        return array("warning" => app_lang("approved_but_message_could_not_be_sent"));
+                    }
+                }
+            }
+
+            $target_path = get_setting("timeline_file_path");
+            $files_data = move_files_from_temp_dir_to_permanent_dir($target_path, "message");
+
+            $title = (string) ($task_info->title ?? "");
+            if (function_exists("mb_substr")) {
+                $title = mb_substr($title, 0, 120);
+            } else {
+                $title = substr($title, 0, 120);
+            }
+            $header = "Task approved: #" . (int) $task_id . " " . $title;
+            if (function_exists("mb_substr")) {
+                $header = mb_substr($header, 0, 200);
+            } else {
+                $header = substr($header, 0, 200);
+            }
+
+            // Escape user text; no raw HTML. Body: header, optional typed message, task link.
+            $safe_typed = htmlspecialchars($approval_message, ENT_QUOTES, "UTF-8");
+            $task_url = get_uri("projects/task_view/" . (int) $task_id);
+            $safe_body = $header;
+            if ($safe_typed !== "") {
+                $safe_body .= "\n\n" . $safe_typed;
+            }
+            $safe_body .= "\n\nTask: " . $task_url;
+
+            // One conversation per person: reply into open root thread if present
+            $root = $this->Messages_model->get_open_thread_between_users($this->login_user->id, $assignee_id);
+            $parent_message_id = ($root && !empty($root->id)) ? (int) $root->id : 0;
+
+            $message_data = array(
+                "from_user_id" => $this->login_user->id,
+                "to_user_id" => $assignee_id,
+                "message_id" => $parent_message_id,
+                "subject" => $parent_message_id ? "" : "Task review messages",
+                "message" => $safe_body,
+                "created_at" => get_current_utc_time(),
+                "deleted_by_users" => "",
+            );
+            $message_data = clean_data($message_data);
+            $message_data["files"] = $files_data; // don't clean serialized files
+            // clean_data may cast message_id; restore intentional parent id
+            $message_data["message_id"] = $parent_message_id;
+
+            $save_id = $this->Messages_model->ci_save($message_data);
+            if (!$save_id) {
+                return array("warning" => app_lang("approved_but_message_could_not_be_sent"));
+            }
+
+            if ($parent_message_id) {
+                // Same as Messages::reply — revive thread if soft-deleted and notify as reply
+                $this->Messages_model->clear_deleted_status($parent_message_id);
+                log_notification("message_reply_sent", array(
+                    "actual_message_id" => $save_id,
+                    "parent_message_id" => $parent_message_id
+                ));
+                if (get_setting("enable_chat_via_pusher") && get_setting("enable_push_notification")) {
+                    send_message_via_pusher($assignee_id, $message_data, $parent_message_id);
+                }
+            } else {
+                log_notification("new_message_sent", array("actual_message_id" => $save_id));
+                if (get_setting("enable_chat_via_pusher") && get_setting("enable_push_notification")) {
+                    send_message_via_pusher($assignee_id, $message_data, $save_id);
+                }
+            }
+
+            return array(
+                "message_id" => (int) $save_id,
+                "thread_id" => $parent_message_id ? $parent_message_id : (int) $save_id
+            );
+        } catch (\Throwable $ex) {
+            log_message("error", "approve_task_review message send failed: " . $ex->getMessage());
+            return array("warning" => app_lang("approved_but_message_could_not_be_sent"));
         }
     }
 

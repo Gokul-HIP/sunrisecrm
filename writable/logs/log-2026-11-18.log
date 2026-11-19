@@ -14,3 +14,1553 @@ in SYSTEMPATH\Security\Security.php on line 306.
  5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
  6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
  7 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:49:57 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_users' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT *\nFROM `...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT *\nFROM `...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT *\nFROM `...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(1749): CodeIgniter\Database\BaseConnection->query('SELECT *\nFROM `...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(83): CodeIgniter\Database\BaseBuilder->getWhere(Array, 1)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(78): App\Models\Crud_model->get_one_where(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(117): App\Models\Crud_model->get_one('30')
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\activity_logs_helper.php(47): App\Controllers\App_Controller->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\activity_logs_helper.php(330): get_change_logs('task', 'status_id', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Views\activity_logs\activity_logs_widget.php(3): get_change_logs_array(Array, 'task', 'updated')
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\View\View.php(213): include('\\\\WSL.LOCALHOST...')
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\View\View.php(216): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(1184): CodeIgniter\View\View->render('activity_logs/a...', Array, true)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\widget_helper.php(55): view('activity_logs/a...', Array)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Views\dashboards\custom_dashboards\extra_data\widget_with_heading.php(22): activity_logs_widget(Array)
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\View\View.php(213): include('\\\\WSL.LOCALHOST...')
+#16 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\View\View.php(216): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+#17 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(1184): CodeIgniter\View\View->render('dashboards/cust...', Array, true)
+#18 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Template.php(38): view('dashboards/cust...', Array)
+#19 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Dashboard.php(1095): App\Libraries\Template->view('dashboards/cust...', Array)
+#20 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Dashboard.php(1065): App\Controllers\Dashboard->_get_widgets_for_staffs('project_timelin...', Array)
+#21 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Dashboard.php(1042): App\Controllers\Dashboard->_make_dashboard_widgets('project_timelin...')
+#22 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Dashboard.php(34): App\Controllers\Dashboard->make_dashboard(Array)
+#23 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(934): App\Controllers\Dashboard->index()
+#24 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Dashboard))
+#25 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#26 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#27 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#28 {main}
+CRITICAL - 2026-11-18 22:49:57 --> Call to a member function getRow() on false
+in APPPATH\Models\Crud_model.php on line 85.
+ 1 APPPATH\Models\Crud_model.php(78): App\Models\Crud_model->get_one_where([...])
+ 2 APPPATH\Controllers\App_Controller.php(117): App\Models\Crud_model->get_one('30')
+ 3 APPPATH\Helpers\activity_logs_helper.php(47): App\Controllers\App_Controller->__construct()
+ 4 APPPATH\Helpers\activity_logs_helper.php(330): get_change_logs('task', 'status_id', [...])
+ 5 APPPATH\Views\activity_logs\activity_logs_widget.php(3): get_change_logs_array([...], 'task', 'updated')
+ 6 SYSTEMPATH\View\View.php(213): include('APPPATH\\Views\\activity_logs\\activity_logs_widget.php')
+ 7 SYSTEMPATH\View\View.php(216): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 8 SYSTEMPATH\Common.php(1184): CodeIgniter\View\View->render('activity_logs/activity_logs_widget', [], true)
+ 9 APPPATH\Helpers\widget_helper.php(55): view('activity_logs/activity_logs_widget', [...])
+10 APPPATH\Views\dashboards\custom_dashboards\extra_data\widget_with_heading.php(22): activity_logs_widget([...])
+11 SYSTEMPATH\View\View.php(213): include('APPPATH\\Views\\dashboards\\custom_dashboards\\extra_data\\widget_with_heading.php')
+12 SYSTEMPATH\View\View.php(216): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+13 SYSTEMPATH\Common.php(1184): CodeIgniter\View\View->render('dashboards/custom_dashboards/extra_data/widget_with_heading', [], true)
+14 APPPATH\Libraries\Template.php(38): view('dashboards/custom_dashboards/extra_data/widget_with_heading', [...])
+15 APPPATH\Controllers\Dashboard.php(1095): App\Libraries\Template->view('dashboards/custom_dashboards/extra_data/widget_with_heading', [...])
+16 APPPATH\Controllers\Dashboard.php(1065): App\Controllers\Dashboard->_get_widgets_for_staffs('project_timeline', [...])
+17 APPPATH\Controllers\Dashboard.php(1042): App\Controllers\Dashboard->_make_dashboard_widgets('project_timeline')
+18 APPPATH\Controllers\Dashboard.php(34): App\Controllers\Dashboard->make_dashboard([...])
+19 SYSTEMPATH\CodeIgniter.php(934): App\Controllers\Dashboard->index()
+20 SYSTEMPATH\CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Dashboard))
+21 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+22 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+23 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:49:57 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_request_load_minute' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+ERROR - 2026-11-18 22:49:57 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_ci_sessions' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('UPDATE `rise_ci...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('UPDATE `rise_ci...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('UPDATE `rise_ci...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_ci...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Handlers\DatabaseHandler.php(230): CodeIgniter\Database\BaseBuilder->update(Array)
+#5 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->write('ni0g3hkl03na915...', 'user_id|s:2:"30...')
+#6 [internal function]: session_write_close()
+#7 {main}
+ERROR - 2026-11-18 22:50:03 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#10 {main}
+ERROR - 2026-11-18 22:50:04 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#14 {main}
+CRITICAL - 2026-11-18 22:50:04 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+ 9 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+10 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+11 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+12 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+13 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:50:04 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:50:09 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:50:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:50:10 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:50:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:50:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:50:11 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:50:11 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:50:11 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:50:43 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:50:43 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:50:43 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:50:43 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:50:51 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_list_msg_tables.php(20): CodeIgniter\Database\BaseConnection->query('SHOW TABLES LIK...')
+#4 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_list_msg_tables.php(20): CodeIgniter\Database\BaseConnection->query('SHOW TABLES LIK...')
+#3 {main}
+CRITICAL - 2026-11-18 22:50:51 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 SYSTEMPATH\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+ 2 FCPATH\tests\_tmp_list_msg_tables.php(20): CodeIgniter\Database\BaseConnection->query('SHOW TABLES LIKE \'%message%\'')
+ERROR - 2026-11-18 22:51:04 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#10 {main}
+ERROR - 2026-11-18 22:51:04 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#14 {main}
+CRITICAL - 2026-11-18 22:51:05 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+ 9 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+10 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+11 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+12 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+13 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:51:05 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:51:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:51:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:51:10 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:51:10 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:51:14 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:51:14 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:51:14 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:51:15 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:51:23 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Signin.php(10): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Signin->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Signin.php(10): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Signin->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#10 {main}
+ERROR - 2026-11-18 22:51:23 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Signin.php(10): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Signin->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Signin.php(10): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Signin->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#14 {main}
+CRITICAL - 2026-11-18 22:51:23 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Signin.php(10): App\Controllers\App_Controller->__construct()
+ 9 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Signin->__construct()
+10 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+11 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+12 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+13 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:51:23 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:51:46 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:51:46 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:51:46 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:51:46 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:52:05 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#10 {main}
+ERROR - 2026-11-18 22:52:06 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#14 {main}
+CRITICAL - 2026-11-18 22:52:06 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+ 9 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+10 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+11 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+12 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+13 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:52:06 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:52:11 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:52:12 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:52:12 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:52:12 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:52:18 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:52:18 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#16 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(129): App\Models\Settings_model->__construct(NULL)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Sett...', Array, NULL)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(100): model('App\\Models\\Sett...')
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#15 {main}
+CRITICAL - 2026-11-18 22:52:18 --> Unable to connect to the database.
+Main connection [MySQLi]: Unknown database 'sunrisecrmnew'
+in SYSTEMPATH\Database\BaseConnection.php on line 427.
+ 1 APPPATH\Models\Crud_model.php(39): CodeIgniter\Database\BaseConnection->initialize()
+ 2 APPPATH\Models\Crud_model.php(27): App\Models\Crud_model::ensure_connection_sql_mode(Object(CodeIgniter\Database\MySQLi\Connection))
+ 3 APPPATH\Models\Settings_model.php(11): App\Models\Crud_model->__construct('settings')
+ 4 SYSTEMPATH\Config\Factories.php(129): App\Models\Settings_model->__construct(null)
+ 5 SYSTEMPATH\Config\Factories.php(86): CodeIgniter\Config\Factories::__callStatic('models', [...])
+ 6 SYSTEMPATH\Common.php(829): CodeIgniter\Config\Factories::models('App\\Models\\Settings_model', [...], null)
+ 7 APPPATH\Controllers\App_Controller.php(100): model('App\\Models\\Settings_model')
+ 8 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+ 9 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+10 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+11 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+12 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+13 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+14 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:52:18 --> Error connecting to the database: mysqli_sql_exception: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:173
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(173): mysqli->real_connect('127.0.0.1', 'hip_wsl', Object(SensitiveParameterValue), 'sunrisecrmnew', 3306, '', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+
+Next CodeIgniter\Database\Exceptions\DatabaseException: Unknown database 'sunrisecrmnew' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:218
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(391): CodeIgniter\Database\MySQLi\Connection->connect(false)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(573): CodeIgniter\Database\BaseConnection->initialize()
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#3 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#4 {main}
+ERROR - 2026-11-18 22:52:50 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_notification_settings' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT id FROM ...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT id FROM ...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+ERROR - 2026-11-18 22:52:51 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_ci_sessions' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT `data`\nF...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT `data`\nF...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT `data`\nF...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `data`\nF...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Handlers\DatabaseHandler.php(144): CodeIgniter\Database\BaseBuilder->get()
+#5 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb064...')
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(928): session_start()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(674): CodeIgniter\Session\Session->start()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', NULL)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#16 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#17 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#18 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#19 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#20 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#21 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#22 {main}
+CRITICAL - 2026-11-18 22:52:51 --> Call to a member function getRow() on false
+in SYSTEMPATH\Session\Handlers\DatabaseHandler.php on line 144.
+ 1 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb0649uafrpkcr4bdr3eog')
+ 2 SYSTEMPATH\Session\Session.php(928): session_start()
+ 3 SYSTEMPATH\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+ 4 SYSTEMPATH\Config\Services.php(674): CodeIgniter\Session\Session->start()
+ 5 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+ 6 SYSTEMPATH\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', [...])
+ 7 SYSTEMPATH\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', null)
+ 8 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+ 9 APPPATH\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', [])
+10 APPPATH\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+11 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+12 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+13 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+14 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+15 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+16 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+17 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:52:51 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_request_load_minute' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+ERROR - 2026-11-18 22:53:07 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_notification_settings' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT id FROM ...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT id FROM ...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#11 {main}
+ERROR - 2026-11-18 22:53:07 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_ci_sessions' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT `data`\nF...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT `data`\nF...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT `data`\nF...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `data`\nF...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Handlers\DatabaseHandler.php(144): CodeIgniter\Database\BaseBuilder->get()
+#5 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('cau56k2pfnvn8g7...')
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(928): session_start()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(674): CodeIgniter\Session\Session->start()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', NULL)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+#16 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+#17 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#18 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#19 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#20 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#21 {main}
+CRITICAL - 2026-11-18 22:53:07 --> Call to a member function getRow() on false
+in SYSTEMPATH\Session\Handlers\DatabaseHandler.php on line 144.
+ 1 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('cau56k2pfnvn8g7qgs8e1ffc9rsrhake')
+ 2 SYSTEMPATH\Session\Session.php(928): session_start()
+ 3 SYSTEMPATH\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+ 4 SYSTEMPATH\Config\Services.php(674): CodeIgniter\Session\Session->start()
+ 5 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+ 6 SYSTEMPATH\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', [...])
+ 7 SYSTEMPATH\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', null)
+ 8 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+ 9 APPPATH\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', [])
+10 APPPATH\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+11 APPPATH\Controllers\Cron.php(16): App\Controllers\App_Controller->__construct()
+12 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Cron->__construct()
+13 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+14 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+15 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+16 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:53:07 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_request_load_minute' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+ERROR - 2026-11-18 22:53:14 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_notification_settings' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT id FROM ...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT id FROM ...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+ERROR - 2026-11-18 22:53:14 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_ci_sessions' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT `data`\nF...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT `data`\nF...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT `data`\nF...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `data`\nF...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Handlers\DatabaseHandler.php(144): CodeIgniter\Database\BaseBuilder->get()
+#5 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb064...')
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(928): session_start()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(674): CodeIgniter\Session\Session->start()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', NULL)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#16 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+#17 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+#18 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#19 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#20 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#21 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#22 {main}
+CRITICAL - 2026-11-18 22:53:14 --> Call to a member function getRow() on false
+in SYSTEMPATH\Session\Handlers\DatabaseHandler.php on line 144.
+ 1 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb0649uafrpkcr4bdr3eog')
+ 2 SYSTEMPATH\Session\Session.php(928): session_start()
+ 3 SYSTEMPATH\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+ 4 SYSTEMPATH\Config\Services.php(674): CodeIgniter\Session\Session->start()
+ 5 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+ 6 SYSTEMPATH\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', [...])
+ 7 SYSTEMPATH\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', null)
+ 8 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+ 9 APPPATH\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', [])
+10 APPPATH\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+11 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+12 APPPATH\Controllers\Notifications.php(8): App\Controllers\Security_Controller->__construct()
+13 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Notifications->__construct()
+14 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+15 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+16 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+17 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:53:14 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_request_load_minute' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}
+ERROR - 2026-11-18 22:53:23 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_notification_settings' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT id FROM ...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT id FROM ...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT id FROM ...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\notifications_helper.php(1209): CodeIgniter\Database\BaseConnection->query('SELECT id FROM ...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(94): ensure_deadline_2_hour_notification_settings()
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#12 {main}
+ERROR - 2026-11-18 22:53:23 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_ci_sessions' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT `data`\nF...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT `data`\nF...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT `data`\nF...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(1616): CodeIgniter\Database\BaseConnection->query('SELECT `data`\nF...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Handlers\DatabaseHandler.php(144): CodeIgniter\Database\BaseBuilder->get()
+#5 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb064...')
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(928): session_start()
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(674): CodeIgniter\Session\Session->start()
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+#10 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#11 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', NULL)
+#12 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+#13 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', Array)
+#14 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+#15 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+#16 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+#17 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+#18 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+#19 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(NULL, Object(Config\Cache), false)
+#20 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\index.php(80): CodeIgniter\CodeIgniter->run()
+#21 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Commands\Server\rewrite.php(47): require_once('\\\\WSL.LOCALHOST...')
+#22 {main}
+CRITICAL - 2026-11-18 22:53:23 --> Call to a member function getRow() on false
+in SYSTEMPATH\Session\Handlers\DatabaseHandler.php on line 144.
+ 1 [internal function]: CodeIgniter\Session\Handlers\DatabaseHandler->read('fm5ljh5r4bgb0649uafrpkcr4bdr3eog')
+ 2 SYSTEMPATH\Session\Session.php(928): session_start()
+ 3 SYSTEMPATH\Session\Session.php(250): CodeIgniter\Session\Session->startSession()
+ 4 SYSTEMPATH\Config\Services.php(674): CodeIgniter\Session\Session->start()
+ 5 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session(Object(Config\App), false)
+ 6 SYSTEMPATH\Config\BaseService.php(193): CodeIgniter\Config\BaseService::__callStatic('session', [...])
+ 7 SYSTEMPATH\Config\Services.php(641): CodeIgniter\Config\BaseService::getSharedInstance('session', null)
+ 8 SYSTEMPATH\Config\BaseService.php(252): CodeIgniter\Config\Services::session()
+ 9 APPPATH\Models\Users_model.php(82): CodeIgniter\Config\BaseService::__callStatic('session', [])
+10 APPPATH\Controllers\App_Controller.php(103): App\Models\Users_model->login_user_id()
+11 APPPATH\Controllers\Security_Controller.php(17): App\Controllers\App_Controller->__construct()
+12 APPPATH\Controllers\Messages.php(8): App\Controllers\Security_Controller->__construct()
+13 SYSTEMPATH\CodeIgniter.php(906): App\Controllers\Messages->__construct()
+14 SYSTEMPATH\CodeIgniter.php(490): CodeIgniter\CodeIgniter->createController()
+15 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+16 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+17 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+ERROR - 2026-11-18 22:53:23 --> mysqli_sql_exception: Table 'sunrisecrmnew.rise_request_load_minute' doesn't exist in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Libraries\Request_performance_tracker.php(177): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array)
+#4 [internal function]: App\Libraries\Request_performance_tracker::shutdown()
+#5 {main}

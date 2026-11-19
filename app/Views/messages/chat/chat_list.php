@@ -16,6 +16,15 @@ if ($messages) {
         if ($message->status === "unread" && $last_message_from != $login_user->id) {
             $status = "unread";
         }
+
+        $preview = function_exists("message_thread_preview_text")
+            ? message_thread_preview_text(
+                $message->last_message ?? "",
+                $message->last_message_files ?? null,
+                $last_message_from,
+                $login_user->id
+            )
+            : "";
         ?>
         <div class='js-message-row message-row <?php echo $status; ?>' data-id='<?php echo $message->id; ?>' data-index='<?php echo $message->id; ?>'>
             <div class="d-flex">
@@ -30,7 +39,7 @@ if ($messages) {
                         <strong><?php echo $message->user_name; ?></strong>
                         <span class='text-off float-end time'><?php echo format_to_relative_time($message->message_time); ?></span>
                     </div>
-                    <?php echo $message->subject; ?>
+                    <div class="text-wrap-ellipsis"><?php echo $preview; ?></div>
                 </div>
             </div>
         </div>

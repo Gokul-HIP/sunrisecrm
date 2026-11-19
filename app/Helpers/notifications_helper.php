@@ -403,15 +403,15 @@ if (!function_exists('get_notification_config')) {
                 "info" => $task_link
             ),
             "project_task_deadline_2_hours_pre_reminder" => array(
-                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "notify_to" => array("task_assignee", "task_collaborators"),
                 "info" => $task_link
             ),
             "project_task_deadline_1_hour_pre_reminder" => array(
-                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "notify_to" => array("task_assignee", "task_collaborators"),
                 "info" => $task_link
             ),
             "project_task_deadline_30_mins_pre_reminder" => array(
-                "notify_to" => array("task_assignee", "task_collaborators", "task_creator"),
+                "notify_to" => array("task_assignee", "task_collaborators"),
                 "info" => $task_link
             ),
             "project_task_sent_for_review" => array(
@@ -1198,9 +1198,9 @@ if (!function_exists('ensure_deadline_2_hour_notification_settings')) {
             $table = "{$prefix}notification_settings";
 
             $events = array(
-                'project_task_deadline_2_hours_pre_reminder' => array('sort' => 21, 'terms' => 'task_assignee,task_collaborators,task_creator'),
-                'project_task_deadline_1_hour_pre_reminder' => array('sort' => 22, 'terms' => 'task_assignee,task_collaborators,task_creator'),
-                'project_task_deadline_30_mins_pre_reminder' => array('sort' => 23, 'terms' => 'task_assignee,task_collaborators,task_creator'),
+                'project_task_deadline_2_hours_pre_reminder' => array('sort' => 21, 'terms' => 'task_assignee,task_collaborators'),
+                'project_task_deadline_1_hour_pre_reminder' => array('sort' => 22, 'terms' => 'task_assignee,task_collaborators'),
+                'project_task_deadline_30_mins_pre_reminder' => array('sort' => 23, 'terms' => 'task_assignee,task_collaborators'),
                 'project_task_sent_for_review' => array('sort' => 24, 'terms' => 'task_creator'),
                 'project_task_changes_requested' => array('sort' => 25, 'terms' => 'task_assignee')
             );

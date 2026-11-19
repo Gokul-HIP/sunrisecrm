@@ -292,8 +292,11 @@
 
         if ("<?php echo (get_setting('enable_chat_via_pusher') && get_setting("enable_push_notification")) != 1 ?>") {
             window.activeChatChecker = window.setInterval(function () {
+                if (document.hidden) {
+                    return; // pause polling while the tab is hidden
+                }
                 loadMessages();
-            }, 5000); //check message in every 5 seconds
+            }, 4000); // polling fallback ~4s when Pusher is not configured
         }
     }
 

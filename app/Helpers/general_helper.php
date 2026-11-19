@@ -1906,6 +1906,52 @@ if (!function_exists('can_access_messages_module')) {
 
 }
 
+/**
+ * WhatsApp-style thread preview: latest text (or 📎 file), truncated, escaped, optional "You: " prefix.
+ */
+if (!function_exists('message_thread_preview_text')) {
+
+    function message_thread_preview_text($message_text, $files = null, $from_user_id = 0, $viewer_id = 0, $max_len = 100, $for_html = true) {
+        $raw = html_entity_decode((string) $message_text, ENT_QUOTES, "UTF-8");
+        $raw = trim(preg_replace('/\s+/u', ' ', strip_tags($raw)));
+
+        if ($raw === "") {
+            $files_arr = $files;
+            if (is_string($files)) {
+                $files_arr = @unserialize($files);
+            }
+            if (is_array($files_arr) && count($files_arr)) {
+                $fname = get_array_value($files_arr[0], "file_name");
+                if ($fname) {
+                    if (function_exists("remove_file_prefix")) {
+                        $fname = remove_file_prefix($fname);
+                    }
+                    $raw = "📎 " . $fname;
+                }
+            }
+        }
+
+        if ($raw === "") {
+            return "";
+        }
+
+        if (function_exists("mb_strlen") && function_exists("mb_substr")) {
+            if (mb_strlen($raw) > $max_len) {
+                $raw = mb_substr($raw, 0, $max_len) . "…";
+            }
+        } else if (strlen($raw) > $max_len) {
+            $raw = substr($raw, 0, $max_len) . "…";
+        }
+
+        if ($viewer_id && (int) $from_user_id === (int) $viewer_id) {
+            $raw = app_lang("you") . ": " . $raw;
+        }
+
+        return $for_html ? htmlspecialchars($raw, ENT_QUOTES, "UTF-8") : $raw;
+    }
+
+}
+
 if (!function_exists('add_auto_reply_to_ticket')) {
 
     function add_auto_reply_to_ticket($ticket_id = 0) {

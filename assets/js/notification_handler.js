@@ -755,7 +755,8 @@ scheduleNotificationCheck = function (params) {
     var isHidden = !!document.hidden;
     var check_notification_after_every;
     if (params.isMessageNotification) {
-        check_notification_after_every = isHidden ? 30000 : 5000;
+        // 3–5s when tab visible; pause-ish when hidden
+        check_notification_after_every = isHidden ? 30000 : 4000;
     } else {
         var baseInterval = (params.checkNotificationAfterEvery * 1000) || 15000;
         if (baseInterval < 10000) {
@@ -810,7 +811,7 @@ checkNotifications = function (params, updateStatus) {
                 var payloads = result.desktop_notifications || [];
                 var maxPayloadId = 0;
                 payloads.forEach(function (item) {
-                    var id = parseInt(item.notification_id, 10) || 0;
+                    var id = parseInt(String(item.notification_id).replace(/\D/g, ""), 10) || 0;
                     if (id > maxPayloadId) {
                         maxPayloadId = id;
                     }
@@ -849,13 +850,31 @@ checkNotifications = function (params, updateStatus) {
                                 showedDesktopToast = true;
                             }
                         } else if (params.isMessageNotification) {
-                            showDesktopNotifications([{
-                                title: "Sunrise CRM",
-                                message: "You have a new message",
-                                icon: "",
-                                notification_id: "msg-" + totalNotifications + "-" + Date.now()
-                            }]);
+                            var msgFresh = payloads.filter(function (item) {
+                                var id = parseInt(String(item.notification_id).replace(/\D/g, ""), 10) || 0;
+                                return id > (parseInt(params.lastDesktopNotificationId, 10) || 0);
+                            });
+                            if (!msgFresh.length && payloads.length && maxPayloadId > (parseInt(params.lastDesktopNotificationId, 10) || 0)) {
+                                msgFresh = [payloads[0]];
+                            }
+                            if (msgFresh.length > 1) {
+                                msgFresh = [msgFresh[0]];
+                            }
+                            if (msgFresh.length) {
+                                showDesktopNotifications(msgFresh);
+                            } else {
+                                showDesktopNotifications([{
+                                    title: "Sunrise CRM",
+                                    message: "You have a new message",
+                                    icon: "",
+                                    notification_id: "msg-" + totalNotifications + "-" + Date.now()
+                                }]);
+                            }
                             showedDesktopToast = true;
+
+                            if (typeof window.refreshMessageChatListIfOpen === "function") {
+                                window.refreshMessageChatListIfOpen();
+                            }
                         }
 
                         if (!showedDesktopToast) {

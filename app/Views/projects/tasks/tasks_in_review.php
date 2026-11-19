@@ -46,10 +46,41 @@
     </div>
 </div>
 
+<!-- Modal for Approve Task (optional message + files via Messages uploader) -->
+<div class="modal fade" id="approve-task-modal" tabindex="-1" role="dialog" aria-labelledby="approveTaskModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div id="approve-task-dropzone" class="post-dropzone">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="approveTaskModalLabel"><?php echo app_lang("approve_task_modal_title"); ?></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="approve-task-id" value="" />
+                    <div class="form-group">
+                        <label for="approve-task-message" class="mb5"><?php echo app_lang("optional_message_to_assignee"); ?></label>
+                        <textarea id="approve-task-message" name="approval_message" class="form-control" rows="4" placeholder="<?php echo app_lang("optional_message_to_assignee"); ?>..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <?php echo view("includes/dropzone_preview"); ?>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default upload-file-button float-start me-auto btn-sm round" type="button" style="color:#7988a2"><i data-feather='camera' class='icon-16'></i> <?php echo app_lang("upload_file"); ?></button>
+                    <button type="button" class="btn btn-default" id="approve-task-cancel-btn" data-bs-dismiss="modal"><?php echo app_lang("cancel"); ?></button>
+                    <button type="button" id="submit-approve-task-btn" class="btn btn-success"><?php echo app_lang("approve"); ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     $(document).ready(function () {
         var currentFilter = "<?php echo $filter; ?>";
         var sourceUrl = "<?php echo_uri('projects/tasks_in_review_list_data'); ?>/" + currentFilter;
+        var approveSubmitting = false;
+        var approveDropzone = null;
 
         $("#tasks-in-review-table").appTable({
             source: sourceUrl,
@@ -70,33 +101,102 @@
             }
         });
 
-        // Approve action — confirm when projected award is 0 or less than original
+        // Messages upload endpoints + same Dropzone component as Messages feature.
+        // Init once per modal show; destroy on hide so Upload File works every open.
+        var uploadUrl = "<?php echo get_uri("messages/upload_file"); ?>";
+        var validationUrl = "<?php echo get_uri("messages/validate_message_file"); ?>";
+        var approveDropzonePreviewHtml = (function () {
+            var $host = $("#approve-task-dropzone .modal-body .form-group").has(".post-file-dropzone-scrollbar").first();
+            if (!$host.length) {
+                $host = $("#approve-task-dropzone .modal-body .form-group").last();
+            }
+            return $host.length ? $host.html() : "";
+        })();
+
+        function getApprovePreviewHost() {
+            var $host = $("#approve-task-dropzone .modal-body .form-group").has(".post-file-dropzone-scrollbar").first();
+            if (!$host.length) {
+                $host = $("#approve-task-dropzone .modal-body .form-group").last();
+            }
+            return $host;
+        }
+
+        function destroyApproveDropzone() {
+            var $dz = $("#approve-task-dropzone");
+            var instances = [];
+            if (approveDropzone) {
+                instances.push(approveDropzone);
+            }
+            try {
+                if (typeof Dropzone !== "undefined" && $dz.length && $dz[0].dropzone) {
+                    instances.push($dz[0].dropzone);
+                }
+            } catch (e) { /* ignore */ }
+
+            instances.forEach(function (dz) {
+                try {
+                    if (dz && typeof dz.removeAllFiles === "function") {
+                        dz.removeAllFiles(true);
+                    }
+                    if (dz && typeof dz.destroy === "function") {
+                        dz.destroy();
+                    }
+                } catch (e) { /* ignore stale instance */ }
+            });
+            approveDropzone = null;
+            try {
+                if ($dz[0]) {
+                    delete $dz[0].dropzone;
+                }
+            } catch (e) { /* ignore */ }
+
+            $dz.find("input[name='file_names[]'], input[name='file_sizes[]']").remove();
+            $dz.find("input.dz-hidden-input").remove();
+            $(document).find("input.dz-hidden-input").filter(function () {
+                return $(this).closest("#approve-task-dropzone").length === 0 && !$(this).closest(".dropzone, .post-dropzone").length;
+            }).remove();
+            $dz.removeClass("dz-clickable dz-started dz-max-files-reached");
+
+            // Restore pristine preview markup (attachDropzoneWithForm removes the template row)
+            if (approveDropzonePreviewHtml) {
+                getApprovePreviewHost().html(approveDropzonePreviewHtml);
+            }
+            $dz.find(".upload-file-button").prop("disabled", false).removeAttr("disabled").removeAttr("id");
+        }
+
+        function initApproveDropzone() {
+            destroyApproveDropzone();
+            if (typeof attachDropzoneWithForm !== "function") {
+                return;
+            }
+            try {
+                approveDropzone = attachDropzoneWithForm("#approve-task-dropzone", uploadUrl, validationUrl);
+            } catch (e) {
+                // Retry once after a hard markup restore if a stale instance blocked attach
+                destroyApproveDropzone();
+                approveDropzone = attachDropzoneWithForm("#approve-task-dropzone", uploadUrl, validationUrl);
+            }
+            $("#approve-task-dropzone").find(".upload-file-button").prop("disabled", false).removeAttr("disabled");
+        }
+
+        function resetApproveModalFields() {
+            $("#approve-task-id").val("");
+            $("#approve-task-message").val("");
+            $("#approve-task-cancel-btn, #submit-approve-task-btn").prop("disabled", false);
+            $("#approve-task-dropzone").find(".upload-file-button").prop("disabled", false).removeAttr("disabled");
+            approveSubmitting = false;
+        }
+
+        function setApproveButtonsDisabled(disabled) {
+            $("#approve-task-cancel-btn, #submit-approve-task-btn").prop("disabled", !!disabled);
+            $("#approve-task-dropzone").find(".upload-file-button").prop("disabled", !!disabled);
+        }
+
+        // Open Approve modal (optional award confirm first)
         $(document).on("click", ".approve-review-task-btn", function () {
             var $btn = $(this);
             var taskId = $btn.data("id");
-            if (!taskId) return;
-
-            var doApprove = function () {
-                appLoader.show();
-                $.ajax({
-                    url: "<?php echo_uri('projects/approve_task_review'); ?>/" + taskId,
-                    type: "POST",
-                    dataType: "json",
-                    success: function (response) {
-                        appLoader.hide();
-                        if (response.success) {
-                            appAlert.success(response.message, {duration: 5000});
-                            $("#tasks-in-review-table").appTable({reload: true});
-                        } else {
-                            appAlert.error(response.message);
-                        }
-                    },
-                    error: function () {
-                        appLoader.hide();
-                        appAlert.error("<?php echo app_lang('error_occurred'); ?>");
-                    }
-                });
-            };
+            if (!taskId || approveSubmitting) return;
 
             var needsConfirm = String($btn.data("confirm-needed")) === "1";
             if (needsConfirm) {
@@ -109,7 +209,86 @@
                     return;
                 }
             }
-            doApprove();
+
+            resetApproveModalFields();
+            $("#approve-task-id").val(taskId);
+            $("#approve-task-modal").modal("show");
+        });
+
+        // Tear down as soon as close starts (before transition) so a quick re-open
+        // cannot race a late hidden.bs.modal destroy against a fresh init.
+        $("#approve-task-modal").on("hide.bs.modal", function () {
+            destroyApproveDropzone();
+        });
+
+        $("#approve-task-modal").on("shown.bs.modal", function () {
+            initApproveDropzone();
+            if (typeof feather !== "undefined" && feather.replace) {
+                feather.replace();
+            }
+        });
+
+        $("#approve-task-modal").on("hidden.bs.modal", function () {
+            destroyApproveDropzone();
+            if (!approveSubmitting) {
+                resetApproveModalFields();
+            } else {
+                // Approval still in flight: keep submit guard, but never leave upload stuck disabled
+                $("#approve-task-dropzone").find(".upload-file-button").prop("disabled", false).removeAttr("disabled");
+            }
+        });
+
+        // Submit Approve (message/files optional)
+        $("#submit-approve-task-btn").on("click", function () {
+            var taskId = $("#approve-task-id").val();
+            if (!taskId || approveSubmitting) return;
+
+            approveSubmitting = true;
+            setApproveButtonsDisabled(true);
+            appLoader.show();
+
+            var formData = new FormData();
+            formData.append("approval_message", $("#approve-task-message").val() || "");
+            if (typeof AppHelper !== "undefined" && AppHelper.csrfTokenName) {
+                formData.append(AppHelper.csrfTokenName, AppHelper.csrfHash);
+            }
+            $("#approve-task-dropzone").find("input[name='file_names[]']").each(function () {
+                formData.append("file_names[]", $(this).val());
+            });
+            $("#approve-task-dropzone").find("input[name='file_sizes[]']").each(function () {
+                formData.append("file_sizes[]", $(this).val() || "");
+            });
+
+            $.ajax({
+                url: "<?php echo_uri('projects/approve_task_review'); ?>/" + taskId,
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: "json",
+                success: function (response) {
+                    appLoader.hide();
+                    $("#approve-task-modal").modal("hide");
+                    approveSubmitting = false;
+                    resetApproveModalFields();
+                    if (response.success) {
+                        if (response.message_warning) {
+                            appAlert.warning(response.message, {duration: 8000});
+                        } else {
+                            appAlert.success(response.message, {duration: 5000});
+                        }
+                        $("#tasks-in-review-table").appTable({reload: true});
+                    } else {
+                        appAlert.error(response.message);
+                    }
+                },
+                error: function () {
+                    appLoader.hide();
+                    approveSubmitting = false;
+                    setApproveButtonsDisabled(false);
+                    appAlert.error("<?php echo app_lang('error_occurred'); ?>");
+                }
+            });
         });
 
         // Open Request Changes modal

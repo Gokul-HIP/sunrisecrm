@@ -1,0 +1,129 @@
+CRITICAL - 2026-11-19 10:22:39 --> App\Models\Tasks_model::ci_save(): Argument #1 ($data) could not be passed by reference
+in FCPATH\tests\_tmp_approve_message_audit.php on line 254.
+ 1 FCPATH\tests\_tmp_approve_message_audit.php(332): make_in_review_task('AUDIT neither', '7', '12', 5)
+ERROR - 2026-11-19 10:23:05 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(334): route_approve_with_message(25851, Object(stdClass), '')
+#10 {main}
+ERROR - 2026-11-19 10:23:05 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:23:25 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(343): route_approve_with_message(25852, Object(stdClass), 'Hello <script>a...')
+#10 {main}
+ERROR - 2026-11-19 10:23:25 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:23:43 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(369): route_approve_with_message(25853, Object(stdClass), '', Array, Array)
+#10 {main}
+ERROR - 2026-11-19 10:23:43 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:24:02 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(390): route_approve_with_message(25854, Object(stdClass), 'Both body', Array, Array)
+#10 {main}
+ERROR - 2026-11-19 10:24:02 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:24:18 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(403): route_approve_with_message(25855, Object(stdClass), 'first')
+#10 {main}
+ERROR - 2026-11-19 10:24:18 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:24:33 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(418): route_approve_with_message(25856, Object(stdClass), 'skip')
+#10 {main}
+ERROR - 2026-11-19 10:24:33 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:24:48 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(429): route_approve_with_message(25857, Object(stdClass), 'skip del')
+#10 {main}
+ERROR - 2026-11-19 10:24:48 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:25:05 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(435): route_approve_with_message(25858, Object(stdClass), 'skip self')
+#10 {main}
+ERROR - 2026-11-19 10:25:05 --> Notification create failed: Column 'user_id' cannot be null
+ERROR - 2026-11-19 10:25:22 --> mysqli_sql_exception: Column 'user_id' cannot be null in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('INSERT INTO `ri...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('INSERT INTO `ri...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('INSERT INTO `ri...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query('INSERT INTO `ri...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(228): CodeIgniter\Database\BaseBuilder->insert(Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Notifications_model.php(690): App\Models\Crud_model->ci_save(Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Notification_processor.php(123): App\Models\Notifications_model->create_notification('project_task_fi...', NULL, Array)
+#7 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Helpers\general_helper.php(1295): App\Controllers\Notification_processor->create_notification(Array)
+#8 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(119): log_notification('project_task_fi...', Array)
+#9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(452): route_approve_with_message(25860, Object(stdClass), 'with bad', Array, Array)
+#10 {main}
+ERROR - 2026-11-19 10:25:22 --> Notification create failed: Column 'user_id' cannot be null

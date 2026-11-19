@@ -25,6 +25,12 @@ $lang["optional_review_comment"] = "Optional comment describing requested change
 $lang["only_creator_or_admin_can_mark_task_done"] = "Only the task creator or an administrator can mark this task as Done.";
 $lang["changes_status_can_only_be_set_via_review_queue"] = "Status 'Changes' can only be set from the review queue.";
 $lang["approve"] = "Approve";
+$lang["approve_task_modal_title"] = "Approve Task";
+$lang["optional_message_to_assignee"] = "Optional message to the assignee";
+$lang["approved_but_message_could_not_be_sent"] = "Approved, but the message could not be sent";
+$lang["approved_but_message_skipped_no_assignee"] = "Approved, but no message was sent because the task has no assignee.";
+$lang["approved_but_message_skipped_deleted_assignee"] = "Approved, but no message was sent because the assignee account is deleted.";
+$lang["approved_but_message_skipped_self"] = "Approved, but no message was sent because you are the assignee.";
 $lang["submitted_at"] = "Submitted at";
 
 $lang["held_points"] = "Held points";
@@ -47,5 +53,6 @@ $lang["timesheet_grouped_caption"] = "Tasks created between {from} and {to}. Tim
 $lang["no_tasks_created_in_this_range"] = "No tasks created in this range";
 $lang["unassigned"] = "Unassigned";
 $lang["filter_active"] = "Filter active";
+$lang["you"] = "You";
 
 return $lang;

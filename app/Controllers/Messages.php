@@ -149,21 +149,32 @@ class Messages extends Security_Controller {
         $reply = "";
         $status = "";
         $attachment_icon = "";
-        $subject = $data->subject;
         if ($mode == "inbox") {
-            $status = $data->status;
+            // Highlight when the latest inbound message to me is unread
+            if (!empty($data->status) && $data->status === "unread"
+                && (int) ($data->last_to_user_id ?? 0) === (int) $this->login_user->id) {
+                $status = "unread";
+            }
         }
 
-        if ($data->reply_subject) {
+        $has_replies = !empty($data->last_message_row_id) && (int) $data->last_message_row_id !== (int) $message_id;
+        if ($has_replies || (!empty($data->reply_subject) && $data->reply_subject !== ($data->subject ?? ''))) {
             $label = " <label class='badge bg-success d-inline-block'>" . app_lang('reply') . "</label>";
             $reply = "1";
-            $subject = $data->reply_subject;
         }
 
-        if ($data->files && is_array(unserialize($data->files)) && count(unserialize($data->files))) {
+        if ($data->files && is_array(@unserialize($data->files)) && count(@unserialize($data->files))) {
             $attachment_icon = "<i data-feather='paperclip' class='icon-14 mr15'></i>";
         }
 
+        $preview = function_exists("message_thread_preview_text")
+            ? message_thread_preview_text(
+                $data->last_message ?? "",
+                $data->files ?? null,
+                $data->last_from_user_id ?? 0,
+                $this->login_user->id
+            )
+            : "";
 
         //prepare online status
         $online = "";
@@ -182,7 +193,7 @@ class Messages extends Security_Controller {
                             <strong> $data->user_name</strong>
                                   <span class='text-off float-end time'>$attachment_icon $created_at</span>
                         </div>
-                        $label $subject
+                        $label $preview
                     </div></div></div>
                   
                 ";
@@ -357,8 +368,35 @@ class Messages extends Security_Controller {
             "active_message_id" => "numeric"
         ));
 
-        $notifiations = $this->Messages_model->count_notifications($this->login_user->id, $this->login_user->message_checked_at, $this->request->getPost("active_message_id"), $this->get_allowed_user_ids());
-        echo json_encode(array("success" => true, "active_message_id" => $this->request->getPost("active_message_id"), 'total_notifications' => $notifiations));
+        $active_message_id = $this->request->getPost("active_message_id");
+        $notifiations = $this->Messages_model->count_notifications($this->login_user->id, $this->login_user->message_checked_at, $active_message_id, $this->get_allowed_user_ids());
+
+        $desktop_notifications = array();
+        $rows = $this->Messages_model->get_unread_desktop_payloads(
+            $this->login_user->id,
+            $this->login_user->message_checked_at,
+            $active_message_id,
+            3
+        );
+        foreach ($rows as $row) {
+            $body = function_exists("message_thread_preview_text")
+                ? message_thread_preview_text($row->message, $row->files, 0, 0, 100, false)
+                : "";
+            $desktop_notifications[] = array(
+                "notification_id" => "msg-" . $row->id,
+                "title" => $row->user_name,
+                "message" => $body !== "" ? $body : app_lang("no_messages_text"),
+                "icon" => get_avatar($row->user_image),
+                "is_message" => true
+            );
+        }
+
+        echo json_encode(array(
+            "success" => true,
+            "active_message_id" => $active_message_id,
+            "total_notifications" => $notifiations,
+            "desktop_notifications" => $desktop_notifications
+        ));
     }
 
     /* prepare notifications */
@@ -366,6 +404,7 @@ class Messages extends Security_Controller {
     function get_notifications() {
         $options = array("user_id" => $this->login_user->id, "mode" => "inbox", "user_ids" => $this->get_allowed_user_ids(), "is_notification" => true);
         $view_data['notifications'] = $this->Messages_model->get_list($options)->getResult();
+        $view_data['login_user'] = $this->login_user;
         echo json_encode(array("success" => true, 'notification_list' => $this->template->view("messages/notifications", $view_data)));
     }
 
@@ -530,7 +569,8 @@ class Messages extends Security_Controller {
             app_redirect("forbidden");
         }
 
-        //$this->Messages_model->set_message_status_as_read($view_data["message_info"]->id, $this->login_user->id);
+        // Mark read when the chat is opened so the other party's send is seen
+        $this->Messages_model->set_message_status_as_read($view_data["message_info"]->id, $this->login_user->id);
 
         $view_data["message_id"] = $message_id;
         return $this->template->view("messages/chat/active_chat", $view_data);
