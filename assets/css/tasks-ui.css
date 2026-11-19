@@ -1152,6 +1152,21 @@
 }
 
 .tasks-ui td.tasks-col-status {
+    white-space: normal;
+}
+
+.tasks-ui .task-status-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tasks-ui .task-status-changed-at {
+    font-size: 11px;
+    line-height: 1.2;
+    color: var(--muted);
     white-space: nowrap;
 }
 
@@ -1236,17 +1251,20 @@
 .tasks-ui td.c-start,
 .tasks-ui td.c-deadline,
 .tasks-ui td.c-assignee,
-.tasks-ui td.c-status,
 .tasks-ui td.c-created,
 .tasks-ui td.c-actions,
 .tasks-ui td.tasks-col-start,
 .tasks-ui td.tasks-col-deadline,
 .tasks-ui td.tasks-col-assigned,
-.tasks-ui td.tasks-col-status,
 .tasks-ui td.tasks-col-created,
 .tasks-ui td.tasks-col-muted,
 .tasks-ui td.option {
     white-space: nowrap;
+}
+
+.tasks-ui td.c-status,
+.tasks-ui td.tasks-col-status {
+    white-space: normal;
 }
 
 /* pagination footer inside the table card */

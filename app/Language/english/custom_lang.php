@@ -54,5 +54,6 @@ $lang["no_tasks_created_in_this_range"] = "No tasks created in this range";
 $lang["unassigned"] = "Unassigned";
 $lang["filter_active"] = "Filter active";
 $lang["you"] = "You";
+$lang["number_of_days_ago"] = "%s days ago";
 
 return $lang;

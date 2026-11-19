@@ -127,3 +127,12 @@ Stack trace:
 #9 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\tests\_tmp_approve_message_audit.php(452): route_approve_with_message(25860, Object(stdClass), 'with bad', Array, Array)
 #10 {main}
 ERROR - 2026-11-19 10:25:22 --> Notification create failed: Column 'user_id' cannot be null
+CRITICAL - 2026-11-19 01:55:38 --> App\Models\Tasks_model::ci_save(): Argument #1 ($data) could not be passed by reference
+in FCPATH\tests\_tmp_status_changed_at_display_audit.php on line 143.
+
+CRITICAL - 2026-11-19 01:55:54 --> DateTimeZone::__construct(): Unknown or bad timezone ()
+in APPPATH\Helpers\date_time_helper.php on line 67.
+ 1 APPPATH\Helpers\date_time_helper.php(67): DateTimeZone->__construct('\\\\WSL.LOCALHOST\\UBUNTU\\home\\gokul\\projects\\crm_sunrise')
+ 2 APPPATH\Helpers\task_points_helper.php(630): convert_date_utc_to_local('2026-11-19 07:55:54', 'Y-m-d')
+ 3 APPPATH\Models\Tasks_model.php(74): recalculate_task_point_awards(Object(stdClass), true)
+ 4 FCPATH\tests\_tmp_status_changed_at_display_audit.php(163): App\Models\Tasks_model->ci_save([...], 26018)

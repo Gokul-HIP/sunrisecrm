@@ -641,11 +641,20 @@
             if (!$status.length) {
                 $status = $tds.eq(COL.status);
             }
-            var $statusLink = $status.find("a");
-            var statusText = $.trim($status.text());
+            var $statusLink = $status.find("a[data-act='update-task-status'], a").first();
+            var $statusLabel = $status.find(".tasks-status-label").first();
+            // Ignore relative "status changed" text under the badge when classifying status
+            var statusText = $.trim(
+                ($statusLink.length ? $statusLink.text() : ($statusLabel.length ? $statusLabel.text() : ""))
+            );
+            if (!statusText) {
+                statusText = $.trim($status.clone().find(".task-status-changed-at").remove().end().text());
+            }
             var kind = statusKind(statusText);
             if ($statusLink.length) {
                 $statusLink.addClass("tasks-status " + kind);
+            } else if ($statusLabel.length) {
+                $statusLabel.addClass("tasks-status " + kind);
             } else if (statusText && statusText !== "-") {
                 $status.contents().filter(function () {
                     return this.nodeType === 3 && $.trim(this.nodeValue);

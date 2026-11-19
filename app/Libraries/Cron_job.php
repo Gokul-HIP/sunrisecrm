@@ -744,6 +744,7 @@ class Cron_job {
             "assigned_to" => $task->assigned_to,
             "points" => $task->points,
             "status_id" => 1,
+            "status_changed_at" => get_current_utc_time(),
             "priority_id" => isset($task->priority_id) ? $task->priority_id : 0,
             "labels" => $task->labels,
             "collaborators" => $task->collaborators,
@@ -918,6 +919,7 @@ class Cron_job {
             $sub_task_data['status_id'] = 1;
             $sub_task_data['parent_task_id'] = $new_task_id;
             $sub_task_data['created_date'] = get_current_utc_time();
+            $sub_task_data['status_changed_at'] = get_current_utc_time();
             $sub_task_data['deadline'] = null;
             $sub_task_data["sort"] = $this->ci->Tasks_model->get_next_sort_value(get_array_value($sub_task_data, "project_id"), $sub_task_data["status_id"]);
 

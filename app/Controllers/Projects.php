@@ -779,6 +779,7 @@ class Projects extends Security_Controller {
 
         $task_data = (array) $task;
         unset($task_data["id"]); //remove id from existing data
+        $task_data["status_changed_at"] = get_current_utc_time();
 
         if ($move_all_tasks_to_to_do) {
             $task_data["status"] = "to_do";
@@ -4698,6 +4699,7 @@ class Projects extends Security_Controller {
 
         if (!$id) {
             $data["created_date"] = $now;
+            $data["status_changed_at"] = $now; // status set at creation
             $this->set_task_created_by($data);
 
             $data["sort"] = $this->Tasks_model->get_next_sort_value($project_id, $status_id);
@@ -4892,6 +4894,7 @@ class Projects extends Security_Controller {
                         $sub_task_data['status_id'] = 1;
                         $sub_task_data['parent_task_id'] = $save_id;
                         $sub_task_data['created_date'] = $now;
+                        $sub_task_data['status_changed_at'] = $now;
                         $this->set_task_created_by($sub_task_data);
 
                         $sub_task_data["sort"] = $this->Tasks_model->get_next_sort_value($sub_task_data["project_id"], $sub_task_data['status_id']);
@@ -5015,15 +5018,17 @@ class Projects extends Security_Controller {
             $milestone_id = $parent_task->milestone_id;
         }
 
+        $created_now = get_current_utc_time();
         $data = array(
             "title" => $this->request->getPost('sub-task-title'),
             "project_id" => $project_id,
             "milestone_id" => $milestone_id,
             "parent_task_id" => $parent_task_id,
             "status_id" => 1,
-            "created_date" => get_current_utc_time(),
-            "start_date" => $parent_task->start_date ? $parent_task->start_date : get_current_utc_time(),
-            "deadline" => $parent_task->deadline ? $parent_task->deadline : get_current_utc_time(),
+            "created_date" => $created_now,
+            "status_changed_at" => $created_now,
+            "start_date" => $parent_task->start_date ? $parent_task->start_date : $created_now,
+            "deadline" => $parent_task->deadline ? $parent_task->deadline : $created_now,
             "end_time" => ($parent_task->end_time && $parent_task->end_time !== "00:00:00") ? $parent_task->end_time : NULL,
             "priority_id" => $parent_task->priority_id ? $parent_task->priority_id : 0,
             "labels" => $parent_task->labels,
@@ -5828,17 +5833,23 @@ class Projects extends Security_Controller {
             $checkbox_class = "checkbox-checked";
         }
 
+        $status_changed_html = function_exists("task_status_changed_at_html")
+            ? task_status_changed_at_html(isset($data->status_changed_at) ? $data->status_changed_at : null)
+            : "";
+
         if (($this->login_user->user_type == "staff" && can_edit_this_task_status($data->assigned_to, $this->login_user)) || ($this->login_user->user_type == "client" && $this->can_edit_tasks())) {
             //show changeable status checkbox and link to team members
             $check_status = js_anchor("<span class='$checkbox_class mr15 float-start'></span>", array('title' => "", "class" => "js-task", "data-id" => $data->id, "data-value" => $data->status_key_name === "done" ? "1" : "3", "data-act" => "update-task-status-checkbox")) . $data->id;
-            $status = js_anchor($data->status_key_name ? app_lang($data->status_key_name) : $data->status_title, array('title' => "", "class" => "", "data-id" => $data->id, "data-value" => $data->status_id, "data-act" => "update-task-status"));
+            $status_label = js_anchor($data->status_key_name ? app_lang($data->status_key_name) : $data->status_title, array('title' => "", "class" => "", "data-id" => $data->id, "data-value" => $data->status_id, "data-act" => "update-task-status"));
+            $status = "<div class='task-status-cell'>" . $status_label . $status_changed_html . "</div>";
         } else {
             //don't show clickable checkboxes/status to client
             if ($checkbox_class == "checkbox-blank") {
                 $checkbox_class = "checkbox-un-checked";
             }
             $check_status = "<span class='$checkbox_class mr15 float-start'></span> " . $data->id;
-            $status = $data->status_key_name ? app_lang($data->status_key_name) : $data->status_title;
+            $status_label = "<span class='tasks-status-label'>" . ($data->status_key_name ? app_lang($data->status_key_name) : $data->status_title) . "</span>";
+            $status = "<div class='task-status-cell'>" . $status_label . $status_changed_html . "</div>";
         }
 
 
@@ -7953,6 +7964,9 @@ class Projects extends Security_Controller {
             }
 
             $task_data["sort"] = $sort;
+            if (!isset($task_data["status_changed_at"])) {
+                $task_data["status_changed_at"] = $now;
+            }
             
             //save task data
             $task_save_id = $this->Tasks_model->ci_save($task_data);

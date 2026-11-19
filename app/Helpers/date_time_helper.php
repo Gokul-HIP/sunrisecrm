@@ -553,3 +553,80 @@ if (!function_exists('prepare_last_recently_date_time')) {
 
 }
 
+/**
+ * Format a UTC status_changed_at for the Tasks list status cell.
+ * Calendar day is Asia/Kolkata (not a rolling 24h window).
+ * Returns empty string when the timestamp is missing.
+ *
+ * @param string|null $utc_datetime
+ * @param string|null $now_utc optional UTC "now" for tests
+ * @return array{label:string,title:string}
+ */
+if (!function_exists('format_task_status_changed_at')) {
+
+    function format_task_status_changed_at($utc_datetime, $now_utc = null) {
+        $empty = array("label" => "", "title" => "");
+        if ($utc_datetime === null || $utc_datetime === "" || $utc_datetime === "0000-00-00 00:00:00") {
+            return $empty;
+        }
+
+        try {
+            $tz = new DateTimeZone("Asia/Kolkata");
+            $changed = new DateTime($utc_datetime, new DateTimeZone("UTC"));
+            $changed->setTimezone($tz);
+
+            $now = new DateTime($now_utc ? $now_utc : "now", new DateTimeZone("UTC"));
+            $now->setTimezone($tz);
+
+            $changed_day = $changed->format("Y-m-d");
+            $today = $now->format("Y-m-d");
+            $yesterday_dt = clone $now;
+            $yesterday_dt->modify("-1 day");
+            $yesterday = $yesterday_dt->format("Y-m-d");
+
+            $time_12h = $changed->format("g:i A"); // e.g. 3:45 PM
+            $full_title = $changed->format("d-m-Y g:i A");
+
+            if ($changed_day === $today) {
+                $label = app_lang("today") . ", " . $time_12h;
+            } else if ($changed_day === $yesterday) {
+                $label = app_lang("yesterday") . ", " . $time_12h;
+            } else {
+                $changed_midnight = DateTime::createFromFormat("Y-m-d H:i:s", $changed_day . " 00:00:00", $tz);
+                $today_midnight = DateTime::createFromFormat("Y-m-d H:i:s", $today . " 00:00:00", $tz);
+                $days = (int) $today_midnight->diff($changed_midnight)->format("%a");
+                if ($changed_midnight > $today_midnight) {
+                    // Future stamp: show the date
+                    $label = $changed->format("d-m-Y");
+                } else if ($days >= 2 && $days <= 7) {
+                    $label = sprintf(app_lang("number_of_days_ago"), $days);
+                } else {
+                    $label = $changed->format("d-m-Y");
+                }
+            }
+
+            return array("label" => $label, "title" => $full_title);
+        } catch (\Exception $e) {
+            return $empty;
+        }
+    }
+
+}
+
+/**
+ * HTML snippet for status_changed_at under the status badge (escaped).
+ */
+if (!function_exists('task_status_changed_at_html')) {
+
+    function task_status_changed_at_html($utc_datetime, $now_utc = null) {
+        $formatted = format_task_status_changed_at($utc_datetime, $now_utc);
+        if ($formatted["label"] === "") {
+            return "";
+        }
+        return "<div class='task-status-changed-at text-off' title='" . htmlspecialchars($formatted["title"], ENT_QUOTES, "UTF-8") . "'>"
+            . htmlspecialchars($formatted["label"], ENT_QUOTES, "UTF-8")
+            . "</div>";
+    }
+
+}
+

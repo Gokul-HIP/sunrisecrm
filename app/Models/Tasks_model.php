@@ -1317,6 +1317,7 @@ class Tasks_model extends Crud_model {
             "recurring_task_id" => (int) $data["recurring_task_id"],
             "no_of_cycles_completed" => 0,
             "created_date" => $this->is_valid_sql_date(get_today_date()) ? get_today_date() : date("Y-m-d"),
+            "status_changed_at" => !empty($data["status_changed_at"]) ? $data["status_changed_at"] : get_current_utc_time(),
             "created_by" => isset($data["created_by"]) ? (int) $data["created_by"] : 0,
             "blocking" => isset($data["blocking"]) ? $data["blocking"] : "",
             "blocked_by" => isset($data["blocked_by"]) ? $data["blocked_by"] : "",
