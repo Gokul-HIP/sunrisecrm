@@ -1,0 +1,363 @@
+CRITICAL - 2026-11-20 04:56:16 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:56:17 --> Trying to access array offset on null
+in FCPATH/tests/_tmp_content_calendar_http_smoke.php on line 240.
+ 1 FCPATH/tests/_tmp_content_calendar_http_smoke.php(240): CodeIgniter\Debug\Exceptions->errorHandler()
+CRITICAL - 2026-11-20 04:56:27 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 04:58:09 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('signin/authenticate', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:11 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('signin/authenticate', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:14 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('signin/authenticate', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:16 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('signin/authenticate', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:18 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('signin/authenticate', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:20 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/page_data', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:30 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/save_client', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 04:58:31 --> Trying to access array offset on null
+in FCPATH\tests\_tmp_content_calendar_http_smoke.php on line 250.
+ 1 FCPATH\tests\_tmp_content_calendar_http_smoke.php(250): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Trying to access array offset on null', 'FCPATH\\tests\\_tmp_content_calendar_http_smoke.php', 250)
+CRITICAL - 2026-11-20 05:47:22 --> Cannot use object of type stdClass as array
+in FCPATH/tests/_tmp_content_calendar_phase2_audit.php on line 256.
+
+CRITICAL - 2026-11-20 05:47:41 --> strpos(): Argument #1 ($haystack) must be of type string, array given
+in FCPATH/tests/_tmp_content_calendar_phase2_audit.php on line 285.
+ 1 FCPATH/tests/_tmp_content_calendar_phase2_audit.php(285): strpos()
+ERROR - 2026-11-20 05:47:56 --> [ERROR] cc import read_workbook: simplexml_load_string(): Entity: line 1: parser error : Document is empty
+CRITICAL - 2026-11-20 05:47:56 --> The file could not be read. It may be damaged, password protected, or not a real spreadsheet.
+in APPPATH/Libraries/Content_calendar_import.php on line 511.
+ 1 APPPATH/Libraries/Content_calendar_import.php(295): App\Libraries\Content_calendar_import->read_workbook()
+ 2 FCPATH/tests/_tmp_content_calendar_phase2_audit.php(127): App\Libraries\Content_calendar_import->read_file()
+ 3 FCPATH/tests/_tmp_content_calendar_phase2_audit.php(290): read_fixture()
+ERROR - 2026-11-20 05:48:24 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:48:24 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:48:59 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:48:59 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:49:24 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:49:24 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:49:25 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:49:25 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+CRITICAL - 2026-11-20 05:58:55 --> file_get_contents(/home/gokul/projects/crm_sunrise/app/Views/content_calendar/add_client.php): Failed to open stream: No such file or directory
+in FCPATH/tests/_tmp_content_calendar_audit.php on line 43.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 FCPATH/tests/_tmp_content_calendar_audit.php(43): file_get_contents()
+ 3 FCPATH/tests/_tmp_content_calendar_audit.php(186): src()
+ERROR - 2026-11-20 05:59:40 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 05:59:40 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:00:25 --> Trying to access array offset on null
+in FCPATH/tests/_tmp_content_calendar_http_smoke.php on line 268.
+ 1 FCPATH/tests/_tmp_content_calendar_http_smoke.php(268): CodeIgniter\Debug\Exceptions->errorHandler()
+CRITICAL - 2026-11-20 06:00:35 --> Declaration of CodeIgniter\I18n\Time::createFromTimestamp(int $timestamp, $timezone = null, ?string $locale = null) must be compatible with DateTimeImmutable::createFromTimestamp(int|float $timestamp): CodeIgniter\Autoloader\Autoloader
+in SYSTEMPATH/I18n/TimeTrait.php on line 258.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->shutdownHandler()
+CRITICAL - 2026-11-20 06:18:05 --> The file could not be read. It may be damaged, password protected, or not a real spreadsheet.
+in APPPATH\Libraries\Content_calendar_import.php on line 514.
+ 1 APPPATH\Libraries\Content_calendar_import.php(501): App\Libraries\Content_calendar_import->read_workbook_inner('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'xlsx')
+ 2 APPPATH\Libraries\Content_calendar_import.php(295): App\Libraries\Content_calendar_import->read_workbook('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'xlsx')
+ 3 FCPATH\tests\_tmp_content_calendar_phase2_audit.php(127): App\Libraries\Content_calendar_import->read_file('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'auto')
+ 4 FCPATH\tests\_tmp_content_calendar_phase2_audit.php(290): read_fixture('complex.xlsx')
+CRITICAL - 2026-11-20 06:19:44 --> The file could not be read. It may be damaged, password protected, or not a real spreadsheet.
+in APPPATH\Libraries\Content_calendar_import.php on line 521.
+ 1 APPPATH\Libraries\Content_calendar_import.php(501): App\Libraries\Content_calendar_import->read_workbook_inner('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'xlsx')
+ 2 APPPATH\Libraries\Content_calendar_import.php(295): App\Libraries\Content_calendar_import->read_workbook('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'xlsx')
+ 3 FCPATH\tests\_tmp_content_calendar_phase2_audit.php(127): App\Libraries\Content_calendar_import->read_file('FCPATH\\tests\\_tmp_cc_fixtures\\complex.xlsx', 'auto')
+ 4 FCPATH\tests\_tmp_content_calendar_phase2_audit.php(290): read_fixture('complex.xlsx')
+ERROR - 2026-11-20 06:21:15 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+ERROR - 2026-11-20 06:21:15 --> [ERROR] cc import run_sheet: simulated failure while writing the log
+CRITICAL - 2026-11-20 06:28:51 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_parse', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 06:28:53 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_preview', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 06:28:55 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_run', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 06:28:57 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_undo', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 06:28:59 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_skipped_csv', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+CRITICAL - 2026-11-20 06:43:59 --> Undefined property: stdClass::$id
+in APPPATH\Controllers\Dashboard.php on line 392.
+ 1 APPPATH\Controllers\Dashboard.php(392): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined property: stdClass::$id', 'APPPATH\\Controllers\\Dashboard.php', 392)
+ 2 SYSTEMPATH\CodeIgniter.php(934): App\Controllers\Dashboard->view()
+ 3 SYSTEMPATH\CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Dashboard))
+ 4 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 5 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 6 FCPATH\tests\_tmp_cc_router.php(8): require('FCPATH\\index.php')
+CRITICAL - 2026-11-20 06:44:08 --> Undefined property: stdClass::$id
+in APPPATH\Controllers\Dashboard.php on line 392.
+ 1 APPPATH\Controllers\Dashboard.php(392): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined property: stdClass::$id', 'APPPATH\\Controllers\\Dashboard.php', 392)
+ 2 SYSTEMPATH\CodeIgniter.php(934): App\Controllers\Dashboard->view()
+ 3 SYSTEMPATH\CodeIgniter.php(499): CodeIgniter\CodeIgniter->runController(Object(App\Controllers\Dashboard))
+ 4 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 5 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 6 FCPATH\tests\_tmp_cc_router.php(8): require('FCPATH\\index.php')
+ERROR - 2026-11-20 06:44:32 --> mysqli_sql_exception: Unknown column 'client_permissions' in 'INSERT INTO' in /home/gokul/projects/crm_sunrise/system/Database/MySQLi/Connection.php:295
+Stack trace:
+#0 /home/gokul/projects/crm_sunrise/system/Database/MySQLi/Connection.php(295): mysqli->query()
+#1 /home/gokul/projects/crm_sunrise/system/Database/BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute()
+#2 /home/gokul/projects/crm_sunrise/system/Database/BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery()
+#3 /home/gokul/projects/crm_sunrise/system/Database/BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query()
+#4 /home/gokul/projects/crm_sunrise/tests/_tmp_p2_fix_admin.php(36): CodeIgniter\Database\BaseBuilder->insert()
+#5 {main}
+CRITICAL - 2026-11-20 06:44:32 --> Unknown column 'client_permissions' in 'INSERT INTO'
+in SYSTEMPATH/Database/BaseConnection.php on line 645.
+ 1 SYSTEMPATH/Database/BaseBuilder.php(2309): CodeIgniter\Database\BaseConnection->query()
+ 2 FCPATH/tests/_tmp_p2_fix_admin.php(36): CodeIgniter\Database\BaseBuilder->insert()

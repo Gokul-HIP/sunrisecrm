@@ -239,6 +239,36 @@ class Left_menu {
             $view_data["sidebar_menu"] = $this->_get_sidebar_menu_items($type);
         }
 
+        // Content Calendar: inject after Events when custom left menu omits it
+        if (function_exists('cc_can') && cc_can('view')) {
+            $has_cc = false;
+            $events_idx = null;
+            foreach ($view_data["sidebar_menu"] as $m_key => $m_val) {
+                $m_name = get_array_value($m_val, "name");
+                if ($m_name === "content_calendar") {
+                    $has_cc = true;
+                }
+                if ($m_name === "events") {
+                    $events_idx = $m_key;
+                }
+            }
+            if (!$has_cc) {
+                $cc_item = array("name" => "content_calendar", "url" => "content_calendar", "class" => "layout");
+                if ($events_idx !== null) {
+                    $new_menu = array();
+                    foreach ($view_data["sidebar_menu"] as $m_key => $m_val) {
+                        $new_menu[] = $m_val;
+                        if ($m_key === $events_idx) {
+                            $new_menu[] = $cc_item;
+                        }
+                    }
+                    $view_data["sidebar_menu"] = $new_menu;
+                } else {
+                    $view_data["sidebar_menu"][] = $cc_item;
+                }
+            }
+        }
+
         if (get_setting("task_review_workflow_enabled")) {
             $in_review_badge = function_exists('count_tasks_in_review') ? count_tasks_in_review($this->ci->login_user) : 0;
             foreach ($view_data["sidebar_menu"] as $m_key => $m_val) {
@@ -387,6 +417,10 @@ class Left_menu {
 
             if (get_setting("module_event") == "1") {
                 $sidebar_menu["events"] = array("name" => "events", "url" => "events", "class" => "calendar");
+            }
+
+            if (function_exists('cc_can') && cc_can('view')) {
+                $sidebar_menu["content_calendar"] = array("name" => "content_calendar", "url" => "content_calendar", "class" => "layout");
             }
 
 

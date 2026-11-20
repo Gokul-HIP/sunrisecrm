@@ -356,6 +356,74 @@ class Settings extends Security_Controller {
         echo json_encode(array("success" => true, 'message' => app_lang('settings_updated')));
     }
 
+    //Content Calendar access (admin only)
+    function content_calendar_access() {
+        $this->access_only_admin();
+
+        $permissions_model = model("App\Models\Cc_permissions_model");
+
+        $staff = array();
+        $staff_users = $this->Users_model->get_all_where(array("deleted" => 0, "user_type" => "staff", "status" => "active"), 1000000, 0, "first_name")->getResult();
+        foreach ($staff_users as $user) {
+            $staff[] = array(
+                "id" => (int) $user->id,
+                "name" => trim($user->first_name . " " . $user->last_name),
+                "job_title" => $user->job_title,
+                "avatar" => get_avatar($user->image),
+                "is_admin" => (int) $user->is_admin
+            );
+        }
+
+        $selected = array();
+        foreach ($permissions_model->get_valid_keys() as $key) {
+            $selected[$key] = $permissions_model->get_user_ids($key);
+        }
+
+        $view_data["staff"] = $staff;
+        $view_data["selected"] = $selected;
+        return $this->template->rander("settings/content_calendar_access", $view_data);
+    }
+
+    //replace the set of users of one Content Calendar permission
+    function save_content_calendar_access() {
+        $this->access_only_admin();
+
+        $permissions_model = model("App\Models\Cc_permissions_model");
+
+        $permission_key = $this->request->getPost("permission_key");
+        if (!in_array($permission_key, $permissions_model->get_valid_keys(), true)) {
+            echo json_encode(array("success" => false, "message" => cc_lang("cc_error")));
+            return;
+        }
+
+        $posted_ids = $this->request->getPost("user_ids");
+        if (!is_array($posted_ids)) {
+            $posted_ids = array();
+        }
+
+        //only active staff users can be given access
+        $valid_ids = array();
+        $staff_users = $this->Users_model->get_all_where(array("deleted" => 0, "user_type" => "staff", "status" => "active"))->getResult();
+        foreach ($staff_users as $user) {
+            $valid_ids[(int) $user->id] = true;
+        }
+
+        $user_ids = array();
+        foreach ($posted_ids as $user_id) {
+            $user_id = (int) $user_id;
+            if ($user_id && isset($valid_ids[$user_id]) && !in_array($user_id, $user_ids, true)) {
+                $user_ids[] = $user_id;
+            }
+        }
+
+        $success = $permissions_model->replace_users_for_key($permission_key, $user_ids, $this->login_user->id);
+        if ($success) {
+            echo json_encode(array("success" => true, "count" => count($user_ids), "message" => app_lang('settings_updated')));
+        } else {
+            echo json_encode(array("success" => false, "message" => cc_lang("cc_error")));
+        }
+    }
+
     function notifications() {
         $category_suggestions = array(
             array("id" => "", "text" => "- " . app_lang('category') . " -"),

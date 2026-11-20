@@ -40,6 +40,10 @@ if ($login_user->is_admin || (get_array_value($login_user->permissions, "can_man
 
 $settings_menu["access_permission"][] = array("name" => "team", "url" => "team");
 
+if ($login_user->is_admin) {
+    $settings_menu["access_permission"][] = array("name" => "content_calendar_access", "url" => "settings/content_calendar_access");
+}
+
 if (get_setting("module_attendance") == "1") {
     $settings_menu["access_permission"][] = array("name" => "ip_restriction", "url" => "settings/ip_restriction");
 }
