@@ -30,7 +30,7 @@ foreach ($task_statuses as $status) {
                             window.refreshTaskPointsWidgets();
                         }
                         if ($("#task-table").length) {
-                            $("#task-table").appTable({reload: true});
+                            $("#task-table").appTable({reload: true, keepPage: true});
                         }
                     }
                 }
@@ -54,7 +54,7 @@ foreach ($task_statuses as $status) {
                             window.refreshTaskPointsWidgets();
                         }
                         if ($("#task-table").length) {
-                            $("#task-table").appTable({reload: true});
+                            $("#task-table").appTable({reload: true, keepPage: true});
                         }
                     }
                 }

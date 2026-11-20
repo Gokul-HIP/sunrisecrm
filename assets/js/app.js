@@ -1651,6 +1651,7 @@ var $appFilterXhrRequest = 'new';
 
         var defaults = {
             serverSide: false,
+            keepPage: false, // when reload:true, keep current DataTables page
             source: "", //data url
             xlsColumns: [], // array of excel exportable column numbers
             pdfColumns: [], // array of pdf exportable column numbers
@@ -1738,7 +1739,20 @@ var $appFilterXhrRequest = 'new';
             var tableId = table.get(0).id;
 
             if (instanceSettings.serverSide) {
-                window.appTables[tableId]._fnReDraw();
+                if (settings.keepPage) {
+                    // Refresh data but stay on the current page (status/approve updates).
+                    var dtApi = (table.api && table.api()) || $instance.DataTable();
+                    dtApi.ajax.reload(function () {
+                        try {
+                            var info = dtApi.page.info();
+                            if (info.pages > 0 && info.page >= info.pages) {
+                                dtApi.page(info.pages - 1).draw("page");
+                            }
+                        } catch (e) {}
+                    }, false);
+                } else {
+                    window.appTables[tableId]._fnReDraw();
+                }
             } else {
                 table.fnReloadAjax(instanceSettings.filterParams);
             }

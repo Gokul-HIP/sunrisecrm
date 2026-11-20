@@ -277,7 +277,7 @@
                         } else {
                             appAlert.success(response.message, {duration: 5000});
                         }
-                        $("#tasks-in-review-table").appTable({reload: true});
+                        $("#tasks-in-review-table").appTable({reload: true, keepPage: true});
                     } else {
                         appAlert.error(response.message);
                     }
@@ -316,7 +316,7 @@
                     $("#request-changes-modal").modal("hide");
                     if (response.success) {
                         appAlert.success(response.message, {duration: 5000});
-                        $("#tasks-in-review-table").appTable({reload: true});
+                        $("#tasks-in-review-table").appTable({reload: true, keepPage: true});
                     } else {
                         appAlert.error(response.message);
                     }
