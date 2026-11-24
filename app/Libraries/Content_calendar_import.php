@@ -700,8 +700,9 @@ class Content_calendar_import {
     }
 
     private function clean_cell($value) {
+        $value = str_replace(array("\r\n", "\r"), "\n", (string) $value);
         $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $value);
-        return trim((string) $value);
+        return trim($value);
     }
 
     private function trim_cells($cells) {
@@ -2926,7 +2927,8 @@ class Content_calendar_import {
         }
 
         if ($type === "long") {
-            $value = trim($raw);
+            $value = str_replace(array("\r\n", "\r"), "\n", (string) $raw);
+            $value = trim($value);
             if ($this->len($value) > 10000) {
                 $stats["truncated_cells"]++;
                 $value = $this->cut($value, 10000);
@@ -2935,11 +2937,12 @@ class Content_calendar_import {
             return $value;
         }
 
-        //text
-        $value = trim(preg_replace('/\s*\n\s*/u', " ", $raw));
-        if ($this->len($value) > 500) {
+        //text and other text-like columns keep line breaks
+        $value = str_replace(array("\r\n", "\r"), "\n", (string) $raw);
+        $value = trim($value);
+        if ($this->len($value) > 1000) {
             $stats["truncated_cells"]++;
-            $value = $this->cut($value, 500);
+            $value = $this->cut($value, 1000);
         }
 
         return $value;
@@ -3781,7 +3784,7 @@ class Content_calendar_import {
 
             $title = "";
             if ($title_index !== null && isset($cells[$title_index])) {
-                $title = trim(preg_replace('/\s*\n\s*/u', " ", $cells[$title_index]));
+                $title = trim(preg_replace('/\s+/u', " ", (string) $cells[$title_index]));
             }
 
             if ($title === "") {
@@ -3796,7 +3799,7 @@ class Content_calendar_import {
                             continue;
                         }
 
-                        $title = trim(preg_replace('/\s*\n\s*/u', " ", $candidate));
+                        $title = trim(preg_replace('/\s+/u', " ", (string) $candidate));
                         break 2;
                     }
                 }
@@ -3805,7 +3808,7 @@ class Content_calendar_import {
             if ($title === "") {
                 foreach ($state["third_pass"] as $i) {
                     if ($i !== $record["used"] && isset($cells[$i]) && trim($cells[$i]) !== "") {
-                        $title = trim(preg_replace('/\s*\n\s*/u', " ", $cells[$i]));
+                        $title = trim(preg_replace('/\s+/u', " ", (string) $cells[$i]));
                         break;
                     }
                 }
@@ -4403,7 +4406,7 @@ class Content_calendar_import {
 
                 $rows[] = array(
                     "calendar_id" => $calendar_id,
-                    "publish_date" => $item["date"],
+                    "publish_date" => !empty($item["date"]) ? $item["date"] : null,
                     "content_type" => $item["type"],
                     "status" => $item["status"],
                     "title" => $item["title"],

@@ -46,6 +46,13 @@
 
     var esc = CC.esc;
 
+    function renderBold(escapedText) {
+        if (typeof escapedText !== "string" || escapedText.indexOf("**") === -1) {
+            return escapedText;
+        }
+        return escapedText.replace(/\*\*([^\*\r\n]+?)\*\*/g, "<strong>$1</strong>");
+    }
+
     function pad(n) {
         return (n < 10 ? "0" : "") + n;
     }
@@ -1176,7 +1183,7 @@
                 return "";
             }
 
-            var h = "<div class='cc-imp-title'>" + esc(fmt(L("cc_imp_preview_title"), entry.preview_rows.length)) + "</div><div class='cc-scroll-box'><table class='cc-imp-table'><thead><tr><th scope='col'>#</th>";
+            var h = "<div class='cc-imp-title'>" + esc(fmt(L("cc_imp_preview_title"), entry.preview_rows.length)) + "</div><div class='cc-scroll-box'><table class='cc-imp-table cc-imp-preview-table'><thead><tr><th scope='col'>#</th>";
             $.each(entry.labels, function (i, label) {
                 h += "<th scope='col'>" + esc(label) + "</th>";
             });
@@ -1184,7 +1191,7 @@
             $.each(entry.preview_rows, function (i, row) {
                 h += "<tr><td>" + esc(row.row) + "</td>";
                 $.each(row.cells, function (j, cell) {
-                    h += "<td>" + esc(cell) + "</td>";
+                    h += "<td><div class='cc-imp-preview-cell'>" + esc(cell) + "</div></td>";
                 });
                 h += "</tr>";
             });
@@ -2495,7 +2502,7 @@
                 case "date":
                     return esc(fmtDate(value));
                 case "long":
-                    return esc(value).replace(/\n/g, "<br>");
+                    return esc(value);
                 default:
                     return esc(value);
             }
@@ -2802,6 +2809,7 @@
 
             var bodyHtml = "<div class='cc-view-blocks'>";
             var blockCount = 0;
+            var modalCopyValues = [];
             var cols = columns || visibleColumns();
 
             $.each(cols, function (i, col) {
@@ -2832,7 +2840,7 @@
                     if (/^https?:\/\//i.test(linkUrl)) {
                         valHtml = "<a href='" + esc(linkUrl) + "' target='_blank' rel='noopener noreferrer'>" + esc(val) + "</a>";
                     } else {
-                        valHtml = esc(val);
+                        valHtml = renderBold(esc(val));
                     }
                 } else if (col.input_type === "check") {
                     valHtml = esc(L("yes") || "Yes");
@@ -2842,16 +2850,18 @@
                     var fileName = String(val).split("/").pop();
                     valHtml = "<a href='" + esc(fileUrl(val)) + "' target='_blank' rel='noopener noreferrer'>" + esc(/^https?:\/\//i.test(val) ? val : fileName) + "</a>";
                 } else {
-                    valHtml = esc(val);
+                    valHtml = renderBold(esc(val));
                 }
 
+                var copyAttr = esc(val).replace(/\n/g, "&#10;").replace(/\r/g, "&#13;");
                 bodyHtml += "<div class='cc-view-block'>" +
                     "<div class='cc-view-block-head'>" +
                         "<div class='cc-view-block-label'>" + esc(col.label) + "</div>" +
-                        (isLong && typeof val === "string" ? "<button type='button' class='cc-btn cc-btn-sm cc-view-copy-btn' data-copy-val='" + esc(val) + "'>" + esc(L("copy") || "Copy") + "</button>" : "") +
+                        (isLong && typeof val === "string" ? "<button type='button' class='cc-btn cc-btn-sm cc-view-copy-btn' data-copy-idx='" + blockCount + "' data-copy-val='" + copyAttr + "'>" + esc(L("copy") || "Copy") + "</button>" : "") +
                     "</div>" +
                     "<div class='cc-view-block-value'>" + valHtml + "</div>" +
                 "</div>";
+                modalCopyValues[blockCount] = val;
                 blockCount++;
             });
 
@@ -2898,7 +2908,8 @@
             $dialog.on("click", ".cc-view-copy-btn", function (e) {
                 e.preventDefault();
                 var $btn = $(this);
-                var textToCopy = $btn.attr("data-copy-val") || "";
+                var idx = $btn.data("copy-idx");
+                var textToCopy = (idx !== undefined && modalCopyValues[idx] !== undefined) ? modalCopyValues[idx] : ($btn.attr("data-copy-val") || "");
 
                 function doSuccess() {
                     var origText = $btn.text();
@@ -3368,7 +3379,8 @@
                     }
                     var v = valueHtml(col, itemValue(item, col));
                     if (v !== "") {
-                        rows += "<div class='cc-kv-row'><dt>" + esc(col.label) + "</dt><dd>" + v + "</dd></div>";
+                        var displayV = (col.input_type === "long" || col.input_type === "text" || !col.input_type) ? renderBold(v) : v;
+                        rows += "<div class='cc-kv-row'><dt>" + esc(col.label) + "</dt><dd>" + displayV + "</dd></div>";
                     }
                 });
                 if (rows) {

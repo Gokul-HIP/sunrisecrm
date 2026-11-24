@@ -820,7 +820,8 @@ class Content_calendar extends Security_Controller {
             return array("error" => cc_lang("cc_invalid_value"));
         }
 
-        $value = trim((string) $raw);
+        $value = str_replace(array("\r\n", "\r"), "\n", (string) $raw);
+        $value = trim($value);
 
         if ($type === "select") {
             if ($value !== "" && !in_array($value, $options, true)) {
@@ -869,6 +870,10 @@ class Content_calendar extends Security_Controller {
         }
 
         //text, long, and the core title
+        if ($column->is_core && $column->field_key === "title") {
+            $value = trim(preg_replace('/\s+/u', ' ', $value));
+        }
+
         $max = $type === "long" ? 10000 : ($column->field_key === "title" && $column->is_core ? 255 : 500);
         if ($this->_str_len($value) > $max) {
             return array("error" => cc_lang("cc_value_too_long"));

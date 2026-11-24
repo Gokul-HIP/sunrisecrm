@@ -30,7 +30,7 @@ class Cc_items_model extends Crud_model {
             return "{}";
         }
 
-        return json_encode($values);
+        return json_encode($values, JSON_UNESCAPED_UNICODE);
     }
 
     /**

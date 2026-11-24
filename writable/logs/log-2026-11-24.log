@@ -1,0 +1,45 @@
+CRITICAL - 2026-11-24 00:59:18 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_preview', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+CRITICAL - 2026-11-24 01:45:39 --> Unknown column 'color' in 'INSERT INTO'
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 32.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(32): mysqli_query(Object(mysqli), 'INSERT INTO rise_cc_calendars (name, client_id, color, created_at) VALUES (\'Multiline Test Client\', 0, \'#3b82f6\', NOW())')
+CRITICAL - 2026-11-24 01:46:36 --> Too few arguments to function App\Libraries\Content_calendar_import::read_workbook(), 1 passed in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 53 and exactly 2 expected
+in APPPATH\Libraries\Content_calendar_import.php on line 920.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(53): App\Libraries\Content_calendar_import->read_workbook('C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_multiline.xlsx')
+CRITICAL - 2026-11-24 01:47:17 --> Call to undefined function app_lang()
+in APPPATH\Helpers\content_calendar_helper.php on line 80.
+ 1 APPPATH\Libraries\Content_calendar_import.php(3584): cc_lang('cc_imp_special_days')
+ 2 APPPATH\Libraries\Content_calendar_import.php(3357): App\Libraries\Content_calendar_import->finish_sheet_plan([...], [...], [...])
+ 3 APPPATH\Libraries\Content_calendar_import.php(4258): App\Libraries\Content_calendar_import->build_group_plan([...], [...], 258, [...], [...])
+ 4 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(80): App\Libraries\Content_calendar_import->dry_run_group([...], [...], 258, [...])
+CRITICAL - 2026-11-24 01:47:37 --> Undefined array key "summary"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 82.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(82): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "summary"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_import_programmatic.php', 82)
+CRITICAL - 2026-11-24 01:47:56 --> Undefined array key "imported"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 100.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(100): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "imported"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_import_programmatic.php', 100)
+ERROR - 2026-11-24 01:51:39 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:51:39 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:51:39 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:54:22 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:54:22 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:54:22 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+CRITICAL - 2026-11-24 01:55:32 --> Call to private method App\Libraries\Content_calendar_import::calendars_model() from scope DebugImport
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 108.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(166): DebugImport->debug_run_group([...], [...], [...], [...], 66, 'test_multiline.xlsx', 'run_test_xlsx_1')
+ERROR - 2026-11-24 01:56:40 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:56:40 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:56:40 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:56:56 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:56:56 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+ERROR - 2026-11-24 01:56:56 --> [ERROR] cc import run_group: Call to undefined function get_current_utc_time()
+CRITICAL - 2026-11-24 01:58:40 --> Undefined array key "row"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php on line 138.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_import_programmatic.php(138): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "row"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_import_programmatic.php', 138)
