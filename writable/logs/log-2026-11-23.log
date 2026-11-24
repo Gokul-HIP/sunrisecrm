@@ -1,0 +1,38 @@
+CRITICAL - 2026-11-23 04:14:15 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('content_calendar/import_parse', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')
+CRITICAL - 2026-11-23 04:33:26 --> Undefined array key "detected_header"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php on line 36.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php(36): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "detected_header"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\run_preview_test.php', 36)
+CRITICAL - 2026-11-23 04:35:01 --> Too few arguments to function App\Libraries\Content_calendar_import::load_sheet_parsed(), 2 passed in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php on line 34 and exactly 3 expected
+in APPPATH\Libraries\Content_calendar_import.php on line 235.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php(34): App\Libraries\Content_calendar_import->load_sheet_parsed('19a2d32dcf6e0db2dd970ed7c8647a3d', 0)
+CRITICAL - 2026-11-23 04:35:27 --> Undefined array key "sheet"
+in APPPATH\Libraries\Content_calendar_import.php on line 3077.
+ 1 APPPATH\Libraries\Content_calendar_import.php(3077): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "sheet"', 'APPPATH\\Libraries\\Content_calendar_import.php', 3077)
+ 2 APPPATH\Libraries\Content_calendar_import.php(4201): App\Libraries\Content_calendar_import->build_group_plan([...], [...], 0, [...], [...])
+ 3 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php(61): App\Libraries\Content_calendar_import->dry_run_group([...], [...], 0, [...])
+CRITICAL - 2026-11-23 04:36:20 --> Undefined array key "swapped"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php on line 73.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php(73): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "swapped"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\run_preview_test.php', 73)
+CRITICAL - 2026-11-23 04:37:12 --> Undefined array key "topic"
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php on line 80.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_preview_test.php(80): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "topic"', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\run_preview_test.php', 80)
+CRITICAL - 2026-11-23 04:39:28 --> Undefined array key "new:4"
+in FCPATH\tests\_tmp_content_calendar_phase2_audit.php on line 251.
+ 1 FCPATH\tests\_tmp_content_calendar_phase2_audit.php(251): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined array key "new:4"', 'FCPATH\\tests\\_tmp_content_calendar_phase2_audit.php', 251)
+CRITICAL - 2026-11-23 05:51:36 --> The action you requested is not allowed.
+in SYSTEMPATH\Security\Security.php on line 306.
+ 1 SYSTEMPATH\Security\Security.php(306): CodeIgniter\Security\Exceptions\SecurityException::forDisallowedAction()
+ 2 SYSTEMPATH\Filters\CSRF.php(55): CodeIgniter\Security\Security->verify(Object(CodeIgniter\HTTP\IncomingRequest))
+ 3 SYSTEMPATH\Filters\Filters.php(173): CodeIgniter\Filters\CSRF->before(Object(CodeIgniter\HTTP\IncomingRequest), null)
+ 4 SYSTEMPATH\CodeIgniter.php(473): CodeIgniter\Filters\Filters->run('settings/save_content_calendar_access', 'before')
+ 5 SYSTEMPATH\CodeIgniter.php(368): CodeIgniter\CodeIgniter->handleRequest(null, Object(Config\Cache), false)
+ 6 FCPATH\index.php(80): CodeIgniter\CodeIgniter->run()
+ 7 SYSTEMPATH\Commands\Server\rewrite.php(47): require_once('FCPATH\\index.php')

@@ -10,7 +10,7 @@ $submit_label = $is_edit ? cc_lang("cc_save_changes") : cc_lang("cc_add_to_calen
 //preview sample
 $preview_type = isset($form_values["type"]) ? $form_values["type"] : "";
 $preview_title = isset($form_values["title"]) ? $form_values["title"] : "";
-$preview_date = isset($form_values["date"]) ? $form_values["date"] : "";
+$preview_date = !empty($form_values["date"]) ? $form_values["date"] : "";
 ?>
 <div id="page-content" class="page-wrapper clearfix cc-page">
     <div class="cc-wrap">
@@ -101,7 +101,7 @@ $preview_date = isset($form_values["date"]) ? $form_values["date"] : "";
                                     $html_type = "text";
                                 }
                                 ?>
-                                <input type="<?php echo $html_type; ?>" class="cc-input cc-input-full" id="<?php echo esc($field_id, 'attr'); ?>" name="<?php echo esc($name, 'attr'); ?>" data-key="<?php echo esc($key, 'attr'); ?>" value="<?php echo esc(is_array($value) ? "" : $value, 'attr'); ?>" <?php echo $placeholder ? "placeholder='" . esc($placeholder, 'attr') . "'" : ""; ?> <?php echo $type === "number" ? "inputmode='decimal'" : ""; ?> maxlength="<?php echo ($type === "link" ? 1000 : 500); ?>">
+                                <input type="<?php echo $html_type; ?>" class="cc-input cc-input-full" id="<?php echo esc($field_id, 'attr'); ?>" name="<?php echo esc($name, 'attr'); ?>" data-key="<?php echo esc($key, 'attr'); ?>" value="<?php echo esc(is_array($value) ? "" : (string) $value, 'attr'); ?>" <?php echo $placeholder ? "placeholder='" . esc($placeholder, 'attr') . "'" : ""; ?> <?php echo $type === "number" ? "inputmode='decimal'" : ""; ?> <?php echo ($key === "date" && $column->is_core && !empty($no_date)) ? "disabled" : ""; ?> maxlength="<?php echo ($type === "link" ? 1000 : 500); ?>">
                             <?php } ?>
 
                             <?php if ($is_option_column && $can_manage_options) { ?>
@@ -114,6 +114,17 @@ $preview_date = isset($form_values["date"]) ? $form_values["date"] : "";
                                         <?php } ?>
                                     </div>
                                 </div>
+                            <?php } ?>
+
+                            <?php if ($key === "date" && $column->is_core) { ?>
+                                <label class="cc-check cc-no-date">
+                                    <input type="checkbox" id="cc-no-date" name="no_date" value="1" <?php echo !empty($no_date) ? "checked" : ""; ?>>
+                                    <span><?php echo esc(cc_lang("cc_no_date_yet")); ?></span>
+                                </label>
+                                <div class="cc-muted cc-no-date-hint"><?php echo esc(cc_lang("cc_no_date_hint")); ?></div>
+                                <?php if (!empty($form_values["_src_date_text"]) && is_scalar($form_values["_src_date_text"])) { ?>
+                                    <div class="cc-muted cc-no-date-hint"><?php echo esc(sprintf(cc_lang("cc_undated_from_sheet"), (string) $form_values["_src_date_text"])); ?></div>
+                                <?php } ?>
                             <?php } ?>
 
                             <div class="cc-field-error" role="alert" data-error-for="<?php echo esc($key, 'attr'); ?>"></div>

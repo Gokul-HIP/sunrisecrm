@@ -63,9 +63,12 @@ load_css(array(
                     </div>
                     <div class="cc-filter-field cc-filter-field-toggle">
                         <span class="cc-filter-label" aria-hidden="true">&nbsp;</span>
-                        <div class="cc-toggle" role="group" aria-label="<?php echo esc(cc_lang('cc_view'), 'attr'); ?>">
-                            <button type="button" class="cc-toggle-btn active" data-view="month"><?php echo esc(cc_lang("cc_month")); ?></button>
-                            <button type="button" class="cc-toggle-btn" data-view="table"><?php echo esc(cc_lang("cc_table")); ?></button>
+                        <div class="cc-toggle-row">
+                            <div class="cc-toggle" role="group" aria-label="<?php echo esc(cc_lang('cc_view'), 'attr'); ?>">
+                                <button type="button" class="cc-toggle-btn active" data-view="month"><?php echo esc(cc_lang("cc_month")); ?></button>
+                                <button type="button" class="cc-toggle-btn" data-view="table"><?php echo esc(cc_lang("cc_table")); ?></button>
+                            </div>
+                            <button type="button" class="cc-btn cc-undated-btn" id="cc-undated-open" aria-haspopup="dialog"><?php echo esc(sprintf(cc_lang("cc_without_date_n"), 0)); ?></button>
                         </div>
                     </div>
                 </div>

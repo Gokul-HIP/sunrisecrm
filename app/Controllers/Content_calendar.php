@@ -161,12 +161,19 @@ class Content_calendar extends Security_Controller {
     private function _item_to_array($item) {
         return array(
             "id" => (int) $item->id,
-            "date" => $item->publish_date,
+            "date" => $item->publish_date ? $item->publish_date : null,
             "type" => $item->content_type,
             "status" => $item->status,
             "title" => $item->title,
+            "src_date_text" => (isset($item->values["_src_date_text"]) && is_scalar($item->values["_src_date_text"])) ? (string) $item->values["_src_date_text"] : "",
             "values" => (object) $item->values
         );
+    }
+
+    //"1", "on", "true" => true
+    private function _flag($name) {
+        $value = strtolower(trim((string) $this->request->getPost($name)));
+        return in_array($value, array("1", "on", "true", "yes"), true);
     }
 
     //colours of every option name: lowercase name => [bg, fg]
@@ -261,6 +268,7 @@ class Content_calendar extends Security_Controller {
                 "item_form" => get_uri("content_calendar/item_form"),
                 "save_client" => get_uri("content_calendar/save_client"),
                 "import_parse" => get_uri("content_calendar/import_parse"),
+                "import_parse_next" => get_uri("content_calendar/import_parse_next"),
                 "import_preview" => get_uri("content_calendar/import_preview"),
                 "import_run" => get_uri("content_calendar/import_run"),
                 "import_undo" => get_uri("content_calendar/import_undo"),
@@ -274,6 +282,10 @@ class Content_calendar extends Security_Controller {
                 "copy_columns" => get_uri("content_calendar/copy_columns"),
                 "save_target" => get_uri("content_calendar/save_target"),
                 "delete_item" => get_uri("content_calendar/delete_item"),
+                "item_data" => get_uri("content_calendar/item_data"),
+                "undated_list" => get_uri("content_calendar/undated_list"),
+                "undated_assign" => get_uri("content_calendar/undated_assign"),
+                "undated_assign_bulk" => get_uri("content_calendar/undated_assign_bulk"),
                 "delete_calendar" => get_uri("content_calendar/delete_calendar")
             ),
             "perms" => $this->_permission_flags(),
@@ -388,7 +400,7 @@ class Content_calendar extends Security_Controller {
         $form_values = array();
         if ($item) {
             $form_values = $item->values;
-            $form_values["date"] = $item->publish_date;
+            $form_values["date"] = $item->publish_date ? $item->publish_date : "";
             $form_values["type"] = $item->content_type;
             $form_values["status"] = $item->status;
             $form_values["title"] = $item->title;
@@ -408,6 +420,7 @@ class Content_calendar extends Security_Controller {
         $view_data["columns"] = $columns;
         $view_data["item"] = $item;
         $view_data["form_values"] = $form_values;
+        $view_data["no_date"] = ($item && !$item->publish_date) ? true : false;
         $view_data["can_manage_options"] = cc_can("manage_options");
         $view_data["back_url"] = $this->_month_url($calendar_id, $form_values["date"]);
         $view_data["colors"] = $this->_colors_for($all_columns);
@@ -426,6 +439,75 @@ class Content_calendar extends Security_Controller {
         );
 
         return $this->template->rander("content_calendar/item_form", $view_data);
+    }
+
+    /**
+     * Summary tiles: at most 6. Types with a target first, then the most used types of the month
+     * (then the order of the options list). When there are more than 6 types, the 6th tile is "Others"
+     * with the combined count of the rest. Empty content types never make a tile.
+     */
+    private function _build_tiles($options, $type_counts, $targets) {
+        $max_tiles = 6;
+
+        $candidates = array();
+        $position = 0;
+        $seen = array();
+        foreach ($options as $option) {
+            $option = (string) $option;
+            if ($option === "" || isset($seen[$option])) {
+                continue;
+            }
+
+            $seen[$option] = true;
+            $candidates[] = array("label" => $option, "count" => isset($type_counts[$option]) ? (int) $type_counts[$option] : 0, "target" => isset($targets[$option]) ? (int) $targets[$option] : 0, "pos" => $position++);
+        }
+
+        //a type that is used but no longer in the options list still counts
+        foreach ($type_counts as $type => $count) {
+            $type = (string) $type;
+            if ($type === "" || isset($seen[$type])) {
+                continue;
+            }
+
+            $seen[$type] = true;
+            $candidates[] = array("label" => $type, "count" => (int) $count, "target" => 0, "pos" => $position++);
+        }
+
+        usort($candidates, function ($a, $b) {
+            $a_target = $a["target"] > 0 ? 1 : 0;
+            $b_target = $b["target"] > 0 ? 1 : 0;
+            if ($a_target !== $b_target) {
+                return $b_target - $a_target;
+            }
+
+            if ($a["count"] !== $b["count"]) {
+                return $b["count"] - $a["count"];
+            }
+
+            return $a["pos"] - $b["pos"];
+        });
+
+        $others = 0;
+        $has_others = false;
+        if (count($candidates) > $max_tiles) {
+            foreach (array_slice($candidates, $max_tiles - 1) as $rest) {
+                $others += $rest["count"];
+            }
+
+            $candidates = array_slice($candidates, 0, $max_tiles - 1);
+            $has_others = true;
+        }
+
+        $tiles = array();
+        foreach ($candidates as $one) {
+            $tiles[] = array("label" => $one["label"], "count" => $one["count"], "target" => $one["target"]);
+        }
+
+        if ($has_others) {
+            $tiles[] = array("label" => cc_lang("cc_tile_others"), "count" => $others, "target" => 0, "is_others" => true);
+        }
+
+        return $tiles;
     }
 
     /* ------------------------------------------------------------------ */
@@ -459,6 +541,7 @@ class Content_calendar extends Security_Controller {
             "special_days" => (object) array(),
             "targets" => (object) array(),
             "tiles" => array(),
+            "undated_count" => 0,
             "filters" => array("types" => array(), "goals" => array(), "statuses" => array(), "has_goal" => false),
             "colors" => (object) array()
         );
@@ -551,16 +634,7 @@ class Content_calendar extends Security_Controller {
         $type_counts = $this->Cc_items_model->get_type_counts($calendar_id, $year, $month);
         $targets = $this->Cc_targets_model->get_for_calendar($calendar_id);
 
-        $tiles = array();
-        if ($type_column) {
-            foreach ($type_column->options_list as $option) {
-                $tiles[] = array(
-                    "label" => $option,
-                    "count" => isset($type_counts[$option]) ? $type_counts[$option] : 0,
-                    "target" => isset($targets[$option]) ? $targets[$option] : 0
-                );
-            }
-        }
+        $tiles = $this->_build_tiles($type_column ? $type_column->options_list : array(), $type_counts, $targets);
 
         $has_goal = ($goal_column && $this->Cc_columns_model->is_option_type($goal_column->input_type));
 
@@ -573,6 +647,7 @@ class Content_calendar extends Security_Controller {
         $response["special_days"] = (object) $this->Cc_special_days_model->get_for_month($calendar_id, $year, $month);
         $response["targets"] = (object) $targets;
         $response["tiles"] = $tiles;
+        $response["undated_count"] = $this->Cc_items_model->count_undated($calendar_id);
         $response["filters"] = array(
             "types" => $type_column ? $type_column->options_list : array(),
             "statuses" => $status_column ? $status_column->options_list : array(),
@@ -622,9 +697,19 @@ class Content_calendar extends Security_Controller {
         $core = array("date" => "", "type" => "", "status" => "", "title" => "");
         $values = $existing ? $existing->values : array();
 
+        //"No date yet": only counts when no date is posted (a date always wins and clears the flag)
+        $posted_date = isset($posted["date"]) && !is_array($posted["date"]) ? trim((string) $posted["date"]) : "";
+        $no_date = $this->_flag("no_date") && $posted_date === "";
+
         foreach ($columns as $column) {
             $key = $column->field_key;
             $raw = isset($posted[$key]) ? $posted[$key] : null;
+
+            if ($no_date && $column->is_core && $key === "date") {
+                $core["date"] = "";
+                continue;
+            }
+
             $result = $this->_validate_field_value($column, $raw);
 
             if (isset($result["error"])) {
@@ -644,7 +729,7 @@ class Content_calendar extends Security_Controller {
             }
         }
 
-        if (!isset($errors["date"]) && $core["date"] === "") {
+        if (!$no_date && !isset($errors["date"]) && $core["date"] === "") {
             $errors["date"] = cc_lang("cc_date_required");
         }
 
@@ -656,10 +741,15 @@ class Content_calendar extends Security_Controller {
             $this->_fail(cc_lang("cc_please_fix_errors"), $errors);
         }
 
+        //a date was given to an undated item: the "From sheet" text is not needed any more
+        if ($core["date"] !== "" && $existing && !$existing->publish_date) {
+            unset($values["_src_date_text"]);
+        }
+
         $now = cc_now();
         $data = array(
             "calendar_id" => $calendar_id,
-            "publish_date" => $core["date"],
+            "publish_date" => $core["date"] === "" ? null : $core["date"],
             "content_type" => $core["type"],
             "status" => $core["status"],
             "title" => $core["title"],
@@ -677,13 +767,15 @@ class Content_calendar extends Security_Controller {
         $saved_id = $this->Cc_items_model->save_item($data, $id);
 
         //show the month of this post in the month row
-        $this->Cc_months_model->ensure_for_date($calendar_id, $core["date"]);
+        if ($core["date"] !== "") {
+            $this->Cc_months_model->ensure_for_date($calendar_id, $core["date"]);
+        }
 
         $this->_json(array(
             "success" => true,
             "id" => $saved_id,
             "calendar_id" => $calendar_id,
-            "date" => $core["date"],
+            "date" => $core["date"] === "" ? null : $core["date"],
             "redirect" => $this->_month_url($calendar_id, $core["date"]),
             "message" => cc_lang("cc_saved")
         ));
@@ -801,6 +893,184 @@ class Content_calendar extends Security_Controller {
 
         $this->Cc_items_model->soft_delete_item($item->id, $this->login_user->id);
         $this->_json(array("success" => true, "message" => cc_lang("cc_deleted")));
+    }
+
+    /**
+     * AJAX: Single item data for View popup.
+     */
+    function item_data($id = 0) {
+        $this->_require_can("view");
+        $id = (int) $id;
+        if (!$id) {
+            $id = (int) $this->request->getPostGet("id");
+        }
+        $item = $this->Cc_items_model->get_active($id);
+        if (!$item) {
+            $this->_fail(cc_lang("cc_item_not_found"), array(), 404);
+            return;
+        }
+
+        $calendar = $this->_get_calendar_or_fail($item->calendar_id);
+        $all_columns = $this->Cc_columns_model->get_for_calendar($calendar->id, true);
+
+        $this->_json(array(
+            "success" => true,
+            "item" => $this->_item_to_array($item),
+            "columns" => array_map(array($this, "_column_to_array"), $all_columns)
+        ));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* AJAX: "Without date" (items with no publish date)                   */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Undated items of one calendar, 50 at a time. Posts: calendar_id, q (title search), offset.
+     */
+    function undated_list() {
+        $this->_require_post();
+        $this->_require_can("view");
+
+        $calendar = $this->_get_calendar_or_fail((int) $this->request->getPost("calendar_id"));
+        $q = trim((string) $this->request->getPost("q"));
+        if ($this->_str_len($q) > 120) {
+            $q = mb_substr($q, 0, 120, "UTF-8");
+        }
+
+        $limit = 50;
+        $offset = max(0, (int) $this->request->getPost("offset"));
+
+        $items = array();
+        $names = array();
+        foreach ($this->Cc_items_model->get_undated($calendar->id, array("q" => $q, "limit" => $limit, "offset" => $offset)) as $item) {
+            $items[] = $this->_item_to_array($item);
+            $names[] = $item->content_type;
+            $names[] = $item->status;
+        }
+
+        $all_columns = $this->Cc_columns_model->get_for_calendar($calendar->id, true);
+
+        $this->_json(array(
+            "success" => true,
+            "calendar_id" => (int) $calendar->id,
+            "items" => $items,
+            "total" => $this->Cc_items_model->count_undated($calendar->id, $q),
+            "undated_count" => $this->Cc_items_model->count_undated($calendar->id),
+            "offset" => $offset,
+            "limit" => $limit,
+            "colors" => $this->_colors_for($all_columns, $names)
+        ));
+    }
+
+    /**
+     * Give a date to undated items (shared by undated_assign and undated_assign_bulk).
+     * Items that are not undated (or belong to another calendar) are skipped.
+     */
+    private function _undated_assign_run($ids) {
+        $calendar = $this->_get_calendar_or_fail((int) $this->request->getPost("calendar_id"));
+
+        $date = trim((string) $this->request->getPost("publish_date"));
+        if ($date === "") {
+            $date = trim((string) $this->request->getPost("date"));
+        }
+
+        if ($date === "") {
+            $this->_fail(cc_lang("cc_pick_a_date"), array("date" => cc_lang("cc_pick_a_date")));
+        }
+
+        if (!$this->_is_valid_date($date)) {
+            $this->_fail(cc_lang("cc_invalid_date"), array("date" => cc_lang("cc_invalid_date")));
+        }
+
+        $year = (int) substr($date, 0, 4);
+        if (!$this->_is_valid_year_month($year, (int) substr($date, 5, 2))) {
+            $this->_fail(cc_lang("cc_invalid_date"), array("date" => cc_lang("cc_invalid_date")));
+        }
+
+        $clean_ids = array();
+        foreach ((array) $ids as $id) {
+            $id = (int) $id;
+            if ($id > 0 && !in_array($id, $clean_ids, true)) {
+                $clean_ids[] = $id;
+            }
+        }
+
+        if (!count($clean_ids)) {
+            $this->_fail(cc_lang("cc_item_not_found"));
+        }
+
+        if (count($clean_ids) > 500) {
+            $this->_fail(cc_lang("cc_invalid_request"));
+        }
+
+        $assigned = array();
+        foreach ($clean_ids as $id) {
+            $item = $this->Cc_items_model->get_active($id);
+            if (!$item || (int) $item->calendar_id !== (int) $calendar->id || $item->publish_date) {
+                continue;
+            }
+
+            if ($this->Cc_items_model->assign_date($id, $date, $this->login_user->id, true)) {
+                $assigned[] = $id;
+            }
+        }
+
+        $added_month = false;
+        if (count($assigned)) {
+            $added_month = $this->Cc_months_model->ensure_for_date($calendar->id, $date);
+        }
+
+        $counts = $this->Cc_items_model->get_month_counts($calendar->id);
+        $months = array();
+        foreach ($this->Cc_months_model->get_for_calendar($calendar->id) as $row) {
+            $key = sprintf("%04d-%02d", $row->year, $row->month);
+            $months[] = array("year" => $row->year, "month" => $row->month, "count" => isset($counts[$key]) ? $counts[$key] : 0);
+        }
+
+        $this->_json(array(
+            "success" => true,
+            "calendar_id" => (int) $calendar->id,
+            "date" => $date,
+            "assigned" => $assigned,
+            "assigned_count" => count($assigned),
+            "skipped_count" => count($clean_ids) - count($assigned),
+            "added_month" => $added_month ? true : false,
+            "months" => $months,
+            "undated_count" => $this->Cc_items_model->count_undated($calendar->id),
+            "message" => count($assigned) ? sprintf(cc_lang("cc_undated_moved"), $date) : cc_lang("cc_undated_none_moved")
+        ));
+    }
+
+    /**
+     * Posts: calendar_id, publish_date (or date), item_id (one) or item_ids[] (several).
+     */
+    function undated_assign() {
+        $this->_require_post();
+        $this->_require_can("edit");
+
+        $ids = array();
+        $one = (int) $this->request->getPost("item_id");
+        if ($one) {
+            $ids[] = $one;
+        }
+
+        $many = $this->request->getPost("item_ids");
+        if (is_array($many)) {
+            $ids = array_merge($ids, $many);
+        }
+
+        $this->_undated_assign_run($ids);
+    }
+
+    /**
+     * Posts: calendar_id, publish_date (or date), ids[].
+     */
+    function undated_assign_bulk() {
+        $this->_require_post();
+        $this->_require_can("edit");
+
+        $ids = $this->request->getPost("ids");
+        $this->_undated_assign_run(is_array($ids) ? $ids : array());
     }
 
     function upload_file() {
@@ -1147,13 +1417,32 @@ class Content_calendar extends Security_Controller {
     }
 
     private function _import_perms() {
+        $add_client = cc_can("add_client");
+        $add_column = cc_can("add_column");
         return array(
             "add" => cc_can("add"),
+            "edit" => cc_can("edit"),
             "admin_manage" => cc_can("admin_manage"),
             "manage_options" => cc_can("manage_options"),
-            "add_client" => cc_can("add_client"),
-            "add_column" => cc_can("add_column")
+            "add_client" => $add_client,
+            "add_clients" => $add_client,
+            "add_column" => $add_column,
+            "add_columns" => $add_column
         );
+    }
+
+    //may the user create a client during an import
+    private function _can_create_clients($perms) {
+        return !empty($perms["add_client"]) || !empty($perms["add_clients"]) || !empty($perms["admin_manage"]);
+    }
+
+    private function _calendars_for_js($calendars) {
+        $list = array();
+        foreach ($calendars as $calendar) {
+            $list[] = array("id" => (int) $calendar->id, "name" => $calendar->name);
+        }
+
+        return $list;
     }
 
     //import needs the phase 2 table and column (docs/content_calendar.sql)
@@ -1181,7 +1470,8 @@ class Content_calendar extends Security_Controller {
     }
 
     /**
-     * Step 1: upload, check size / type / content, parse once, keep the parsed rows in a temp file under a token.
+     * Step 1: upload, check size / type, keep the file under a token and list the sheet names. No sheet is read here:
+     * import_parse_next reads them one by one (so a 32 sheet workbook never has to fit in one request).
      */
     function import_parse() {
         $this->_require_post();
@@ -1195,8 +1485,6 @@ class Content_calendar extends Security_Controller {
         $calendar_id = (int) $this->request->getPost("calendar_id");
         if ($calendar_id) {
             $this->_get_calendar_or_fail($calendar_id);
-        } else if (empty($perms["add_client"]) && empty($perms["admin_manage"])) {
-            $this->_forbidden_json();
         }
 
         if (empty($_FILES["file"]) || !isset($_FILES["file"]["error"])) {
@@ -1218,14 +1506,14 @@ class Content_calendar extends Security_Controller {
             $this->_fail(cc_lang("cc_imp_err_ext"));
         }
 
-        //random name in writable/files/content_calendar/imports/, deleted again right after parsing
+        //random name in writable/files/content_calendar/imports/; begin_parse keeps it as token.upload until the last sheet is read
         $upload_path = $lib->dir() . $lib->new_token() . ".upload";
         if (!move_uploaded_file($_FILES["file"]["tmp_name"], $upload_path)) {
             $this->_fail(cc_lang("cc_imp_upload_failed"));
         }
 
         try {
-            $result = $lib->read_file($upload_path, (string) $this->request->getPost("file_type"));
+            $begin = $lib->begin_parse($this->login_user->id, $calendar_id, $file_name, $upload_path, (string) $this->request->getPost("file_type"));
         } catch (\RuntimeException $e) {
             @unlink($upload_path);
             $this->_fail($e->getMessage());
@@ -1235,52 +1523,16 @@ class Content_calendar extends Security_Controller {
             $this->_fail(cc_lang("cc_imp_err_corrupt"));
         }
 
-        @unlink($upload_path);
-
-        $sheets = $result["sheets"];
-        if ($result["type"] === "csv") {
-            $sheets[0]["name"] = mb_substr(pathinfo($file_name, PATHINFO_FILENAME), 0, 120, "UTF-8");
-        }
-
-        $calendars = $this->Cc_calendars_model->get_all_active();
-        $sheet_infos = array();
-        $usable = 0;
-        $first_error = "";
-        foreach ($sheets as $index => $sheet) {
-            $info = $lib->sheet_summary($sheet, $index);
-            $info["match_calendar_id"] = $lib->match_calendar($sheet["name"], $calendars);
-            if ($info["usable"]) {
-                $usable++;
-            } else if ($first_error === "") {
-                $first_error = $info["error"];
-            }
-
-            $sheet_infos[] = $info;
-        }
-
-        if (!$usable) {
-            $this->_fail($first_error !== "" ? $first_error : cc_lang("cc_imp_err_no_sheets"));
-        }
-
-        $token = $lib->store_parsed($this->login_user->id, $calendar_id, $file_name, $result["type"], $sheets);
-        if ($token === "") {
-            $this->_fail(cc_lang("cc_imp_upload_failed"));
-        }
-
-        $calendars_array = array();
-        foreach ($calendars as $calendar) {
-            $calendars_array[] = array("id" => (int) $calendar->id, "name" => $calendar->name);
-        }
-
         $this->_json(array(
             "success" => true,
-            "token" => $token,
+            "token" => $begin["token"],
             "file_name" => $file_name,
-            "type" => $result["type"],
-            "type_label" => $lib->type_label($result["type"]),
-            "notes" => $result["notes"],
-            "sheets" => $sheet_infos,
-            "calendars" => $calendars_array,
+            "type" => $begin["type"],
+            "type_label" => $lib->type_label($begin["type"]),
+            "notes" => $begin["notes"],
+            "total" => $begin["total"],
+            "sheet_names" => $begin["sheet_names"],
+            "calendars" => $this->_calendars_for_js($this->Cc_calendars_model->get_all_active()),
             "calendar_id" => $calendar_id,
             "perms" => $perms,
             "limits" => \App\Libraries\Content_calendar_import::limits()
@@ -1288,88 +1540,300 @@ class Content_calendar extends Security_Controller {
     }
 
     /**
-     * Shared by preview and run: read the posted choices, load the parsed sheets, and resolve each sheet's target.
-     * Returns array("lib", "payload", "stored", "config", "perms", "jobs").
+     * Step 1b (called until "done"): read the next sheet(s) of the uploaded file.
+     * Returns the progress and the summaries of the sheets read by this call. When done it also returns every
+     * sheet summary ("sheets"), the client groups ("groups", same client = one group) and the calendars.
+     */
+    function import_parse_next() {
+        $this->_require_post();
+        $this->_require_can("add");
+        $this->_require_import_schema();
+
+        $lib = $this->_import_lib();
+        $token = (string) $this->request->getPost("token");
+        $batch = (int) $this->request->getPost("batch");
+        $batch = $batch >= 1 ? min(5, $batch) : 2;
+
+        try {
+            $step = $lib->parse_next_sheets($token, $this->login_user->id, $batch);
+        } catch (\RuntimeException $e) {
+            $this->_fail($e->getMessage());
+        } catch (\Throwable $e) {
+            log_message('error', '[ERROR] cc import parse next: {message}', array('message' => $e->getMessage()));
+            $this->_fail(cc_lang("cc_imp_err_corrupt"));
+        }
+
+        $out = array(
+            "success" => true,
+            "token" => $token,
+            "done" => (bool) $step["done"],
+            "parsed" => (int) $step["parsed"],
+            "total" => (int) $step["total"],
+            "sheets" => $step["sheets"]
+        );
+
+        if ($step["done"]) {
+            $calendars = $this->Cc_calendars_model->get_all_active();
+            $meta = $lib->load_meta($token, $this->login_user->id);
+            $summaries = array();
+            $usable = 0;
+            $first_error = "";
+            if ($meta) {
+                foreach (array_keys($meta["sheet_names"]) as $index) {
+                    $sheet = $lib->load_sheet_parsed($token, $this->login_user->id, $index);
+                    if ($sheet === null) {
+                        continue;
+                    }
+
+                    $summary = isset($sheet["summary"]) ? $sheet["summary"] : $lib->sheet_summary($sheet, $index);
+                    unset($sheet);
+                    $summary["match_calendar_id"] = $lib->match_calendar($summary["client_name"], $calendars);
+                    if (!empty($summary["usable"])) {
+                        $usable++;
+                    } else if ($first_error === "") {
+                        $first_error = $summary["error"];
+                    }
+
+                    $summaries[] = $summary;
+                }
+            }
+
+            if (!$usable) {
+                $lib->delete_parsed($token);
+                $this->_fail($first_error !== "" ? $first_error : cc_lang("cc_imp_err_no_sheets"));
+            }
+
+            $out["sheets"] = $summaries;
+            $out["groups"] = $lib->group_sheets($summaries, $calendars);
+            $out["calendars"] = $this->_calendars_for_js($calendars);
+            $out["perms"] = $this->_import_perms();
+        }
+
+        $this->_json($out);
+    }
+
+    /* ---------- import: resolve the posted choices (shared by preview and run) ---------- */
+
+    //the global options of the payload, in the names that the library knows
+    private function _import_options($payload, $perms) {
+        $in = isset($payload["options"]) && is_array($payload["options"]) ? $payload["options"] : array();
+        $options = array();
+        foreach (array("year", "carry_blank_date", "skip_duplicates", "import_without_date", "fix_swapped_dates", "special_ignore", "set_targets_from_counts", "leave_as_text") as $key) {
+            if (array_key_exists($key, $in)) {
+                $options[$key] = $in[$key];
+            }
+        }
+
+        //blank status: "Planned" (or any status name) or "" = leave empty
+        if (isset($in["blank_status"]) && is_string($in["blank_status"])) {
+            $options["default_status"] = trim($in["blank_status"]);
+        } else if (isset($in["default_status"]) && is_string($in["default_status"])) {
+            $options["default_status"] = trim($in["default_status"]);
+        }
+
+        $merges = isset($in["value_merges"]) && is_array($in["value_merges"]) ? $in["value_merges"] : (isset($in["merges"]) && is_array($in["merges"]) ? $in["merges"] : array());
+        $options["merges"] = $merges;
+
+        //targets from the header counts are an admin setting
+        if (empty($perms["admin_manage"])) {
+            $options["set_targets_from_counts"] = false;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Column key of every column of a sheet for the mapping that is remembered per client: normalized header text
+     * (letters and digits only), or "column<letter>" when there is no header.
+     */
+    private function _header_keys($lib, $sheet, $header_row) {
+        $cfg = $lib->default_config();
+        $cfg["header_row"] = (int) $header_row;
+        $layout = $lib->analyze_layout($sheet["rows"], $cfg, isset($sheet["name"]) ? $sheet["name"] : "");
+        $keys = array();
+        if (empty($layout["ok"])) {
+            return $keys;
+        }
+
+        foreach ($layout["info"] as $i => $col) {
+            $keys[(int) $i] = ($col["has_header"] && $col["raw_norm"] !== "") ? $col["raw_norm"] : "column" . strtolower($col["letter"]);
+        }
+
+        return $keys;
+    }
+
+    //mapping by column index of ONE sheet from the mapping by normalized header of the client
+    private function _mapping_for_sheet($lib, $sheet, $header_row, $by_header) {
+        if (!count($by_header)) {
+            return array();
+        }
+
+        $mapping = array();
+        foreach ($this->_header_keys($lib, $sheet, $header_row) as $i => $key) {
+            if (isset($by_header[$key]) && is_array($by_header[$key])) {
+                $mapping[$i] = $by_header[$key];
+            }
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Read the posted choices and resolve the target of every client group. Sheets are NOT loaded here (see _import_group_jobs),
+     * so many groups never have to be in memory together.
+     * Returns array("lib", "payload", "token", "meta", "perms", "options", "groups", "run_id").
+     * A group never creates a client silently: "new" needs the add client permission, otherwise it gets the error "needs_add_client".
      */
     private function _import_resolve() {
         $lib = $this->_import_lib();
         $perms = $this->_import_perms();
         $payload = $this->_import_payload();
 
-        $stored = $lib->load_parsed(isset($payload["token"]) ? $payload["token"] : "", $this->login_user->id);
-        if (!$stored) {
+        $token = isset($payload["token"]) ? (string) $payload["token"] : "";
+        $meta = $lib->load_meta($token, $this->login_user->id);
+        if (!$meta) {
             $this->_fail(cc_lang("cc_imp_expired"));
         }
 
-        $options = isset($payload["options"]) && is_array($payload["options"]) ? $payload["options"] : array();
-        $sheet_configs = isset($payload["sheets"]) && is_array($payload["sheets"]) ? $payload["sheets"] : array();
-        $single = (isset($payload["mode"]) ? $payload["mode"] : "single") !== "multi";
+        if (empty($meta["complete"])) {
+            $this->_fail(cc_lang("cc_imp_parse_incomplete"));
+        }
 
-        $jobs = array();
+        $options = $this->_import_options($payload, $perms);
+        $groups_in = isset($payload["groups"]) && is_array($payload["groups"]) ? $payload["groups"] : array();
+        $can_create = $this->_can_create_clients($perms);
+
+        $groups = array();
+        $used_indexes = array();
         $seen_new_names = array();
-        foreach ($sheet_configs as $sheet_config) {
-            if (!is_array($sheet_config) || !isset($sheet_config["index"]) || !isset($stored["sheets"][(int) $sheet_config["index"]])) {
+        foreach ($groups_in as $g) {
+            if (!is_array($g) || !isset($g["sheet_indexes"]) || !is_array($g["sheet_indexes"])) {
                 continue;
             }
 
-            $index = (int) $sheet_config["index"];
-            $sheet = $stored["sheets"][$index];
-            $summary = $lib->sheet_summary($sheet, $index);
-            $config = array_merge($options, array(
-                "header_row" => isset($sheet_config["header_row"]) ? $sheet_config["header_row"] : 0,
-                "mapping" => isset($sheet_config["mapping"]) && is_array($sheet_config["mapping"]) ? $sheet_config["mapping"] : array()
-            ));
+            $indexes = array();
+            foreach ($g["sheet_indexes"] as $i) {
+                $i = (int) $i;
+                if (isset($meta["sheet_names"][$i]) && !empty($meta["parsed"][$i]) && !isset($used_indexes[$i])) {
+                    $indexes[] = $i;
+                    $used_indexes[$i] = true;
+                }
+            }
 
-            $job = array("index" => $index, "sheet" => $sheet, "summary" => $summary, "config" => $config, "checked" => !empty($sheet_config["checked"]), "error" => "", "error_code" => "", "target" => array(), "calendar_id" => 0, "calendar_name" => "", "is_new" => false);
+            if (!count($indexes)) {
+                continue;
+            }
 
-            $target = isset($sheet_config["target"]) ? (string) $sheet_config["target"] : "";
-            if (!$summary["usable"]) {
-                $job["error"] = $summary["error"];
-            } else if ($target === "new") {
-                $name = trim(preg_replace('/\s+/u', " ", isset($sheet_config["new_name"]) ? (string) $sheet_config["new_name"] : $sheet["name"]));
-                $job["is_new"] = true;
-                $job["calendar_name"] = $name;
-                if (empty($perms["add_client"]) && empty($perms["admin_manage"])) {
-                    $job["error"] = cc_lang("cc_imp_needs_admin");
-                    $job["error_code"] = "needs_admin";
+            $client_name = trim(preg_replace('/\s+/u', " ", isset($g["client_name"]) ? (string) $g["client_name"] : ""));
+            $header_rows = array();
+            if (isset($g["header_rows"]) && is_array($g["header_rows"])) {
+                foreach ($g["header_rows"] as $i => $row) {
+                    if ((int) $row >= 1) {
+                        $header_rows[(int) $i] = (int) $row;
+                    }
+                }
+            }
+
+            $by_header = array();
+            if (isset($g["mapping_by_header"]) && is_array($g["mapping_by_header"])) {
+                foreach ($g["mapping_by_header"] as $key => $map) {
+                    if (is_string($key) && is_array($map) && count($by_header) < 200) {
+                        $by_header[$key] = $map;
+                    }
+                }
+            }
+
+            //options of this client = the global options + its own value merges / "keep as text" choices
+            $group_options = $options;
+            if (isset($g["value_merges"]) && is_array($g["value_merges"])) {
+                foreach ($g["value_merges"] as $target_key => $list) {
+                    if (is_string($target_key) && is_array($list)) {
+                        foreach ($list as $from => $to) {
+                            $group_options["merges"][$target_key][$from] = $to;
+                        }
+                    }
+                }
+            }
+
+            if (isset($g["leave_as_text"]) && is_array($g["leave_as_text"])) {
+                $group_options["leave_as_text"] = $g["leave_as_text"];
+            }
+
+            $group = array(
+                "key" => isset($g["key"]) ? mb_substr((string) $g["key"], 0, 120, "UTF-8") : "g" . count($groups),
+                "checked" => !empty($g["checked"]),
+                "client_name" => $client_name,
+                "indexes" => $indexes,
+                "header_rows" => $header_rows,
+                "mapping_by_header" => $by_header,
+                "options" => $group_options,
+                "error" => "", "error_code" => "", "target" => array(), "calendar_id" => 0, "calendar_name" => "", "is_new" => false
+            );
+
+            $target = isset($g["target"]) ? (string) $g["target"] : "";
+            if ($target === "new") {
+                $name = trim(preg_replace('/\s+/u', " ", isset($g["new_name"]) && trim((string) $g["new_name"]) !== "" ? (string) $g["new_name"] : $client_name));
+                $group["is_new"] = true;
+                $group["calendar_name"] = $name;
+                if (!$can_create) {
+                    $group["error"] = cc_lang("cc_imp_needs_add_clients");
+                    $group["error_code"] = "needs_add_client";
                 } else if ($name === "") {
-                    $job["error"] = cc_lang("cc_name_required");
+                    $group["error"] = cc_lang("cc_name_required");
                 } else if (mb_strlen($name, "UTF-8") > 120) {
-                    $job["error"] = cc_lang("cc_name_too_long");
+                    $group["error"] = cc_lang("cc_name_too_long");
                 } else if ($this->Cc_calendars_model->name_exists($name) || isset($seen_new_names[mb_strtolower($name, "UTF-8")])) {
-                    $job["error"] = cc_lang("cc_client_exists");
+                    $group["error"] = cc_lang("cc_client_exists");
                 } else {
                     $seen_new_names[mb_strtolower($name, "UTF-8")] = true;
-                    $job["target"] = array("new_name" => $name);
+                    $group["target"] = array("new_name" => $name);
                 }
             } else {
-                $calendar = $this->Cc_calendars_model->get_active((int) $target);
+                $calendar = (int) $target > 0 ? $this->Cc_calendars_model->get_active((int) $target) : null;
                 if (!$calendar) {
-                    $job["error"] = cc_lang("cc_calendar_not_found");
+                    $group["error"] = cc_lang("cc_calendar_not_found");
                 } else {
-                    $job["calendar_id"] = (int) $calendar->id;
-                    $job["calendar_name"] = $calendar->name;
-                    $job["target"] = array("calendar_id" => (int) $calendar->id);
+                    $group["calendar_id"] = (int) $calendar->id;
+                    $group["calendar_name"] = $calendar->name;
+                    $group["target"] = array("calendar_id" => (int) $calendar->id);
                 }
             }
 
-            //the parsed file belongs to the client that was chosen in step 1
-            if ($single && $job["error"] === "" && (int) $stored["calendar_id"] !== $job["calendar_id"]) {
-                $job["error"] = cc_lang("cc_imp_expired");
-            }
-
-            $jobs[] = $job;
+            $groups[] = $group;
         }
 
-        if (!count($jobs)) {
+        if (!count($groups)) {
             $this->_fail(cc_lang("cc_invalid_request"));
         }
 
-        return array("lib" => $lib, "payload" => $payload, "stored" => $stored, "perms" => $perms, "jobs" => $jobs);
+        $run_id = isset($payload["run_id"]) && $lib->valid_run_id($payload["run_id"]) ? $payload["run_id"] : $lib->new_run_id();
+        return array("lib" => $lib, "payload" => $payload, "token" => $token, "meta" => $meta, "perms" => $perms, "options" => $options, "groups" => $groups, "run_id" => $run_id);
+    }
+
+    //load the sheets of one group from the temp files and build the library jobs (index, sheet, config)
+    private function _import_group_jobs($r, $group) {
+        $lib = $r["lib"];
+        $jobs = array();
+        foreach ($group["indexes"] as $index) {
+            $sheet = $lib->load_sheet_parsed($r["token"], $this->login_user->id, $index);
+            if ($sheet === null || (isset($sheet["summary"]["usable"]) && !$sheet["summary"]["usable"])) {
+                continue;
+            }
+
+            $header_row = isset($group["header_rows"][$index]) ? $group["header_rows"][$index] : 0;
+            $jobs[] = array(
+                "index" => $index,
+                "sheet" => $sheet,
+                "config" => array("header_row" => $header_row, "mapping" => $this->_mapping_for_sheet($lib, $sheet, $header_row, $group["mapping_by_header"]))
+            );
+        }
+
+        return $jobs;
     }
 
     /**
-     * Step 2: dry run. Same planning function as import_run, nothing is written.
+     * Step 2: dry run of every checked client group (plus the group that is open for review). Same planning function
+     * as import_run, nothing is written. Groups are sent back in the order of the payload.
      */
     function import_preview() {
         $this->_require_post();
@@ -1378,42 +1842,99 @@ class Content_calendar extends Security_Controller {
 
         $r = $this->_import_resolve();
         $lib = $r["lib"];
-        $detail = isset($r["payload"]["detail"]) ? (int) $r["payload"]["detail"] : -1;
+        $detail_group = isset($r["payload"]["detail_group"]) ? (string) $r["payload"]["detail_group"] : "";
+        $detail_index = isset($r["payload"]["detail_index"]) && $r["payload"]["detail_index"] !== "" ? (int) $r["payload"]["detail_index"] : null;
 
-        $sheets = array();
-        foreach ($r["jobs"] as $job) {
+        $groups = array();
+        foreach ($r["groups"] as $group) {
+            $is_detail = $detail_group !== "" && $group["key"] === $detail_group;
+            if (!$group["checked"] && !$is_detail) {
+                continue;
+            }
+
             $entry = array(
-                "index" => $job["index"], "name" => $job["sheet"]["name"], "checked" => $job["checked"],
-                "target_calendar_id" => $job["calendar_id"], "target_name" => $job["calendar_name"], "is_new" => $job["is_new"],
-                "ok" => false, "error" => $job["error"], "error_code" => $job["error_code"], "can_import" => false,
-                "target_columns" => array()
+                "key" => $group["key"], "client_name" => $group["client_name"], "checked" => $group["checked"],
+                "calendar_id" => $group["calendar_id"], "calendar_name" => $group["calendar_name"], "is_new" => $group["is_new"],
+                "ok" => false, "error" => $group["error"], "error_code" => $group["error_code"], "can_import" => false,
+                "target_columns" => array(), "merge_suggestions" => array(), "many_options" => array()
             );
 
             //the columns of the target client (for the "Maps to" list). A new client starts with the core columns only.
-            if ($job["calendar_id"] > 0) {
-                foreach ($this->Cc_columns_model->get_for_calendar($job["calendar_id"]) as $target_column) {
+            if ($is_detail && $group["calendar_id"] > 0) {
+                foreach ($this->Cc_columns_model->get_for_calendar($group["calendar_id"]) as $target_column) {
                     if (!$target_column->is_core) {
                         $entry["target_columns"][] = array("key" => $target_column->field_key, "label" => $target_column->label, "input_type" => $target_column->input_type);
                     }
                 }
             }
 
-            if ($job["error"] === "" || $job["error_code"] === "needs_admin") {
-                //a locked target (needs admin) still shows its numbers, but can't be imported
-                $plan = $lib->dry_run_sheet($job["sheet"], $job["config"], $job["calendar_id"], $r["perms"]);
-                $entry = array_merge($entry, $lib->plan_for_browser($plan, $job["index"] === $detail));
-                $entry["can_import"] = $entry["can_import"] && $job["error"] === "";
-                $entry["error"] = $job["error"] !== "" ? $job["error"] : $plan["error"];
+            if ($group["error"] === "" || $group["error_code"] === "needs_add_client") {
+                //a target that needs a permission still shows its numbers, but can't be imported
+                $jobs = $this->_import_group_jobs($r, $group);
+                if (!count($jobs)) {
+                    $entry["error"] = cc_lang("cc_imp_sheet_no_table");
+                } else {
+                    $plan = $lib->dry_run_group($jobs, $group["options"], $group["calendar_id"], $r["perms"]);
+                    $browser = $lib->plan_for_browser($plan, $is_detail, $is_detail ? $detail_index : null);
+
+                    //value merges that the user can accept / reject, and select columns with many new options
+                    foreach ($plan["value_cleanup"] as $cleanup) {
+                        foreach ($cleanup["suggestions"] as $suggestion) {
+                            if (count($entry["merge_suggestions"]) >= 150) {
+                                break;
+                            }
+
+                            $entry["merge_suggestions"][] = array(
+                                "target_key" => $cleanup["key"], "label" => $cleanup["label"], "from" => $suggestion["from"], "from_key" => $suggestion["from_key"],
+                                "to" => $suggestion["to"], "count_from" => $suggestion["count_from"], "count_to" => $suggestion["count_to"],
+                                "reason" => $suggestion["reason"], "accept" => (bool) $suggestion["accept"]
+                            );
+                        }
+
+                        if (!empty($cleanup["over_limit"])) {
+                            $entry["many_options"][] = array("key" => $cleanup["key"], "label" => $cleanup["label"], "new_distinct" => (int) $cleanup["new_distinct"], "as_text" => (bool) $cleanup["as_text"]);
+                        }
+                    }
+
+                    unset($browser["value_cleanup"]);
+
+                    //column keys of the open sheet: the browser remembers a mapping per client by these
+                    if ($is_detail && isset($browser["columns"]) && isset($browser["detail_index"])) {
+                        foreach ($jobs as $job) {
+                            if ((int) $job["index"] === (int) $browser["detail_index"]) {
+                                $header_row = 0;
+                                foreach ($browser["sheets"] as $one) {
+                                    if ((int) $one["index"] === (int) $job["index"]) {
+                                        $header_row = (int) $one["header_row"];
+                                    }
+                                }
+
+                                $keys = $this->_header_keys($lib, $job["sheet"], $header_row);
+                                foreach ($browser["columns"] as $i => $column) {
+                                    $browser["columns"][$i]["key"] = isset($keys[$column["index"]]) ? $keys[$column["index"]] : "column" . strtolower($column["letter"]);
+                                }
+                            }
+                        }
+                    }
+
+                    $entry = array_merge($entry, $browser);
+                    $entry["can_import"] = $browser["can_import"] && $group["error"] === "";
+                    $entry["error"] = $group["error"] !== "" ? $group["error"] : $plan["error"];
+                    $entry["key"] = $group["key"];
+                }
+
+                unset($jobs, $plan, $browser);
             }
 
-            $sheets[] = $entry;
+            $groups[] = $entry;
         }
 
-        $this->_json(array("success" => true, "sheets" => $sheets, "perms" => $r["perms"]));
+        $this->_json(array("success" => true, "groups" => $groups, "perms" => $r["perms"]));
     }
 
     /**
-     * Step 3: apply. One database transaction per client (sheet).
+     * Step 3: apply. One database transaction per client group (all its sheets), one run id for the whole import.
+     * The plan is built again for every group: nothing is trusted from the preview.
      */
     function import_run() {
         $this->_require_post();
@@ -1422,54 +1943,81 @@ class Content_calendar extends Security_Controller {
 
         $r = $this->_import_resolve();
         $lib = $r["lib"];
-        $file_name = $r["stored"]["file_name"];
+        $file_name = $r["meta"]["file_name"];
 
         $results = array();
         $all_ok = true;
         $ran = 0;
-        foreach ($r["jobs"] as $job) {
-            if (!$job["checked"]) {
+        $has_run_id = false;
+        $totals = array("clients" => 0, "clients_created" => 0, "failed" => 0, "imported" => 0, "without_date" => 0, "special_days_written" => 0, "skipped" => 0, "columns_created" => 0, "options_created" => 0, "months_added" => 0);
+
+        foreach ($r["groups"] as $group) {
+            if (!$group["checked"]) {
                 continue;
             }
 
             $ran++;
-            $block = array("index" => $job["index"], "sheet_name" => $job["sheet"]["name"], "success" => false, "message" => $job["error"], "calendar_name" => $job["calendar_name"]);
+            $block = array(
+                "key" => $group["key"], "client_name" => $group["client_name"], "success" => false, "message" => $group["error"],
+                "calendar_id" => $group["calendar_id"], "calendar_name" => $group["calendar_name"], "sheet_names" => array()
+            );
 
-            if ($job["error"] === "") {
-                $result = $lib->run_sheet($job["sheet"], $job["config"], $job["target"], $r["perms"], $this->login_user->id, $file_name);
-                if ($result["success"]) {
-                    $skipped_rows = $result["skipped_rows"];
-                    unset($result["skipped_rows"]);
-
-                    $header_cells = array();
-                    $header_row = isset($result["header_row"]) ? $result["header_row"] : 0;
-                    foreach ($job["sheet"]["rows"] as $pair) {
-                        if ($pair[0] == $header_row) {
-                            $header_cells = $pair[1];
-                            break;
-                        }
-                    }
-
-                    $result["skipped_list"] = array();
-                    foreach (array_slice($skipped_rows, 0, \App\Libraries\Content_calendar_import::SKIPPED_SHOWN) as $row) {
-                        $result["skipped_list"][] = array("row" => $row[0], "reason" => $row[1]);
-                    }
-
-                    $result["skipped_token"] = "";
-                    if (count($skipped_rows)) {
-                        $result["skipped_token"] = $lib->store_skipped($this->login_user->id, array("header" => $header_cells, "rows" => $skipped_rows));
-                    }
-
-                    $result["first_date"] = $result["date_min"];
-                    $result["first_ym"] = $result["date_min"] ? substr($result["date_min"], 0, 7) : "";
-                    $block = array_merge($block, $result);
+            if ($group["error"] === "") {
+                $jobs = $this->_import_group_jobs($r, $group);
+                if (!count($jobs)) {
+                    $block["message"] = cc_lang("cc_imp_sheet_no_table");
                 } else {
-                    $block["message"] = $result["message"];
+                    $result = $lib->run_group($jobs, $group["options"], $group["target"], $r["perms"], $this->login_user->id, $file_name, $r["run_id"]);
+                    if ($result["success"]) {
+                        $skipped_rows = $result["skipped_rows"];
+                        unset($result["skipped_rows"]);
+
+                        $header_cells = array();
+                        $header_row = isset($result["header_row"]) ? $result["header_row"] : 0;
+                        foreach ($jobs[0]["sheet"]["rows"] as $pair) {
+                            if ($pair[0] == $header_row) {
+                                $header_cells = $pair[1];
+                                break;
+                            }
+                        }
+
+                        $result["skipped_list"] = array();
+                        foreach (array_slice($skipped_rows, 0, \App\Libraries\Content_calendar_import::SKIPPED_SHOWN) as $row) {
+                            $result["skipped_list"][] = array("row" => $row[0], "reason" => $row[1], "sheet" => isset($row[3]) ? $row[3] : "");
+                        }
+
+                        $result["skipped_token"] = "";
+                        if (count($skipped_rows)) {
+                            $result["skipped_token"] = $lib->store_skipped($this->login_user->id, array("header" => $header_cells, "rows" => $skipped_rows));
+                        }
+
+                        $result["first_date"] = $result["date_min"];
+                        $result["first_ym"] = $result["date_min"] ? substr($result["date_min"], 0, 7) : "";
+                        foreach ($jobs as $job) {
+                            $block["sheet_names"][] = trim($job["sheet"]["name"]);
+                        }
+
+                        $block = array_merge($block, $result);
+                        if (!empty($result["run_id"])) {
+                            $has_run_id = true;
+                        }
+
+                        $totals["clients"]++;
+                        $totals["clients_created"] += !empty($result["is_new_client"]) ? 1 : 0;
+                        foreach (array("imported", "without_date", "special_days_written", "skipped", "columns_created", "options_created", "months_added") as $total_key) {
+                            $totals[$total_key] += (int) $result[$total_key];
+                        }
+                    } else {
+                        $block["message"] = $result["message"];
+                    }
                 }
+
+                unset($jobs, $result);
             }
 
             if (!$block["success"]) {
                 $all_ok = false;
+                $totals["failed"]++;
             }
 
             $results[] = $block;
@@ -1479,12 +2027,12 @@ class Content_calendar extends Security_Controller {
             $this->_fail(cc_lang("cc_invalid_request"));
         }
 
-        //the temp file is deleted after a complete import; after a failure it stays (30 minutes) so the user can retry
+        //the temp files are deleted after a complete import; after a failure they stay (30 minutes) so the user can retry the failed clients
         if ($all_ok) {
-            $lib->delete_parsed($r["payload"]["token"]);
+            $lib->delete_parsed($r["token"]);
         }
 
-        $this->_json(array("success" => true, "all_ok" => $all_ok, "results" => $results));
+        $this->_json(array("success" => true, "all_ok" => $all_ok, "run_id" => $has_run_id ? $r["run_id"] : "", "results" => $results, "totals" => $totals));
     }
 
     /**
@@ -1496,6 +2044,13 @@ class Content_calendar extends Security_Controller {
         $this->_require_import_schema();
 
         $logs_model = model("App\Models\Cc_import_logs_model");
+
+        //one import run can have several logs (one per sheet): undo them all together
+        $run_id = trim((string) $this->request->getPost("run_id"));
+        if ($run_id !== "") {
+            $this->_import_undo_run($logs_model, $run_id);
+        }
+
         $log = $logs_model->get_log((int) $this->request->getPost("log_id"));
         if (!$log) {
             $this->_fail(cc_lang("cc_imp_log_not_found"));
@@ -1527,6 +2082,67 @@ class Content_calendar extends Security_Controller {
         }
 
         $this->_json(array("success" => true, "removed" => (int) $removed, "calendar_id" => (int) $log->calendar_id, "message" => sprintf(cc_lang("cc_imp_undone"), (int) $removed)));
+    }
+
+    //undo every log of one run (needs the run_id column of docs/content_calendar_import_v2_alter.sql)
+    private function _import_undo_run($logs_model, $run_id) {
+        $db = db_connect("default");
+        if (!$db->fieldExists("run_id", "cc_import_logs")) {
+            $this->_fail(cc_lang("cc_imp_schema_missing"));
+        }
+
+        $logs = $logs_model->get_logs_by_run($run_id);
+        if (!count($logs)) {
+            $this->_fail(cc_lang("cc_imp_log_not_found"));
+        }
+
+        $is_admin = cc_can("admin_manage");
+        $active = array();
+        foreach ($logs as $log) {
+            if ((int) $log->user_id !== (int) $this->login_user->id && !$is_admin) {
+                $this->_forbidden_json();
+            }
+
+            if ((int) $log->undone !== 1) {
+                $active[] = $log;
+            }
+        }
+
+        if (!count($active)) {
+            $this->_fail(cc_lang("cc_imp_already_undone"));
+        }
+
+        $removed = 0;
+        $calendar_ids = array();
+        $db->transBegin();
+        try {
+            foreach ($active as $log) {
+                //mark first: only one request can win a log, so items are never removed twice
+                if (!$logs_model->mark_undone($log->id)) {
+                    continue;
+                }
+
+                $removed += $this->Cc_items_model->soft_delete_batch($log->calendar_id, $log->batch_id, $this->login_user->id);
+                $calendar_ids[(int) $log->calendar_id] = true;
+            }
+
+            $db->transCommit();
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            log_message('error', '[ERROR] cc import undo run: {message}', array('message' => $e->getMessage()));
+            $this->_fail(cc_lang("cc_error"));
+        }
+
+        $ids = array_keys($calendar_ids);
+        $this->_json(array(
+            "success" => true,
+            "removed" => (int) $removed,
+            "logs" => count($active),
+            "run_id" => $run_id,
+            "calendar_id" => count($ids) ? (int) $ids[0] : 0,
+            "calendar_ids" => $ids,
+            "message" => sprintf(cc_lang("cc_imp_undone"), (int) $removed)
+        ));
     }
 
     /**

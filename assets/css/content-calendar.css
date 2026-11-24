@@ -947,17 +947,35 @@ textarea.cc-input {
     word-break: break-word;
 }
 
+.cc-item-detail {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--cc-muted);
+    margin: 4px 0 8px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
 .cc-item-actions {
     display: flex;
     justify-content: flex-start;
-    gap: var(--cc-s2);
+    align-items: center;
+    gap: 8px;
     flex-wrap: wrap;
+    margin-top: var(--cc-s2);
 }
 
 .cc-item-actions .cc-btn {
-    min-height: var(--cc-control);
-    height: var(--cc-control);
-    min-width: 88px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 30px;
+    min-width: auto;
 }
 
 /* ---------- table view ---------- */
@@ -1256,7 +1274,119 @@ textarea.cc-input {
 }
 
 .cc-modal.cc-modal-wide {
-    width: 960px;
+    width: 1160px;
+}
+
+.cc-modal.cc-modal-view-item {
+    width: 760px;
+    max-width: 100%;
+}
+
+.cc-modal.cc-modal-view-item .cc-modal-head {
+    align-items: flex-start;
+}
+
+.cc-view-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cc-view-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--cc-text);
+    margin: 0;
+    word-break: break-word;
+}
+
+.cc-view-subhead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--cc-muted);
+}
+
+.cc-view-date {
+    font-weight: 600;
+    color: var(--cc-text);
+}
+
+.cc-view-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.cc-view-special {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cc-accent-dark, #b45309);
+    margin-top: 2px;
+}
+
+.cc-view-src {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--cc-muted);
+}
+
+.cc-view-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 6px 0;
+}
+
+.cc-view-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--cc-border);
+}
+
+.cc-view-block:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.cc-view-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cc-view-block-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cc-muted);
+}
+
+.cc-view-block-value {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--cc-text);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.cc-view-copy-btn {
+    min-height: 26px;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 24px;
+    border-radius: var(--cc-radius-sm);
+    cursor: pointer;
 }
 
 .cc-modal-head {
@@ -1329,6 +1459,22 @@ textarea.cc-input {
 
 .cc-toast-error {
     background: #b91c1c;
+}
+
+.cc-toast-action {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-s3);
+}
+
+.cc-toast-link {
+    border: 0;
+    background: transparent;
+    color: #fcd9a8;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
 }
 
 /* ---------- import wizard ---------- */
@@ -1696,9 +1842,472 @@ textarea.cc-input {
     margin-top: var(--cc-s3);
 }
 
+/* ---------- Import v2: multi sheet review ---------- */
+.cc-imp-optbox {
+    margin: var(--cc-s3) 0;
+    padding: var(--cc-s3) var(--cc-s4);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    background: #fffdf9;
+}
+
+.cc-imp-optbox .cc-imp-options {
+    margin: var(--cc-s2) 0;
+}
+
+.cc-imp-grow {
+    flex: 1 1 320px;
+}
+
+.cc-imp-optbox .cc-imp-grow .cc-input {
+    width: 100%;
+    max-width: 520px;
+}
+
+.cc-imp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cc-s2);
+    margin: var(--cc-s3) 0 var(--cc-s2);
+}
+
+.cc-imp-search {
+    flex: 1 1 220px;
+    max-width: 340px;
+}
+
+.cc-imp-hint {
+    margin: var(--cc-s2) 0;
+    font-size: 12px;
+}
+
+/* the table scrolls inside its box, the header stays visible */
+.cc-imp-tablebox {
+    max-height: 380px;
+    overflow: auto;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-sm);
+    background: #fff;
+}
+
+.cc-imp-review {
+    width: 100%;
+    min-width: 860px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.cc-imp-review thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f9f6f0;
+    padding: var(--cc-s2) var(--cc-s3);
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--cc-muted);
+    border-bottom: 1px solid var(--cc-border);
+    white-space: nowrap;
+}
+
+.cc-imp-review td {
+    padding: 6px var(--cc-s3);
+    border-bottom: 1px solid #f1ebe0;
+    vertical-align: middle;
+}
+
+.cc-imp-review th.num,
+.cc-imp-review td.num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.cc-imp-review .cc-imp-c-check {
+    width: 36px;
+    text-align: center;
+}
+
+.cc-imp-review .cc-imp-c-check input {
+    width: 18px;
+    height: 18px;
+}
+
+.cc-imp-review .cc-imp-c-client {
+    min-width: 230px;
+}
+
+.cc-imp-review .cc-imp-c-hdr {
+    width: 84px;
+}
+
+.cc-imp-review .cc-imp-c-status {
+    min-width: 170px;
+}
+
+.cc-imp-review .cc-input {
+    height: 34px;
+    min-height: 34px;
+    width: 100%;
+    padding: 4px 8px;
+}
+
+.cc-imp-review .cc-imp-hdr {
+    width: 64px;
+    text-align: center;
+}
+
+/* sheets of one client share a background; the group header row is bold */
+.cc-imp-review tr.g0 td {
+    background: #fff;
+}
+
+.cc-imp-review tr.g1 td {
+    background: #fbf7ef;
+}
+
+.cc-imp-review tr.cc-imp-grouprow td {
+    background: #f6efe0;
+    border-bottom-color: #e9dfc9;
+}
+
+.cc-imp-review tr.cc-imp-grouprow.g0 td {
+    border-top: 2px solid #e9dfc9;
+}
+
+.cc-imp-review tr.child td:first-child {
+    border-left: 3px solid #e7d7ad;
+}
+
+.cc-imp-review tr.child .cc-imp-c-sheet {
+    padding-left: var(--cc-s5);
+}
+
+.cc-imp-review tr.cc-imp-row {
+    cursor: pointer;
+}
+
+.cc-imp-review tr.cc-imp-row:hover td {
+    background: #fef9e8;
+}
+
+.cc-imp-review tr.off .cc-imp-sheetname {
+    color: var(--cc-muted);
+}
+
+.cc-imp-review tr.selected td {
+    background: #fef3c7;
+    box-shadow: inset 0 1px 0 #f2d58a, inset 0 -1px 0 #f2d58a;
+}
+
+.cc-imp-review .cc-imp-sheetname {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    font-weight: 600;
+}
+
+.cc-imp-clientcell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cc-imp-clientcell .cc-badge {
+    flex: 0 0 auto;
+}
+
+.cc-badge-new {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.cc-imp-status {
+    display: inline-block;
+    max-width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.cc-imp-status.ok {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.cc-imp-status.warn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.cc-imp-status.bad {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.cc-imp-status.off {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.cc-imp-totalsbox {
+    margin-top: var(--cc-s3);
+}
+
+.cc-imp-detailbox {
+    margin-top: var(--cc-s4);
+    padding: var(--cc-s3) var(--cc-s4) var(--cc-s4);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    background: #fff;
+}
+
+.cc-imp-detailhead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--cc-s3);
+    margin-bottom: var(--cc-s2);
+}
+
+.cc-imp-detailtitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.cc-imp-detailhead .cc-select {
+    min-width: 220px;
+}
+
+.cc-imp-sheettabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--cc-s2);
+    margin: var(--cc-s2) 0;
+}
+
+.cc-imp-colbox {
+    max-height: 340px;
+    overflow: auto;
+}
+
+.cc-imp-colbox thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.cc-imp-merges {
+    max-height: 260px;
+    overflow: auto;
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius-sm);
+    padding: var(--cc-s2) var(--cc-s3);
+    background: #fff;
+}
+
+.cc-imp-mergehead {
+    margin: var(--cc-s2) 0 2px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--cc-muted);
+}
+
+.cc-imp-mergerow {
+    min-height: 28px;
+    font-size: 13px;
+}
+
+.cc-imp-sheetlist {
+    list-style: none;
+    margin: var(--cc-s2) 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+.cc-imp-sheetlist li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cc-s2);
+    padding: 4px 0;
+    border-bottom: 1px solid #f1ebe0;
+}
+
+.cc-imp-sheetlist li:last-child {
+    border-bottom: 0;
+}
+
+#cc-imp-progress-text {
+    margin-top: var(--cc-s2);
+    font-size: 13px;
+}
+
+/* determinate progress while the sheets are read one by one */
+#cc-imp-progress:not(.indeterminate) .cc-progress-fill {
+    transition: width .25s;
+}
+
+@media (max-width: 760px) {
+    .cc-imp-tablebox {
+        max-height: 320px;
+    }
+}
+
 /* ---------- Settings: Content Calendar access ---------- */
 .cc-access-card .select2-container {
     width: 100% !important;
+}
+
+/* ---------- Without date ---------- */
+.cc-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-s2);
+    flex-wrap: wrap;
+}
+
+.cc-undated-btn {
+    height: var(--cc-control);
+    white-space: nowrap;
+}
+
+.cc-undated-btn.has-undated {
+    background: var(--cc-accent-soft);
+    border-color: var(--cc-accent);
+    color: var(--cc-accent-dark);
+    font-weight: 700;
+}
+
+.cc-tile-others .cc-tile-label {
+    color: var(--cc-muted);
+}
+
+.cc-modal.cc-modal-undated {
+    width: 760px;
+    max-width: 100%;
+}
+
+.cc-undated-sub {
+    margin: 0 0 var(--cc-s3);
+    color: var(--cc-muted);
+    font-size: 13px;
+}
+
+.cc-undated-tools {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-s3);
+    flex-wrap: wrap;
+    margin-bottom: var(--cc-s3);
+}
+
+.cc-undated-tools .cc-input {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.cc-undated-counter {
+    font-size: 13px;
+    color: var(--cc-muted);
+    white-space: nowrap;
+}
+
+.cc-undated-bulk {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-s2);
+    flex-wrap: wrap;
+    padding: var(--cc-s2) var(--cc-s3);
+    margin-bottom: var(--cc-s3);
+    border: 1px dashed var(--cc-accent);
+    border-radius: var(--cc-radius-sm);
+    background: var(--cc-accent-soft);
+}
+
+.cc-undated-bulk.hide {
+    display: none;
+}
+
+.cc-undated-list {
+    min-height: 60px;
+}
+
+.cc-undated-card {
+    display: flex;
+    gap: var(--cc-s3);
+    align-items: flex-start;
+}
+
+.cc-undated-pick {
+    flex: 0 0 auto;
+    padding-top: 2px;
+}
+
+.cc-undated-pick input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.cc-undated-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cc-undated-src {
+    font-size: 13px;
+    color: var(--cc-muted);
+    font-style: italic;
+    margin-bottom: var(--cc-s2);
+    word-break: break-word;
+}
+
+.cc-undated-assign {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-s2);
+    flex-wrap: wrap;
+    margin-bottom: var(--cc-s2);
+}
+
+.cc-undated-assign .cc-input {
+    width: 170px;
+}
+
+.cc-undated-more {
+    text-align: center;
+    margin-top: var(--cc-s2);
+}
+
+.cc-no-date {
+    margin-top: var(--cc-s2);
+}
+
+.cc-no-date-hint {
+    font-size: 12px;
+}
+
+.cc-input:disabled {
+    background: #f5f1ea;
+    cursor: not-allowed;
 }
 
 /* ---------- responsive ---------- */
@@ -1765,6 +2374,18 @@ textarea.cc-input {
     .cc-toggle {
         width: 100%;
         flex: 1 1 100%;
+    }
+
+    .cc-toggle-row {
+        width: 100%;
+    }
+
+    .cc-undated-btn {
+        flex: 1 1 100%;
+    }
+
+    .cc-undated-assign .cc-input {
+        width: 100%;
     }
 
     .cc-toggle-btn {

@@ -70,6 +70,7 @@ class Cc_items_model extends Crud_model {
         $builder = $this->db->table($this->table)
                 ->where("calendar_id", $calendar_id)
                 ->where("deleted", 0)
+                ->where("publish_date IS NOT NULL", null, false)
                 ->where("publish_date >=", $from)
                 ->where("publish_date <=", $to);
 
@@ -91,7 +92,7 @@ class Cc_items_model extends Crud_model {
      * Number of items per month for a calendar: ["2026-11" => 5, ...].
      */
     function get_month_counts($calendar_id) {
-        $rows = $this->db->query("SELECT YEAR(publish_date) AS y, MONTH(publish_date) AS m, COUNT(*) AS n FROM " . $this->table . " WHERE calendar_id=? AND deleted=0 GROUP BY YEAR(publish_date), MONTH(publish_date)", array((int) $calendar_id))->getResult();
+        $rows = $this->db->query("SELECT YEAR(publish_date) AS y, MONTH(publish_date) AS m, COUNT(*) AS n FROM " . $this->table . " WHERE calendar_id=? AND deleted=0 AND publish_date IS NOT NULL GROUP BY YEAR(publish_date), MONTH(publish_date)", array((int) $calendar_id))->getResult();
         $counts = array();
         foreach ($rows as $row) {
             $counts[sprintf("%04d-%02d", $row->y, $row->m)] = (int) $row->n;
@@ -107,7 +108,7 @@ class Cc_items_model extends Crud_model {
         $from = sprintf("%04d-%02d-01", (int) $year, (int) $month);
         $to = date("Y-m-t", strtotime($from));
 
-        $rows = $this->db->query("SELECT content_type, COUNT(*) AS n FROM " . $this->table . " WHERE calendar_id=? AND deleted=0 AND publish_date>=? AND publish_date<=? GROUP BY content_type", array((int) $calendar_id, $from, $to))->getResult();
+        $rows = $this->db->query("SELECT content_type, COUNT(*) AS n FROM " . $this->table . " WHERE calendar_id=? AND deleted=0 AND publish_date IS NOT NULL AND publish_date>=? AND publish_date<=? GROUP BY content_type", array((int) $calendar_id, $from, $to))->getResult();
         $counts = array();
         foreach ($rows as $row) {
             $counts[$row->content_type] = (int) $row->n;
@@ -199,10 +200,108 @@ class Cc_items_model extends Crud_model {
         $rows = $this->db->query("SELECT publish_date, title FROM " . $this->table . " WHERE calendar_id=? AND deleted=0", array((int) $calendar_id))->getResult();
         $keys = array();
         foreach ($rows as $row) {
-            $keys[$row->publish_date . "|" . cc_title_key($row->title)] = true;
+            //undated items use "null|title" (the import can check it the same way)
+            $date = $row->publish_date ? $row->publish_date : "null";
+            $keys[$date . "|" . cc_title_key($row->title)] = true;
         }
 
         return $keys;
+    }
+
+    /**
+     * Soft delete the items of several import batches (one import run).
+     *
+     * @return int number of items removed
+     */
+    function soft_delete_batches($calendar_id, $batch_ids, $user_id) {
+        if (!is_array($batch_ids) || !count($batch_ids)) {
+            return 0;
+        }
+
+        $this->db->table($this->table)
+                ->where("calendar_id", (int) $calendar_id)
+                ->whereIn("import_batch_id", array_values($batch_ids))
+                ->where("deleted", 0)
+                ->update(array(
+                    "deleted" => 1,
+                    "updated_by" => (int) $user_id,
+                    "updated_at" => cc_now()
+        ));
+
+        return (int) $this->db->affectedRows();
+    }
+
+    /* ---------------------------------------------------------------- */
+    /* items without a date ("Without date")                             */
+    /* ---------------------------------------------------------------- */
+
+    private function _undated_builder($calendar_id, $q = "") {
+        $builder = $this->db->table($this->table)
+                ->where("calendar_id", (int) $calendar_id)
+                ->where("deleted", 0)
+                ->where("publish_date IS NULL", null, false);
+
+        $q = trim((string) $q);
+        if ($q !== "") {
+            $builder->like("title", $q);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * Undated items of a calendar, newest first. Options: q (title search), limit (default 50), offset.
+     *
+     * @return array of objects (with ->values)
+     */
+    function get_undated($calendar_id, $options = array()) {
+        $limit = (int) get_array_value($options, "limit");
+        if ($limit < 1 || $limit > 200) {
+            $limit = 50;
+        }
+
+        $offset = max(0, (int) get_array_value($options, "offset"));
+
+        $rows = $this->_undated_builder($calendar_id, get_array_value($options, "q"))
+                        ->orderBy("id", "ASC")->limit($limit, $offset)->get()->getResult();
+        foreach ($rows as $key => $row) {
+            $row->values = $this->decode_values($row->values_json);
+            $rows[$key] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Number of undated items (optionally filtered by a title search).
+     */
+    function count_undated($calendar_id, $q = "") {
+        return (int) $this->_undated_builder($calendar_id, $q)->countAllResults();
+    }
+
+    /**
+     * Give an undated or dated item a date. Optionally drops the "From sheet" text.
+     */
+    function assign_date($id, $ymd, $user_id, $clear_src_text = false) {
+        $item = $this->get_active($id);
+        if (!$item) {
+            return false;
+        }
+
+        $data = array(
+            "publish_date" => $ymd,
+            "updated_by" => (int) $user_id,
+            "updated_at" => cc_now()
+        );
+
+        if ($clear_src_text && isset($item->values["_src_date_text"])) {
+            $values = $item->values;
+            unset($values["_src_date_text"]);
+            $data["values_json"] = $this->encode_values($values);
+        }
+
+        $this->db->table($this->table)->where("id", (int) $id)->update($data);
+        return true;
     }
 
     /**
