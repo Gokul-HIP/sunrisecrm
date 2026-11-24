@@ -282,6 +282,7 @@ class Content_calendar extends Security_Controller {
                 "copy_columns" => get_uri("content_calendar/copy_columns"),
                 "save_target" => get_uri("content_calendar/save_target"),
                 "delete_item" => get_uri("content_calendar/delete_item"),
+                "set_status" => get_uri("content_calendar/set_status"),
                 "item_data" => get_uri("content_calendar/item_data"),
                 "undated_list" => get_uri("content_calendar/undated_list"),
                 "undated_assign" => get_uri("content_calendar/undated_assign"),
@@ -777,6 +778,83 @@ class Content_calendar extends Security_Controller {
             "calendar_id" => $calendar_id,
             "date" => $core["date"] === "" ? null : $core["date"],
             "redirect" => $this->_month_url($calendar_id, $core["date"]),
+            "message" => cc_lang("cc_saved")
+        ));
+    }
+
+    /**
+     * AJAX: change status directly (from status pill popover).
+     * POST: id (item id) or item_id, status (new status value).
+     */
+    function set_status() {
+        $this->_require_post();
+        $this->_require_can("edit");
+
+        $id = (int) $this->request->getPost("id");
+        if (!$id) {
+            $id = (int) $this->request->getPost("item_id");
+        }
+
+        $item = $this->Cc_items_model->get_active($id);
+        if (!$item) {
+            $this->_fail(cc_lang("cc_item_not_found"), array(), 404);
+            return;
+        }
+
+        $calendar_id = (int) $item->calendar_id;
+        $this->_get_calendar_or_fail($calendar_id);
+
+        $posted_status = (string) $this->request->getPost("status");
+        $status = trim(str_replace(array("\r\n", "\r"), "\n", $posted_status));
+
+        // Find status column
+        $columns = $this->Cc_columns_model->get_for_calendar($calendar_id, true);
+        $status_col = null;
+        foreach ($columns as $col) {
+            if ($col->field_key === "status") {
+                $status_col = $col;
+                break;
+            }
+        }
+
+        if ($status_col) {
+            if ($status_col->input_type === "select" || $status_col->input_type === "multi") {
+                if ($status === "") {
+                    // Empty string allowed
+                } else if (!in_array($status, $status_col->options_list, true)) {
+                    $this->_fail(cc_lang("cc_invalid_option") ?: "Invalid status option", array("status" => cc_lang("cc_invalid_option")), 400);
+                    return;
+                }
+            } else {
+                if ($this->_str_len($status) > 60) {
+                    $this->_fail(cc_lang("cc_option_too_long") ?: "Status too long", array("status" => cc_lang("cc_option_too_long")), 400);
+                    return;
+                }
+            }
+        } else {
+            if ($this->_str_len($status) > 60) {
+                $this->_fail(cc_lang("cc_option_too_long") ?: "Status too long", array("status" => cc_lang("cc_option_too_long")), 400);
+                return;
+            }
+        }
+
+        $now = cc_now();
+        $data = array(
+            "status" => $status,
+            "updated_by" => (int) $this->login_user->id,
+            "updated_at" => $now
+        );
+
+        $this->Cc_items_model->save_item($data, $id);
+
+        $updated_item = $this->Cc_items_model->get_active($id);
+
+        $this->_json(array(
+            "success" => true,
+            "id" => $id,
+            "calendar_id" => $calendar_id,
+            "status" => $status,
+            "item" => $updated_item ? $this->_item_to_array($updated_item) : null,
             "message" => cc_lang("cc_saved")
         ));
     }

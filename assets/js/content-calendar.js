@@ -2468,6 +2468,30 @@
             return "<span class='cc-pill " + (extraClass || "") + "' style='" + chipStyle(state.colors, text) + "'>" + esc(text) + "</span>";
         }
 
+        function statusPillHtml(item) {
+            var perms = state.perms;
+            var status = (item && item.status) ? String(item.status).trim() : "";
+            var chevron = "<svg class='cc-pill-chevron' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>";
+
+            if (perms && perms.edit) {
+                if (!status) {
+                    return "<button type='button' class='cc-pill cc-pill-btn cc-status-pill-btn cc-pill-empty' data-id='" + item.id + "' data-status='' aria-haspopup='listbox' aria-expanded='false' title='" + esc(L("cc_set_status") || "Set status") + "'>" +
+                        "<span class='cc-pill-text'>" + esc(L("cc_no_status") || "No status") + "</span>" +
+                        chevron +
+                    "</button>";
+                }
+                return "<button type='button' class='cc-pill cc-pill-btn cc-status-pill-btn' data-id='" + item.id + "' data-status='" + esc(status) + "' aria-haspopup='listbox' aria-expanded='false' style='" + chipStyle(state.colors, status) + "'>" +
+                    "<span class='cc-pill-text'>" + esc(status) + "</span>" +
+                    chevron +
+                "</button>";
+            } else {
+                if (!status) {
+                    return "";
+                }
+                return pillHtml(status);
+            }
+        }
+
         function fileUrl(value) {
             if (/^https?:\/\//i.test(value)) {
                 return value;
@@ -2748,7 +2772,8 @@
 
                 $.each(list.slice(0, 2), function (i, item) {
                     var text = (item.type ? item.type + ": " : "") + item.title;
-                    html += "<span class='cc-chip' style='" + chipStyle(state.colors, item.type) + "' title='" + esc(text) + "'>" + esc(text) + "</span>";
+                    var chipColorKey = item.type || item.status;
+                    html += "<span class='cc-chip' style='" + chipStyle(state.colors, chipColorKey) + "' title='" + esc(text) + "' data-id='" + item.id + "' data-status='" + esc(item.status || "") + "'>" + esc(text) + "</span>";
                 });
 
                 if (list.length > 2) {
@@ -2794,7 +2819,9 @@
         function showItemViewModal(item, columns) {
             var perms = state.perms;
             var dateStr = item.date ? fmtLongDate(item.date) : (L("cc_undated_no_date") || "No date yet");
-            var pills = pillHtml(item.status) + (item.type ? pillHtml(item.type) : "");
+            var statusPill = statusPillHtml(item);
+            var typePill = item.type ? pillHtml(item.type) : "";
+            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "");
             var special = (item.date && state.specialDays && state.specialDays[item.date]) ? state.specialDays[item.date] : "";
 
             var headHtml = "<div class='cc-view-head'>" +
@@ -3012,7 +3039,9 @@
             var columns = visibleColumns();
             $.each(items, function (i, item) {
                 html += "<div class='cc-item' data-id='" + item.id + "'>";
-                var pills = pillHtml(item.status) + (item.type ? pillHtml(item.type) : "");
+                var statusPill = statusPillHtml(item);
+            var typePill = item.type ? pillHtml(item.type) : "";
+            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "");
                 if (pills) {
                     html += "<div class='cc-item-pills'>" + pills + "</div>";
                 }
@@ -3912,6 +3941,261 @@
             }).fail(function (err) {
                 toast(err.message, "error");
             });
+        });
+
+        function getStatusOptions() {
+            var options = [];
+            if (state.columns && state.columns.length) {
+                $.each(state.columns, function (i, col) {
+                    if (col.field_key === "status") {
+                        options = col.options_list || [];
+                        return false;
+                    }
+                });
+            }
+            if (!options.length && state.filters && state.filters.statuses && state.filters.statuses.length) {
+                options = state.filters.statuses;
+            }
+            return options;
+        }
+
+        function updateTileCounts() {
+            if (!state.tiles || !state.tiles.length) {
+                return;
+            }
+            var counts = {};
+            $.each(state.items, function (i, it) {
+                if (it.type) {
+                    counts[it.type] = (counts[it.type] || 0) + 1;
+                }
+                if (it.status) {
+                    counts[it.status] = (counts[it.status] || 0) + 1;
+                }
+            });
+            $.each(state.tiles, function (i, t) {
+                if (!t.is_others && counts[t.label] !== undefined) {
+                    t.count = counts[t.label];
+                }
+            });
+            renderTiles();
+        }
+
+        var activeStatusBtn = null;
+
+        function closeStatusPopover(focusBtn) {
+            var $pop = $("#cc-status-popover");
+            if ($pop.length) {
+                $pop.remove();
+            }
+            if (activeStatusBtn) {
+                activeStatusBtn.attr("aria-expanded", "false");
+                if (focusBtn) {
+                    activeStatusBtn.focus();
+                }
+                activeStatusBtn = null;
+            }
+        }
+
+        function openStatusPopover($btn) {
+            if (activeStatusBtn && activeStatusBtn[0] === $btn[0]) {
+                closeStatusPopover(false);
+                return;
+            }
+
+            closeStatusPopover(false);
+
+            activeStatusBtn = $btn;
+            $btn.attr("aria-expanded", "true");
+
+            var currentStatus = ($btn.attr("data-status") || "").trim();
+            var options = getStatusOptions();
+
+            var allOpts = options.slice(0);
+            if (currentStatus && $.inArray(currentStatus, allOpts) === -1) {
+                allOpts.unshift(currentStatus);
+            }
+
+            var html = "<div class='cc-status-popover' role='listbox' id='cc-status-popover' tabindex='-1'>";
+            $.each(allOpts, function (i, opt) {
+                var isSelected = (opt === currentStatus);
+                var c = (state.colors && state.colors[String(opt).toLowerCase()]) || DEFAULT_COLORS;
+                var dotColor = c[0];
+                html += "<button type='button' class='cc-status-option" + (isSelected ? " active" : "") + "' role='option' aria-selected='" + (isSelected ? "true" : "false") + "' data-status='" + esc(opt) + "'>";
+                html += "<span class='cc-status-dot' style='background:" + dotColor + "'></span>";
+                html += "<span class='cc-status-name'>" + esc(opt) + "</span>";
+                if (isSelected) {
+                    html += "<span class='cc-status-check'><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'></polyline></svg></span>";
+                }
+                html += "</button>";
+            });
+            html += "</div>";
+
+            var $pop = $(html).appendTo("body");
+
+            var btnOffset = $btn.offset();
+            var btnWidth = $btn.outerWidth();
+            var btnHeight = $btn.outerHeight();
+            var popWidth = $pop.outerWidth();
+            var popHeight = $pop.outerHeight();
+            var winWidth = $(window).width();
+            var winHeight = $(window).height();
+            var scrollTop = $(window).scrollTop();
+
+            var top = btnOffset.top + btnHeight + 4;
+            if (top + popHeight > scrollTop + winHeight - 10) {
+                var upward = btnOffset.top - popHeight - 4;
+                if (upward >= scrollTop + 10) {
+                    top = upward;
+                }
+            }
+
+            var left = btnOffset.left;
+            if (left + popWidth > winWidth - 10) {
+                left = btnOffset.left + btnWidth - popWidth;
+            }
+            if (left + popWidth > winWidth - 10) {
+                left = winWidth - popWidth - 10;
+            }
+            if (left < 10) {
+                left = 10;
+            }
+
+            $pop.css({
+                top: top + "px",
+                left: left + "px"
+            });
+
+            var $active = $pop.find(".cc-status-option.active");
+            if ($active.length) {
+                $active.focus();
+            } else {
+                $pop.find(".cc-status-option:first").focus();
+            }
+        }
+
+        function handleSelectStatus($btn, newStatus) {
+            closeStatusPopover(false);
+
+            var itemId = parseInt($btn.data("id"), 10);
+            var item = null;
+            $.each(state.items, function (i, it) {
+                if (parseInt(it.id, 10) === itemId) {
+                    item = it;
+                    return false;
+                }
+            });
+
+            var oldStatus = item ? (item.status || "") : ($btn.attr("data-status") || "");
+            if (newStatus === oldStatus) {
+                $btn.focus();
+                return;
+            }
+
+            var updateBtnContent = function ($el, status, showSpinner) {
+                var sHtml = showSpinner ? "<span class='cc-pill-spinner'></span>" : "";
+                var chevron = "<svg class='cc-pill-chevron' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>";
+                if (status) {
+                    $el.attr("style", chipStyle(state.colors, status))
+                       .removeClass("cc-pill-empty")
+                       .attr("data-status", status)
+                       .html(sHtml + "<span class='cc-pill-text'>" + esc(status) + "</span>" + chevron);
+                } else {
+                    $el.removeAttr("style")
+                       .addClass("cc-pill-empty")
+                       .attr("data-status", "")
+                       .html(sHtml + "<span class='cc-pill-text'>" + esc(L("cc_no_status") || "No status") + "</span>" + chevron);
+                }
+            };
+
+            var $allButtons = $(".cc-status-pill-btn[data-id='" + itemId + "']");
+            $allButtons.each(function () {
+                updateBtnContent($(this), newStatus, true);
+            });
+
+            if (item) {
+                item.status = newStatus;
+            }
+
+            var postUrl = (urls && urls.set_status) ? urls.set_status : (config.base_url || "") + "index.php/content_calendar/set_status";
+            post(postUrl, {id: itemId, status: newStatus}).done(function (res) {
+                $allButtons.each(function () {
+                    updateBtnContent($(this), newStatus, false);
+                });
+
+                if (item) {
+                    item.status = newStatus;
+                    if (res && res.item && res.item.values) {
+                        item.values = res.item.values;
+                    }
+                }
+
+                if (state.filter.status && state.filter.status !== newStatus) {
+                    toast(L("cc_moved_out_of_filter") || "Moved out of the current filter");
+                    renderViews();
+                } else {
+                    renderGrid();
+                    if (state.view === "table") {
+                        renderTable();
+                    }
+                }
+                updateTileCounts();
+            }).fail(function (err) {
+                if (item) {
+                    item.status = oldStatus;
+                }
+                $allButtons.each(function () {
+                    updateBtnContent($(this), oldStatus, false);
+                });
+                toast(err && err.message ? err.message : (L("cc_error") || "Error"), "error");
+            });
+        }
+
+        $(document).on("click", ".cc-status-pill-btn", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openStatusPopover($(this));
+        });
+
+        $(document).on("click", ".cc-status-option", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var newStatus = $(this).attr("data-status");
+            if (activeStatusBtn) {
+                handleSelectStatus(activeStatusBtn, newStatus);
+            }
+        });
+
+        $(document).on("click", function (e) {
+            if (!$(e.target).closest("#cc-status-popover, .cc-status-pill-btn").length) {
+                closeStatusPopover(false);
+            }
+        });
+
+        $(document).on("keydown", function (e) {
+            var $pop = $("#cc-status-popover");
+            if ($pop.length) {
+                var $options = $pop.find(".cc-status-option");
+                var $focused = $options.filter(":focus");
+                var idx = $options.index($focused);
+
+                if (e.key === "Escape" || e.keyCode === 27) {
+                    e.preventDefault();
+                    closeStatusPopover(true);
+                } else if (e.key === "ArrowDown" || e.keyCode === 40) {
+                    e.preventDefault();
+                    var nextIdx = (idx + 1) % $options.length;
+                    $options.eq(nextIdx).focus();
+                } else if (e.key === "ArrowUp" || e.keyCode === 38) {
+                    e.preventDefault();
+                    var prevIdx = (idx - 1 + $options.length) % $options.length;
+                    $options.eq(prevIdx).focus();
+                } else if (e.key === "Tab" || e.keyCode === 9) {
+                    closeStatusPopover(false);
+                } else if ((e.key === "Enter" || e.keyCode === 13) && $focused.length) {
+                    e.preventDefault();
+                    $focused.trigger("click");
+                }
+            }
         });
 
         $app.on("click", ".cc-item-view", function () {
