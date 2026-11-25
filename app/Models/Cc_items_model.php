@@ -45,6 +45,12 @@ class Cc_items_model extends Crud_model {
         $row = $this->db->table($this->table)->where("id", $id)->where("deleted", 0)->get(1)->getRow();
         if ($row) {
             $row->values = $this->decode_values($row->values_json);
+            if (!empty($row->task_id)) {
+                $t = $this->db->query("SELECT id FROM rise_tasks WHERE id = ? AND deleted = 0", array((int) $row->task_id))->getRow();
+                if (!$t) {
+                    $row->task_id = null;
+                }
+            }
         }
 
         return $row ? $row : null;
@@ -80,8 +86,26 @@ class Cc_items_model extends Crud_model {
         }
 
         $rows = $builder->orderBy("publish_date", "ASC")->orderBy("id", "ASC")->get()->getResult();
+
+        $task_ids = array();
+        foreach ($rows as $row) {
+            if (!empty($row->task_id)) {
+                $task_ids[] = (int) $row->task_id;
+            }
+        }
+        $valid_task_ids = array();
+        if (!empty($task_ids)) {
+            $t_res = $this->db->query("SELECT id FROM rise_tasks WHERE id IN ? AND deleted = 0", array($task_ids))->getResult();
+            foreach ($t_res as $t) {
+                $valid_task_ids[(int) $t->id] = true;
+            }
+        }
+
         foreach ($rows as $key => $row) {
             $row->values = $this->decode_values($row->values_json);
+            if (!empty($row->task_id) && !isset($valid_task_ids[(int) $row->task_id])) {
+                $row->task_id = null;
+            }
             $rows[$key] = $row;
         }
 

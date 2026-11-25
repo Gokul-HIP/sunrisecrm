@@ -448,4 +448,21 @@ $lang["cc_imp_undo_all_confirm"] = "Remove all %s items of this import? The new 
 $lang["cc_imp_n_without_date"] = "%s items have no date";
 $lang["cc_imp_view_client"] = "View client";
 
+$lang["cc_content_calendar"] = "Content Calendar";
+$lang["cc_link_to_content"] = "Link to a content item";
+$lang["cc_choose_client"] = "Choose client";
+$lang["cc_choose_month"] = "Choose month";
+$lang["cc_show_earlier_dates"] = "Show earlier dates";
+$lang["cc_task_exists_tag"] = "Task #%s exists";
+$lang["cc_task_exists_warning"] = "Task #%s already exists for this content item.";
+$lang["cc_create_another_task_anyway"] = "Create another task for this content anyway";
+$lang["cc_content_item_required"] = "Please choose a content item to link.";
+$lang["cc_task_saved_link_failed"] = "Task saved, but the content link failed";
+$lang["cc_no_project_hint"] = "No project for %s yet. Pick one manually.";
+$lang["cc_multiple_projects_hint"] = "%s projects match, please choose";
+$lang["cc_suggested_from"] = "Suggested from %s";
+$lang["cc_linked_content"] = "Content: %s • %s • %s";
+$lang["cc_choose_content_type"] = "Content type (optional)";
+$lang["cc_content_type"] = "Content type";
+
 return $lang;

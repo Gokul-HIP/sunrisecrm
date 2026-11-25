@@ -124,7 +124,8 @@ class Content_calendar extends Security_Controller {
             "manage_options" => cc_can("manage_options"),
             "add_client" => cc_can("add_client"),
             "add_column" => cc_can("add_column"),
-            "admin_manage" => cc_can("admin_manage")
+            "admin_manage" => cc_can("admin_manage"),
+            "can_see_tasks" => ($this->login_user->is_admin || $this->login_user->user_type === "staff" || get_setting("client_can_view_tasks"))
         );
     }
 
@@ -165,6 +166,7 @@ class Content_calendar extends Security_Controller {
             "type" => $item->content_type,
             "status" => $item->status,
             "title" => $item->title,
+            "task_id" => !empty($item->task_id) ? (int) $item->task_id : null,
             "src_date_text" => (isset($item->values["_src_date_text"]) && is_scalar($item->values["_src_date_text"])) ? (string) $item->values["_src_date_text"] : "",
             "values" => (object) $item->values
         );
@@ -256,7 +258,22 @@ class Content_calendar extends Security_Controller {
     function index() {
         $this->_require_page_can("view");
 
+        $initial_calendar_id = (int) $this->request->getGet("calendar");
         $initial_date = $this->_is_valid_date((string) $this->request->getGet("date")) ? (string) $this->request->getGet("date") : "";
+        $initial_item_id = (int) $this->request->getGet("item");
+
+        if ($initial_item_id > 0 && (!$initial_calendar_id || !$initial_date)) {
+            $item_row = $this->Cc_items_model->get_active($initial_item_id);
+            if ($item_row) {
+                if (!$initial_calendar_id) {
+                    $initial_calendar_id = (int) $item_row->calendar_id;
+                }
+                if (!$initial_date && $item_row->publish_date) {
+                    $initial_date = $item_row->publish_date;
+                }
+            }
+        }
+
         $initial_ym = (string) $this->request->getGet("ym");
         if ($initial_date && !preg_match('/^\d{4}-\d{2}$/', $initial_ym)) {
             $initial_ym = substr($initial_date, 0, 7);
@@ -287,7 +304,8 @@ class Content_calendar extends Security_Controller {
                 "undated_list" => get_uri("content_calendar/undated_list"),
                 "undated_assign" => get_uri("content_calendar/undated_assign"),
                 "undated_assign_bulk" => get_uri("content_calendar/undated_assign_bulk"),
-                "delete_calendar" => get_uri("content_calendar/delete_calendar")
+                "delete_calendar" => get_uri("content_calendar/delete_calendar"),
+                "task_view_base" => get_uri("projects/task_view/")
             ),
             "perms" => $this->_permission_flags(),
             "lang" => cc_js_lang(),
@@ -295,9 +313,10 @@ class Content_calendar extends Security_Controller {
             "import_limits" => \App\Libraries\Content_calendar_import::limits(),
             "first_day_of_week" => 0,
             "initial" => array(
-                "calendar_id" => (int) $this->request->getGet("calendar"),
+                "calendar_id" => $initial_calendar_id,
                 "ym" => preg_match('/^\d{4}-\d{2}$/', $initial_ym) ? $initial_ym : "",
-                "date" => $initial_date
+                "date" => $initial_date,
+                "item_id" => $initial_item_id
             )
         );
 
@@ -2246,6 +2265,242 @@ class Content_calendar extends Security_Controller {
         header("X-Content-Type-Options: nosniff");
         echo $csv;
         exit();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* task picker endpoints (Add task form integration)                 */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * List Content Calendar clients accessible to the user.
+     */
+    function task_picker_clients() {
+        $this->_require_can("view");
+
+        $calendars = $this->Cc_calendars_model->get_all_active();
+        $clients = array();
+        foreach ($calendars as $c) {
+            $clients[] = array(
+                "id" => (int) $c->id,
+                "name" => $c->name,
+                "client_id" => (int) $c->client_id
+            );
+        }
+
+        $this->_json(array("success" => true, "clients" => $clients));
+    }
+
+    /**
+     * List months for a calendar: current month and future months only.
+     * Built from client's existing months plus next 2 months.
+     */
+    function task_picker_months() {
+        $this->_require_can("view");
+
+        $calendar_id = (int) $this->_input("calendar_id");
+        if (!$calendar_id) {
+            $calendar_id = (int) $this->_input("id");
+        }
+        $calendar = $this->_get_calendar_or_fail($calendar_id);
+
+        $cur_year = (int) date("Y");
+        $cur_month = (int) date("n");
+        $cur_ym = sprintf("%04d-%02d", $cur_year, $cur_month);
+
+        $month_counts = $this->Cc_items_model->get_month_counts($calendar_id);
+        $candidate_map = array();
+
+        // 1. Current month + next 2 months
+        for ($i = 0; $i <= 2; $i++) {
+            $dt = new \DateTime(sprintf("%04d-%02d-01", $cur_year, $cur_month));
+            if ($i > 0) {
+                $dt->modify("+$i month");
+            }
+            $ym = $dt->format("Y-m");
+            $candidate_map[$ym] = array(
+                "ym" => $ym,
+                "year" => (int) $dt->format("Y"),
+                "month" => (int) $dt->format("n"),
+                "label" => $dt->format("F Y"),
+                "count" => isset($month_counts[$ym]) ? (int) $month_counts[$ym] : 0,
+                "is_current" => ($ym === $cur_ym)
+            );
+        }
+
+        // 2. Existing months from items if >= cur_ym
+        foreach ($month_counts as $ym => $count) {
+            if ($ym >= $cur_ym && !isset($candidate_map[$ym])) {
+                $dt = new \DateTime($ym . "-01");
+                $candidate_map[$ym] = array(
+                    "ym" => $ym,
+                    "year" => (int) $dt->format("Y"),
+                    "month" => (int) $dt->format("n"),
+                    "label" => $dt->format("F Y"),
+                    "count" => (int) $count,
+                    "is_current" => ($ym === $cur_ym)
+                );
+            }
+        }
+
+        // 3. Registered months from rise_cc_months
+        $registered = $this->Cc_months_model->get_for_calendar($calendar_id);
+        foreach ($registered as $rm) {
+            $ym = sprintf("%04d-%02d", $rm->year, $rm->month);
+            if ($ym >= $cur_ym && !isset($candidate_map[$ym])) {
+                $dt = new \DateTime($ym . "-01");
+                $candidate_map[$ym] = array(
+                    "ym" => $ym,
+                    "year" => (int) $dt->format("Y"),
+                    "month" => (int) $dt->format("n"),
+                    "label" => $dt->format("F Y"),
+                    "count" => isset($month_counts[$ym]) ? (int) $month_counts[$ym] : 0,
+                    "is_current" => ($ym === $cur_ym)
+                );
+            }
+        }
+
+        ksort($candidate_map);
+
+        $this->_json(array(
+            "success" => true,
+            "current_ym" => $cur_ym,
+            "months" => array_values($candidate_map)
+        ));
+    }
+
+    /**
+     * List dates that have content for a chosen calendar and month.
+     */
+    function task_picker_dates() {
+        $this->_require_can("view");
+
+        $calendar_id = (int) $this->_input("calendar_id");
+        if (!$calendar_id) {
+            $calendar_id = (int) $this->_input("id");
+        }
+        $calendar = $this->_get_calendar_or_fail($calendar_id);
+
+        $month = trim((string) $this->_input("month"));
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $this->_fail("Invalid month");
+        }
+
+        $today = date("Y-m-d");
+        $db = db_connect('default');
+        cc_use_utf8mb4($db);
+
+        $query = $db->query("SELECT publish_date, COUNT(*) as cnt 
+                             FROM rise_cc_items 
+                             WHERE calendar_id = ? 
+                               AND publish_date LIKE ? 
+                               AND deleted = 0 
+                             GROUP BY publish_date 
+                             ORDER BY publish_date ASC", array($calendar_id, $month . '-%'));
+        $rows = $query->getResult();
+
+        $dates = array();
+        foreach ($rows as $r) {
+            $d = $r->publish_date;
+            $dayNum = (int) substr($d, 8, 2);
+            $dates[] = array(
+                "date" => $d,
+                "day" => $dayNum,
+                "count" => (int) $r->cnt,
+                "is_today" => ($d === $today),
+                "is_past" => ($d < $today)
+            );
+        }
+
+        $this->_json(array(
+            "success" => true,
+            "today" => $today,
+            "month" => $month,
+            "dates" => $dates
+        ));
+    }
+
+    /**
+     * List items for a chosen calendar and date, along with project suggestion.
+     */
+    function task_picker_items() {
+        $this->_require_can("view");
+
+        $calendar_id = (int) $this->_input("calendar_id");
+        if (!$calendar_id) {
+            $calendar_id = (int) $this->_input("id");
+        }
+        $calendar = $this->_get_calendar_or_fail($calendar_id);
+
+        $date = trim((string) $this->_input("date"));
+        if (!$this->_is_valid_date($date)) {
+            $this->_fail("Invalid date");
+        }
+
+        $db = db_connect('default');
+        cc_use_utf8mb4($db);
+
+        $columns = $this->Cc_columns_model->get_for_calendar($calendar_id);
+        $query = $db->query("SELECT * FROM rise_cc_items WHERE calendar_id = ? AND publish_date = ? AND deleted = 0 ORDER BY id ASC", array($calendar_id, $date));
+        $raw_items = $query->getResult();
+
+        // Check active tasks for existing task_id
+        $task_ids = array();
+        foreach ($raw_items as $item) {
+            if (!empty($item->task_id)) {
+                $task_ids[] = (int) $item->task_id;
+            }
+        }
+
+        $active_task_ids = array();
+        if (!empty($task_ids)) {
+            $t_query = $db->query("SELECT id FROM rise_tasks WHERE id IN ? AND deleted = 0", array($task_ids));
+            foreach ($t_query->getResult() as $t_row) {
+                $active_task_ids[(int) $t_row->id] = true;
+            }
+        }
+
+        $items_list = array();
+
+        foreach ($raw_items as $item) {
+            $item->values = $this->Cc_items_model->decode_values($item->values_json);
+            $has_active_task = (!empty($item->task_id) && isset($active_task_ids[(int) $item->task_id]));
+            $task_id = $has_active_task ? (int) $item->task_id : null;
+
+            // Build rich-text HTML and plain text descriptions
+            $desc_info = cc_format_content_description_html($calendar, $item, $columns);
+            $description_html = $desc_info["html"];
+            $description = $desc_info["text"];
+
+            $type_str = !empty($item->type) ? (string) $item->type : (!empty($item->content_type) ? (string) $item->content_type : "");
+            $status_str = (string) $item->status;
+            $type_colors = cc_chip_colors($type_str);
+            $status_colors = cc_chip_colors($status_str);
+            $type_color = $type_colors[0];
+            $status_color = $status_colors[0];
+
+            $items_list[] = array(
+                "id" => (int) $item->id,
+                "title" => $item->title,
+                "type" => $type_str,
+                "type_color" => $type_color,
+                "status" => $status_str,
+                "status_color" => $status_color,
+                "has_task" => $has_active_task,
+                "task_id" => $task_id,
+                "description" => $description,
+                "description_html" => $description_html
+            );
+        }
+
+        helper('content_calendar');
+        $project_suggestion = cc_match_project_suggestion($calendar, $date, $this->login_user);
+
+        $this->_json(array(
+            "success" => true,
+            "date" => $date,
+            "items" => $items_list,
+            "project_suggestion" => $project_suggestion
+        ));
     }
 
 }

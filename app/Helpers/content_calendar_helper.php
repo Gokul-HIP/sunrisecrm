@@ -170,7 +170,7 @@ if (!function_exists('cc_can')) {
 
         $result = false;
 
-        if ($user && isset($user->id) && $user->id && $user->user_type === "staff" && !(int) $user->deleted && (!isset($user->status) || $user->status === "active")) {
+        if ($user && isset($user->id) && $user->id && $user->user_type === "staff" && (!isset($user->deleted) || !(int) $user->deleted) && (!isset($user->status) || $user->status === "active")) {
             if ((int) $user->is_admin === 1) {
                 $result = true;
             } else if ($key === "admin_manage") {
@@ -303,6 +303,598 @@ if (!function_exists('cc_title_key')) {
     function cc_title_key($title) {
         $title = preg_replace('/\s+/u', ' ', trim((string) $title));
         return function_exists('mb_strtolower') ? mb_strtolower($title, 'UTF-8') : strtolower($title);
+    }
+
+}
+
+if (!function_exists('cc_has_task_column')) {
+
+    function cc_has_task_column() {
+        static $exists = null;
+        if ($exists === null) {
+            $db = db_connect('default');
+            $res = $db->query("SHOW COLUMNS FROM `rise_cc_items` LIKE 'task_id'");
+            $exists = ($res && $res->getNumRows() > 0);
+        }
+        return $exists;
+    }
+
+}
+
+if (!function_exists('cc_get_task_linked_item')) {
+
+    function cc_get_task_linked_item($task_id) {
+        $task_id = (int) $task_id;
+        if ($task_id < 1 || !cc_has_task_column()) {
+            return null;
+        }
+
+        $db = db_connect('default');
+        $query = $db->query("SELECT i.id, i.calendar_id, i.title, i.publish_date, c.name as calendar_name
+                             FROM rise_cc_items i
+                             LEFT JOIN rise_cc_calendars c ON c.id = i.calendar_id
+                             WHERE i.task_id = ? AND i.deleted = 0
+                             LIMIT 1", array($task_id));
+        $row = $query->getRow();
+        if (!$row) {
+            return null;
+        }
+
+        $ts = $row->publish_date ? strtotime($row->publish_date) : 0;
+        $formatted_date = $ts ? date("j M Y", $ts) : "No date";
+        $link_url = get_uri("content_calendar?calendar=" . $row->calendar_id . "&date=" . $row->publish_date . "&item=" . $row->id);
+
+        return (object) array(
+            "item_id" => (int) $row->id,
+            "calendar_id" => (int) $row->calendar_id,
+            "calendar_name" => $row->calendar_name,
+            "title" => $row->title,
+            "date" => $row->publish_date,
+            "formatted_date" => $formatted_date,
+            "link_url" => $link_url
+        );
+    }
+
+}
+
+if (!function_exists('cc_match_project_suggestion')) {
+
+    function cc_match_project_suggestion($calendar, $publish_date, $user = null) {
+        if (!$calendar || !$publish_date) {
+            return array("status" => "none", "project_id" => null, "project_title" => null, "message" => "");
+        }
+
+        $cal_name = is_object($calendar) ? $calendar->name : (isset($calendar["name"]) ? $calendar["name"] : "");
+        $cal_client_id = is_object($calendar) ? (int)$calendar->client_id : (isset($calendar["client_id"]) ? (int)$calendar["client_id"] : 0);
+
+        $ts = strtotime($publish_date);
+        if (!$ts) {
+            return array("status" => "none", "project_id" => null, "project_title" => null, "message" => "");
+        }
+
+        $year = (string) date('Y', $ts);
+        $monthFull = date('F', $ts); // e.g. "November"
+        $monthShort = date('M', $ts); // e.g. "Nov"
+        $monthLowerFull = strtolower($monthFull);
+        $monthLowerShort = strtolower($monthShort);
+
+        $projects_model = model("App\Models\Projects_model");
+        $project_options = array("status" => "open");
+        if ($user) {
+            $user_type = isset($user->user_type) ? $user->user_type : "staff";
+            if ($user_type === "staff") {
+                $can_manage = (!empty($user->is_admin) || (isset($user->permissions) && get_array_value($user->permissions, "can_manage_all_projects") == "1"));
+                if (!$can_manage && !empty($user->id)) {
+                    $project_options["user_id"] = $user->id;
+                }
+            } else if ($user_type === "client" && !empty($user->client_id)) {
+                $project_options["client_id"] = $user->client_id;
+            }
+        }
+
+        $projects_result = $projects_model->get_details($project_options);
+        $open_projects = is_object($projects_result) && method_exists($projects_result, 'getResult') ? $projects_result->getResult() : (is_array($projects_result) ? $projects_result : array());
+
+        // 1. If calendar has CRM client id, prefer projects of that client
+        $matches = array();
+        if ($cal_client_id > 0) {
+            foreach ($open_projects as $p) {
+                if ((int) $p->client_id === $cal_client_id) {
+                    $normTitle = strtolower($p->title);
+                    if (strpos($normTitle, $year) !== false &&
+                        (strpos($normTitle, $monthLowerFull) !== false || strpos($normTitle, $monthLowerShort) !== false)) {
+                        $matches[] = $p;
+                    }
+                }
+            }
+        }
+
+        // 2. Otherwise use the name rule
+        if (empty($matches)) {
+            $normCal = preg_replace('/[^a-z0-9]/', '', strtolower($cal_name));
+            if ($normCal) {
+                foreach ($open_projects as $p) {
+                    if (strpos($p->title, '|') === false) {
+                        continue;
+                    }
+                    list($partBefore, $partAfter) = explode('|', $p->title, 2);
+                    $normProjClient = preg_replace('/[^a-z0-9]/', '', strtolower($partBefore));
+                    if (!$normProjClient) {
+                        continue;
+                    }
+
+                    $clientMatches = ($normCal === $normProjClient)
+                        || (strpos($normCal, $normProjClient) === 0)
+                        || (strpos($normProjClient, $normCal) === 0);
+
+                    if (!$clientMatches) {
+                        continue;
+                    }
+
+                    $normAfter = strtolower($partAfter);
+                    $monthMatches = (strpos($normAfter, $year) !== false) &&
+                        (strpos($normAfter, $monthLowerFull) !== false || strpos($normAfter, $monthLowerShort) !== false);
+
+                    if ($monthMatches) {
+                        $matches[] = $p;
+                    }
+                }
+            }
+        }
+
+        $cnt = count($matches);
+        if ($cnt === 1) {
+            $p = $matches[0];
+            return array(
+                "status" => "single",
+                "project_id" => (int) $p->id,
+                "project_title" => $p->title,
+                "message" => sprintf(cc_lang("cc_suggested_from"), $p->title)
+            );
+        } else if ($cnt === 0) {
+            return array(
+                "status" => "none",
+                "project_id" => null,
+                "project_title" => null,
+                "message" => sprintf(cc_lang("cc_no_project_hint"), $monthFull . " " . $year)
+            );
+        } else {
+            return array(
+                "status" => "multiple",
+                "project_id" => null,
+                "project_title" => null,
+                "message" => sprintf(cc_lang("cc_multiple_projects_hint"), $cnt)
+            );
+        }
+    }
+
+}
+
+if (!function_exists('cc_validate_task_link')) {
+
+    function cc_validate_task_link($item_id, $duplicate_confirmed = false, $user = null) {
+        if (!cc_can("view", $user)) {
+            return cc_lang("cc_forbidden");
+        }
+
+        $item_id = (int) $item_id;
+        if ($item_id < 1) {
+            return cc_lang("cc_content_item_required");
+        }
+
+        $items_model = model("App\Models\Cc_items_model");
+        $item = $items_model->get_active($item_id);
+        if (!$item) {
+            return cc_lang("cc_item_not_found");
+        }
+
+        $cal_model = model("App\Models\Cc_calendars_model");
+        $calendar = $cal_model->get_active($item->calendar_id);
+        if (!$calendar) {
+            return cc_lang("cc_calendar_not_found");
+        }
+
+        // Duplicate check
+        if (cc_has_task_column() && !empty($item->task_id)) {
+            $db = db_connect('default');
+            $active_task = $db->query("SELECT id FROM rise_tasks WHERE id = ? AND deleted = 0", array((int) $item->task_id))->getRow();
+            if ($active_task && !$duplicate_confirmed) {
+                return sprintf(cc_lang("cc_task_exists_warning"), $item->task_id);
+            }
+        }
+
+        return null;
+    }
+
+}
+
+if (!function_exists('cc_has_task_links_table')) {
+
+    function cc_has_task_links_table() {
+        static $has_table = null;
+        if ($has_table !== null) {
+            return $has_table;
+        }
+        try {
+            $db = db_connect('default');
+            $res = $db->query("SHOW TABLES LIKE 'rise_cc_task_links'");
+            $has_table = ($res && $res->getNumRows() > 0);
+        } catch (\Throwable $e) {
+            $has_table = false;
+        }
+        return $has_table;
+    }
+
+}
+
+if (!function_exists('cc_get_all_content_types')) {
+
+    function cc_get_all_content_types() {
+        static $cached_types = null;
+        if ($cached_types !== null) {
+            return $cached_types;
+        }
+        try {
+            $db = db_connect('default');
+            cc_use_utf8mb4($db);
+            $sql = "SELECT c.options 
+                    FROM rise_cc_columns c
+                    JOIN rise_cc_calendars cal ON cal.id = c.calendar_id AND cal.deleted = 0
+                    WHERE c.deleted = 0 
+                      AND (c.field_key = 'type' OR c.label LIKE '%Content Type%' OR c.label LIKE '%Type%')
+                      AND c.input_type IN ('select', 'multi')
+                      AND c.options IS NOT NULL AND c.options != ''";
+            $query = $db->query($sql);
+            $rows = $query ? $query->getResult() : array();
+            $groups = array();
+            foreach ($rows as $row) {
+                $opts = json_decode($row->options, true);
+                if (!is_array($opts)) continue;
+                foreach ($opts as $opt) {
+                    $opt = trim((string)$opt);
+                    if ($opt === '') continue;
+                    $norm = strtolower(preg_replace('/[^a-z0-9]/i', '', $opt));
+                    if ($norm === '') continue;
+                    if (!isset($groups[$norm])) $groups[$norm] = array();
+                    if (!isset($groups[$norm][$opt])) $groups[$norm][$opt] = 0;
+                    $groups[$norm][$opt]++;
+                }
+            }
+            $types = array();
+            foreach ($groups as $norm => $spellings) {
+                arsort($spellings);
+                $types[] = key($spellings);
+            }
+            natcasesort($types);
+            $cached_types = array_values($types);
+        } catch (\Throwable $e) {
+            $cached_types = array();
+        }
+        return $cached_types;
+    }
+
+}
+
+if (!function_exists('cc_get_task_link_info')) {
+
+    function cc_get_task_link_info($task_id) {
+        $task_id = (int)$task_id;
+        if ($task_id < 1) {
+            return null;
+        }
+
+        $db = db_connect('default');
+
+        // Verify task exists and is not deleted
+        $task_row = $db->query("SELECT id, project_id, deleted FROM rise_tasks WHERE id = ?", array($task_id))->getRow();
+        if (!$task_row || (int)$task_row->deleted !== 0) {
+            return null;
+        }
+
+        // 1. Check rise_cc_task_links
+        if (cc_has_task_links_table()) {
+            $link_row = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id))->getRow();
+            if ($link_row) {
+                if (!empty($link_row->item_id)) {
+                    $item = model("App\Models\Cc_items_model")->get_active((int)$link_row->item_id);
+                    if ($item) {
+                        $cal = model("App\Models\Cc_calendars_model")->get_active($item->calendar_id);
+                        if ($cal) {
+                            $type_str = !empty($link_row->content_type) ? $link_row->content_type : (!empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : ""));
+                            $type_color_info = cc_chip_colors($type_str);
+                            $formatted_date = $item->publish_date;
+                            if ($item->publish_date && strtotime($item->publish_date)) {
+                                $formatted_date = date("j M Y", strtotime($item->publish_date));
+                            }
+                            return (object) array(
+                                "task_id" => $task_id,
+                                "is_linked" => true,
+                                "is_manual" => false,
+                                "item_id" => (int)$item->id,
+                                "content_type" => $type_str,
+                                "type_color" => $type_color_info[0],
+                                "calendar_id" => (int)$cal->id,
+                                "calendar_name" => $cal->name,
+                                "publish_date" => $item->publish_date,
+                                "formatted_date" => $formatted_date,
+                                "title" => $item->title,
+                                "link_url" => get_uri("content_calendar?calendar=" . $cal->id . "&date=" . $item->publish_date . "&item=" . $item->id)
+                            );
+                        }
+                    }
+                } else if (!empty($link_row->content_type)) {
+                    $type_str = (string)$link_row->content_type;
+                    $type_color_info = cc_chip_colors($type_str);
+                    return (object) array(
+                        "task_id" => $task_id,
+                        "is_linked" => false,
+                        "is_manual" => true,
+                        "content_type" => $type_str,
+                        "type_color" => $type_color_info[0]
+                    );
+                }
+            }
+        }
+
+        // 2. Fallback to rise_cc_items.task_id if rise_cc_task_links row not present
+        if (cc_has_task_column()) {
+            $item_row = $db->query("SELECT id, calendar_id, publish_date, title, type, content_type FROM rise_cc_items WHERE task_id = ? AND deleted = 0", array($task_id))->getRow();
+            if ($item_row) {
+                $cal = model("App\Models\Cc_calendars_model")->get_active($item_row->calendar_id);
+                if ($cal) {
+                    $type_str = !empty($item_row->type) ? (string)$item_row->type : (!empty($item_row->content_type) ? (string)$item_row->content_type : "");
+                    $type_color_info = cc_chip_colors($type_str);
+                    $formatted_date = $item_row->publish_date;
+                    if ($item_row->publish_date && strtotime($item_row->publish_date)) {
+                        $formatted_date = date("j M Y", strtotime($item_row->publish_date));
+                    }
+                    return (object) array(
+                        "task_id" => $task_id,
+                        "is_linked" => true,
+                        "is_manual" => false,
+                        "item_id" => (int)$item_row->id,
+                        "content_type" => $type_str,
+                        "type_color" => $type_color_info[0],
+                        "calendar_id" => (int)$cal->id,
+                        "calendar_name" => $cal->name,
+                        "publish_date" => $item_row->publish_date,
+                        "formatted_date" => $formatted_date,
+                        "title" => $item_row->title,
+                        "link_url" => get_uri("content_calendar?calendar=" . $cal->id . "&date=" . $item_row->publish_date . "&item=" . $item_row->id)
+                    );
+                }
+            }
+        }
+
+        return null;
+    }
+
+}
+
+if (!function_exists('cc_save_manual_task_type')) {
+
+    function cc_save_manual_task_type($task_id, $content_type, $user = null) {
+        $task_id = (int)$task_id;
+        $content_type = trim((string)$content_type);
+        if ($task_id < 1 || $content_type === '') {
+            return array("success" => false, "message" => "Invalid task ID or content type");
+        }
+
+        $valid_types = cc_get_all_content_types();
+        if (!in_array($content_type, $valid_types, true)) {
+            return array("success" => false, "message" => "Content type not in valid list");
+        }
+
+        if (cc_has_task_links_table()) {
+            try {
+                $db = db_connect('default');
+                $user_id = $user && !empty($user->id) ? (int)$user->id : 1;
+                $db->query("INSERT INTO rise_cc_task_links (task_id, item_id, content_type, created_by, created_at)
+                            VALUES (?, NULL, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE content_type = VALUES(content_type)",
+                           array($task_id, $content_type, $user_id, date("Y-m-d H:i:s")));
+                return array("success" => true);
+            } catch (\Throwable $e) {
+                return array("success" => false, "message" => $e->getMessage());
+            }
+        }
+        return array("success" => true);
+    }
+
+}
+
+if (!function_exists('cc_format_content_description_html')) {
+
+    function cc_format_content_description_html($calendar, $item, $columns) {
+        $deep_link = get_uri("content_calendar?calendar=" . $calendar->id . "&date=" . $item->publish_date . "&item=" . $item->id);
+
+        $html_parts = array();
+        $text_parts = array();
+
+        // 1. Content link
+        $link_escaped = esc($deep_link);
+        $html_parts[] = "<p><strong>Content link:</strong> <a href=\"{$link_escaped}\" target=\"_blank\" rel=\"noopener noreferrer\">{$link_escaped}</a></p>";
+        $text_parts[] = "Content link: " . $deep_link;
+
+        // 2. Client
+        $client_name = esc($calendar->name);
+        $html_parts[] = "<p><strong>Client:</strong> {$client_name}</p>";
+        $text_parts[] = "Client: " . $calendar->name;
+
+        // 3. Date
+        $formatted_date = $item->publish_date;
+        if ($item->publish_date && strtotime($item->publish_date)) {
+            $formatted_date = date("j M Y", strtotime($item->publish_date));
+        }
+        $date_escaped = esc($formatted_date);
+        $html_parts[] = "<p><strong>Date:</strong> {$date_escaped}</p>";
+        $text_parts[] = "Date: " . $formatted_date;
+
+        // 4. Content type
+        $type = !empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : "");
+        if ($type !== "") {
+            $type_escaped = esc($type);
+            $html_parts[] = "<p><strong>Content type:</strong> {$type_escaped}</p>";
+            $text_parts[] = "Content type: " . $type;
+        }
+
+        // 5. Columns in client column order
+        $values = is_array($item->values ?? null) ? $item->values : (isset($item->values_json) ? json_decode($item->values_json, true) : array());
+        if (!is_array($values)) $values = array();
+
+        foreach ($columns as $col) {
+            $k = $col->field_key;
+            if ($k === "title" || $k === "date" || $k === "type" || $k === "status") {
+                continue;
+            }
+
+            $raw_val = "";
+            if (isset($values[$k])) {
+                $v = $values[$k];
+                if (is_array($v)) {
+                    $raw_val = implode(", ", $v);
+                } else {
+                    $raw_val = (string) $v;
+                }
+            }
+
+            $trimmed = trim($raw_val);
+            if ($trimmed === "") {
+                continue;
+            }
+
+            $label = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $col->field_key);
+            $label_escaped = esc($label);
+
+            $text_parts[] = $label . ": " . $raw_val;
+
+            $val_escaped = esc($raw_val);
+            $val_escaped = preg_replace('/\*\*(.*?)\*\*/u', '<strong>$1</strong>', $val_escaped);
+
+            if ($col->input_type === 'link' || preg_match('/^https?:\/\//i', $trimmed)) {
+                $url_escaped = esc($trimmed);
+                $val_html = "<a href=\"{$url_escaped}\" target=\"_blank\" rel=\"noopener noreferrer\">{$val_escaped}</a>";
+            } else {
+                $val_html = nl2br($val_escaped);
+            }
+
+            if (strpos($raw_val, "\n") !== false) {
+                $html_parts[] = "<p><strong>{$label_escaped}:</strong><br>{$val_html}</p>";
+            } else {
+                $html_parts[] = "<p><strong>{$label_escaped}:</strong> {$val_html}</p>";
+            }
+        }
+
+        return array(
+            "html" => implode("\n", $html_parts),
+            "text" => implode("\n\n", $text_parts)
+        );
+    }
+
+}
+
+if (!function_exists('cc_link_task_to_item')) {
+
+    function cc_link_task_to_item($task_id, $item_id, $user = null) {
+        $task_id = (int) $task_id;
+        $item_id = (int) $item_id;
+        if ($task_id < 1 || $item_id < 1) {
+            return array("success" => false, "message" => "Invalid task or item ID");
+        }
+
+        $items_model = model("App\Models\Cc_items_model");
+        $item = $items_model->get_active($item_id);
+        if (!$item) {
+            return array("success" => false, "message" => "Content item not found");
+        }
+
+        $cal_model = model("App\Models\Cc_calendars_model");
+        $calendar = $cal_model->get_active($item->calendar_id);
+        if (!$calendar) {
+            return array("success" => false, "message" => "Content calendar not found");
+        }
+
+        $values = is_array($item->values ?? null) ? $item->values : (isset($item->values_json) ? json_decode($item->values_json, true) : array());
+
+        // 1. Update task_id in rise_cc_items
+        if (cc_has_task_column()) {
+            $items_model->save_item(array("task_id" => $task_id), $item_id);
+        }
+
+        // 2. Insert or replace in rise_cc_task_links
+        if (cc_has_task_links_table()) {
+            try {
+                $db = db_connect('default');
+                $user_id = $user && !empty($user->id) ? (int)$user->id : 1;
+                $content_type = !empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : null);
+                $db->query("INSERT INTO rise_cc_task_links (task_id, item_id, content_type, created_by, created_at)
+                            VALUES (?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE item_id = VALUES(item_id), content_type = VALUES(content_type)",
+                           array($task_id, $item_id, $content_type, $user_id, date("Y-m-d H:i:s")));
+            } catch (\Throwable $e) {
+                log_message('error', '[ERROR] cc_link_task_to_item task_links insert: ' . $e->getMessage());
+            }
+        }
+
+        // 3. Add first comment on task
+        // "Content milestone: <date> • <client> • <content type> • Goal: <goal> • Open content: <link>"
+        try {
+            $parts = array();
+
+            if (!empty($item->publish_date)) {
+                $ts = strtotime($item->publish_date);
+                $parts[] = $ts ? date("j M Y", $ts) : $item->publish_date;
+            }
+
+            if (!empty($calendar->name)) {
+                $parts[] = $calendar->name;
+            }
+
+            $type_val = !empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : "");
+            if ($type_val !== "") {
+                $parts[] = $type_val;
+            }
+
+            // Goal
+            $goal = "";
+            if (isset($values["goal"])) {
+                $g = $values["goal"];
+                $goal = is_array($g) ? implode(", ", $g) : (string)$g;
+            }
+            if (!empty($goal)) {
+                $parts[] = "Goal: " . $goal;
+            }
+
+            $link_url = get_uri("content_calendar?calendar=" . $calendar->id . "&date=" . $item->publish_date . "&item=" . $item->id);
+            $parts[] = "Open content: <a href='" . esc($link_url) . "' target='_blank' rel='noopener noreferrer'>" . esc($link_url) . "</a>";
+
+            $comment_text = "Content milestone: " . implode(" • ", $parts);
+
+            $tasks_model = model("App\Models\Tasks_model");
+            $task_info = $tasks_model->get_one($task_id);
+
+            $comments_model = model("App\Models\Project_comments_model");
+            $comment_data = array(
+                "created_by" => $user && !empty($user->id) ? (int)$user->id : 1,
+                "created_at" => get_current_utc_time(),
+                "project_id" => $task_info ? (int)$task_info->project_id : 0,
+                "task_id" => $task_id,
+                "description" => $comment_text,
+                "deleted" => 0
+            );
+
+            $save_res = $comments_model->save_comment($comment_data);
+            if (!$save_res) {
+                $db = db_connect('default');
+                $db->query("INSERT INTO rise_project_comments (created_by, created_at, project_id, task_id, description, deleted) VALUES (?, ?, ?, ?, ?, 0)",
+                    array($comment_data["created_by"], $comment_data["created_at"], $comment_data["project_id"], $task_id, $comment_text));
+            }
+
+            return array("success" => true, "message" => "Linked successfully");
+        } catch (\Throwable $e) {
+            log_message('error', '[ERROR] cc_link_task_to_item comment: ' . $e->getMessage());
+            return array("success" => false, "message" => $e->getMessage());
+        }
     }
 
 }

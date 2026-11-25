@@ -11,6 +11,13 @@
                 <input type="hidden" name="is_clone" value="1" />
             <?php } ?>
 
+            <?php
+            helper('content_calendar');
+            if (function_exists('cc_can') && cc_can('view')) {
+                echo view("content_calendar/tasks/task_modal_section", array("model_info" => $model_info, "add_type" => $add_type, "project_id" => $project_id));
+            }
+            ?>
+
             <div class="form-group">
                 <div class="row">
                     <label for="title" class=" col-md-3"><?php echo app_lang('title'); ?></label>
@@ -72,7 +79,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <div class="row">
                     <label for="milestone_id" class=" col-md-3"><?php echo app_lang('milestone'); ?></label>
                     <div class="col-md-9" id="dropdown-apploader-section">
@@ -87,7 +94,7 @@
                         ?>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <?php if ($show_assign_to_dropdown) { ?>
                 <div class="form-group">

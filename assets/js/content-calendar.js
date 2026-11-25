@@ -2351,6 +2351,13 @@
 
                 chooseDate();
                 renderAll();
+                if (config.initial && config.initial.item_id) {
+                    var deepItemId = parseInt(config.initial.item_id, 10);
+                    config.initial.item_id = null;
+                    if (deepItemId) {
+                        openItemViewModal(deepItemId);
+                    }
+                }
             }).fail(function (err) {
                 toast(err.message, "error");
             }).always(function () {
@@ -2490,6 +2497,17 @@
                 }
                 return pillHtml(status);
             }
+        }
+
+        function taskChipHtml(taskId) {
+            if (!taskId || !state.perms.can_see_tasks) {
+                return "";
+            }
+            var taskUrl = (urls.task_view_base || "projects/task_view/") + taskId;
+            return "<a href='" + esc(taskUrl) + "' class='cc-task-chip' target='_blank' rel='noopener noreferrer' title='Task #" + esc(taskId) + "'>" +
+                "<i data-feather='check-square' class='icon-12'></i> " +
+                "Task #" + esc(taskId) +
+                "</a>";
         }
 
         function fileUrl(value) {
@@ -2821,7 +2839,8 @@
             var dateStr = item.date ? fmtLongDate(item.date) : (L("cc_undated_no_date") || "No date yet");
             var statusPill = statusPillHtml(item);
             var typePill = item.type ? pillHtml(item.type) : "";
-            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "");
+            var taskChip = (item.task_id && perms.can_see_tasks) ? taskChipHtml(item.task_id) : "";
+            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "") + (taskChip ? " " + taskChip : "");
             var special = (item.date && state.specialDays && state.specialDays[item.date]) ? state.specialDays[item.date] : "";
 
             var headHtml = "<div class='cc-view-head'>" +
@@ -2903,6 +2922,9 @@
                 className: "cc-modal-view-item",
                 body: bodyHtml
             });
+            if (window.feather) {
+                feather.replace();
+            }
 
             var $dialog = modal.$el;
             var $foot = modal.$foot;
@@ -3041,7 +3063,8 @@
                 html += "<div class='cc-item' data-id='" + item.id + "'>";
                 var statusPill = statusPillHtml(item);
             var typePill = item.type ? pillHtml(item.type) : "";
-            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "");
+            var taskChip = (item.task_id && perms.can_see_tasks) ? taskChipHtml(item.task_id) : "";
+            var pills = (statusPill ? statusPill : "") + (typePill ? (statusPill ? " " : "") + typePill : "") + (taskChip ? " " + taskChip : "");
                 if (pills) {
                     html += "<div class='cc-item-pills'>" + pills + "</div>";
                 }
@@ -3066,6 +3089,9 @@
             });
 
             $("#cc-day-panel").html(html);
+            if (window.feather) {
+                feather.replace();
+            }
         }
 
         function renderTable() {

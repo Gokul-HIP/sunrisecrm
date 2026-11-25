@@ -214,6 +214,8 @@ $point_display = get_task_point_display($model_info);
                         <strong><?php echo $model_info->title; ?></strong>
                     </div>
 
+                    <?php echo view("content_calendar/tasks/task_view_content_section", array("model_info" => $model_info)); ?>
+
                     <?php if ($model_info->parent_task_id) { ?>
                         <div class="col-md-12 mb15">
                             <strong><?php echo app_lang("main_task") . ": "; ?></strong><?php echo modal_anchor(get_uri("projects/task_view"), $parent_task_title, array("title" => app_lang('task_info') . " #$model_info->parent_task_id", "data-post-id" => $model_info->parent_task_id, "data-modal-lg" => "1")); ?>

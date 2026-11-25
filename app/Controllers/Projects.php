@@ -4739,6 +4739,30 @@ class Projects extends Security_Controller {
             $data["end_time"] = NULL;
         }
 
+        // Content Calendar task link validation
+        if ($this->request->getPost('cc_link_switch')) {
+            helper('content_calendar');
+            $cc_val_err = cc_validate_task_link(
+                $this->request->getPost('cc_item_id'),
+                $this->request->getPost('cc_duplicate_confirmed'),
+                $this->login_user
+            );
+            if ($cc_val_err) {
+                echo json_encode(array("success" => false, 'message' => $cc_val_err));
+                return false;
+            }
+        } else if (!$id && !$this->request->getPost('cc_link_switch')) {
+            $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
+            if ($manual_type !== '') {
+                helper('content_calendar');
+                $valid_types = cc_get_all_content_types();
+                if (!in_array($manual_type, $valid_types, true)) {
+                    echo json_encode(array("success" => false, 'message' => 'Invalid content type'));
+                    return false;
+                }
+            }
+        }
+
         // start_date is required
         if (empty($data["start_date"])) {
             echo json_encode(array("success" => false, 'message' => app_lang('field_required') . " (" . app_lang('start_date') . ")"));
@@ -4969,7 +4993,27 @@ class Projects extends Security_Controller {
                 }
             }
 
-            echo json_encode(array("success" => true, "data" => $this->_task_row_data($save_id), 'id' => $save_id, 'message' => app_lang('record_saved'), "add_type" => $add_type));
+            // Content Calendar task link hook
+            $link_warning = "";
+            helper('content_calendar');
+            if (!$id && $this->request->getPost('cc_link_switch')) {
+                $link_res = cc_link_task_to_item($save_id, $this->request->getPost('cc_item_id'), $this->login_user);
+                if (empty($link_res['success'])) {
+                    log_message('error', 'Content link failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
+                    $link_warning = "Task saved, but the content link failed";
+                }
+            } else if (!$id && !$this->request->getPost('cc_link_switch')) {
+                $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
+                if ($manual_type !== '') {
+                    $link_res = cc_save_manual_task_type($save_id, $manual_type, $this->login_user);
+                    if (empty($link_res['success'])) {
+                        log_message('error', 'Manual content type failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
+                    }
+                }
+            }
+
+            $success_message = $link_warning ? $link_warning : app_lang('record_saved');
+            echo json_encode(array("success" => true, "data" => $this->_task_row_data($save_id), 'id' => $save_id, 'message' => $success_message, "add_type" => $add_type));
         } else {
             echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
         }
