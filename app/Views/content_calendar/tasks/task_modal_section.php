@@ -758,18 +758,29 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
             var $desc = $("#description");
             var isSummernote = typeof $desc.summernote === "function" && $desc.next(".note-editor").length;
 
+            function normalizeText(txt) {
+                return (txt || "").replace(/[\u00A0\s]+/g, " ").trim();
+            }
+
             if (isSummernote) {
                 var currentVal = $.trim($desc.summernote("code"));
-                var plainText = $("<div>").html(currentVal).text().trim();
-                var isEmpty = (plainText === "" || currentVal === "<p><br></p>" || currentVal === lastSuggestedHtml || plainText === lastSuggestedDesc.trim());
-                if (isEmpty) {
+                var plainText = $("<div>").html(currentVal).text();
+                var normCurrent = normalizeText(plainText);
+                var normSuggested = normalizeText(lastSuggestedDesc);
+
+                var isAutoFilled = (normCurrent === "" || currentVal === "<p><br></p>" || currentVal === "<p><br/></p>" || currentVal === "<br>" || currentVal === lastSuggestedHtml || normCurrent === normSuggested);
+                if (isAutoFilled) {
                     $desc.summernote("code", htmlContent);
                     lastSuggestedHtml = htmlContent;
                     lastSuggestedDesc = textContent;
                 }
             } else {
                 var currentVal = $.trim($desc.val());
-                if (currentVal === "" || currentVal === lastSuggestedDesc) {
+                var normCurrent = normalizeText(currentVal);
+                var normSuggested = normalizeText(lastSuggestedDesc);
+
+                var isAutoFilled = (normCurrent === "" || currentVal === lastSuggestedDesc || normCurrent === normSuggested);
+                if (isAutoFilled) {
                     $desc.val(textContent);
                     lastSuggestedDesc = textContent;
                 }

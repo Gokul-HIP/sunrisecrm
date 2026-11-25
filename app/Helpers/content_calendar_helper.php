@@ -958,93 +958,17 @@ if (!function_exists('cc_save_manual_task_type')) {
 
 if (!function_exists('cc_format_content_description_html')) {
 
-    function cc_format_content_description_html($calendar, $item, $columns) {
+    function cc_format_content_description_html($calendar, $item, $columns = array()) {
         $deep_link = get_uri("content_calendar?calendar=" . $calendar->id . "&date=" . $item->publish_date . "&item=" . $item->id);
 
-        $html_parts = array();
-        $text_parts = array();
-
-        // 1. Content link
         $link_escaped = esc($deep_link);
-        $html_parts[] = "<p><strong>Content link:</strong> <a href=\"{$link_escaped}\" target=\"_blank\" rel=\"noopener noreferrer\">{$link_escaped}</a></p>";
-        $text_parts[] = "Content link: " . $deep_link;
-
-        // 2. Client
-        $client_name = esc($calendar->name);
-        $html_parts[] = "<p><strong>Client:</strong> {$client_name}</p>";
-        $text_parts[] = "Client: " . $calendar->name;
-
-        // 3. Date
-        $formatted_date = $item->publish_date;
-        if ($item->publish_date && strtotime($item->publish_date)) {
-            $formatted_date = date("j M Y", strtotime($item->publish_date));
-        }
-        $date_escaped = esc($formatted_date);
-        $html_parts[] = "<p><strong>Date:</strong> {$date_escaped}</p>";
-        $text_parts[] = "Date: " . $formatted_date;
-
-        // 4. Columns in client column order (skipping title, date, status, and any content-type column as type is in top block)
-        $values = is_array($item->values ?? null) ? $item->values : (isset($item->values_json) ? json_decode($item->values_json, true) : array());
-        if (!is_array($values)) $values = array();
-
-        $seen_cols = array();
-        foreach ($columns as $col) {
-            $k = $col->field_key;
-            $label = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $col->field_key);
-
-            if ($k === "title" || $k === "date" || $k === "type" || $k === "status") {
-                continue;
-            }
-            if (preg_match('/^content_type/i', $k) || preg_match('/content\s*type/i', $label)) {
-                continue;
-            }
-
-            $norm_key = strtolower(trim($k));
-            if (isset($seen_cols[$norm_key])) {
-                continue;
-            }
-            $seen_cols[$norm_key] = true;
-
-            $raw_val = "";
-            if (isset($values[$k])) {
-                $v = $values[$k];
-                if (is_array($v)) {
-                    $raw_val = implode(", ", $v);
-                } else {
-                    $raw_val = (string) $v;
-                }
-            }
-
-            $trimmed = trim($raw_val);
-            if ($trimmed === "") {
-                continue;
-            }
-
-            $label = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $col->field_key);
-            $label_escaped = esc($label);
-
-            $text_parts[] = $label . ": " . $raw_val;
-
-            $val_escaped = esc($raw_val);
-            $val_escaped = preg_replace('/\*\*(.*?)\*\*/u', '<strong>$1</strong>', $val_escaped);
-
-            if ($col->input_type === 'link' || preg_match('/^https?:\/\//i', $trimmed)) {
-                $url_escaped = esc($trimmed);
-                $val_html = "<a href=\"{$url_escaped}\" target=\"_blank\" rel=\"noopener noreferrer\">{$val_escaped}</a>";
-            } else {
-                $val_html = nl2br($val_escaped);
-            }
-
-            if (strpos($raw_val, "\n") !== false) {
-                $html_parts[] = "<p><strong>{$label_escaped}:</strong><br>{$val_html}</p>";
-            } else {
-                $html_parts[] = "<p><strong>{$label_escaped}:</strong> {$val_html}</p>";
-            }
-        }
+        $html = "<p>Content link: <a href=\"{$link_escaped}\" target=\"_blank\" rel=\"noopener noreferrer\">{$link_escaped}</a></p>";
+        $text = "Content link: " . $deep_link;
 
         return array(
-            "html" => implode("\n", $html_parts),
-            "text" => implode("\n\n", $text_parts)
+            "html" => $html,
+            "text" => $text,
+            "url" => $deep_link
         );
     }
 
