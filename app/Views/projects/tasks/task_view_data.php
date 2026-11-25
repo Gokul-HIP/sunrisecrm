@@ -214,7 +214,13 @@ $point_display = get_task_point_display($model_info);
                         <strong><?php echo $model_info->title; ?></strong>
                     </div>
 
-                    <?php echo view("content_calendar/tasks/task_view_content_section", array("model_info" => $model_info)); ?>
+                    <?php
+                    try {
+                        echo view("content_calendar/tasks/task_view_content_section", array("model_info" => $model_info));
+                    } catch (\Throwable $e) {
+                        log_message('error', 'Content calendar task view error: ' . $e->getMessage());
+                    }
+                    ?>
 
                     <?php if ($model_info->parent_task_id) { ?>
                         <div class="col-md-12 mb15">

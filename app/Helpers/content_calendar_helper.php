@@ -510,30 +510,35 @@ if (!function_exists('cc_get_task_linked_item')) {
             return null;
         }
 
-        $db = db_connect('default');
-        $query = $db->query("SELECT i.id, i.calendar_id, i.title, i.publish_date, c.name as calendar_name
-                             FROM rise_cc_items i
-                             LEFT JOIN rise_cc_calendars c ON c.id = i.calendar_id
-                             WHERE i.task_id = ? AND i.deleted = 0
-                             LIMIT 1", array($task_id));
-        $row = $query->getRow();
-        if (!$row) {
+        try {
+            $db = db_connect('default');
+            $query = $db->query("SELECT i.id, i.calendar_id, i.title, i.publish_date, c.name as calendar_name
+                                 FROM rise_cc_items i
+                                 LEFT JOIN rise_cc_calendars c ON c.id = i.calendar_id
+                                 WHERE i.task_id = ? AND i.deleted = 0
+                                 LIMIT 1", array($task_id));
+            $row = ($query && is_object($query)) ? $query->getRow() : null;
+            if (!$row) {
+                return null;
+            }
+
+            $ts = $row->publish_date ? strtotime($row->publish_date) : 0;
+            $formatted_date = $ts ? date("j M Y", $ts) : "No date";
+            $link_url = get_uri("content_calendar?calendar=" . $row->calendar_id . "&date=" . $row->publish_date . "&item=" . $row->id);
+
+            return (object) array(
+                "item_id" => (int) $row->id,
+                "calendar_id" => (int) $row->calendar_id,
+                "calendar_name" => $row->calendar_name,
+                "title" => $row->title,
+                "date" => $row->publish_date,
+                "formatted_date" => $formatted_date,
+                "link_url" => $link_url
+            );
+        } catch (\Throwable $e) {
+            log_message('error', 'cc_get_task_linked_item error: ' . $e->getMessage());
             return null;
         }
-
-        $ts = $row->publish_date ? strtotime($row->publish_date) : 0;
-        $formatted_date = $ts ? date("j M Y", $ts) : "No date";
-        $link_url = get_uri("content_calendar?calendar=" . $row->calendar_id . "&date=" . $row->publish_date . "&item=" . $row->id);
-
-        return (object) array(
-            "item_id" => (int) $row->id,
-            "calendar_id" => (int) $row->calendar_id,
-            "calendar_name" => $row->calendar_name,
-            "title" => $row->title,
-            "date" => $row->publish_date,
-            "formatted_date" => $formatted_date,
-            "link_url" => $link_url
-        );
     }
 
 }
@@ -764,136 +769,151 @@ if (!function_exists('cc_get_task_link_info')) {
             return null;
         }
 
-        $db = db_connect('default');
+        try {
+            $db = db_connect('default');
 
-        // Verify task exists and is not deleted
-        $task_row = $db->query("SELECT id, project_id, deleted, assigned_to, collaborators FROM rise_tasks WHERE id = ?", array($task_id))->getRow();
-        if (!$task_row || (int)$task_row->deleted !== 0) {
-            return null;
-        }
+            // Verify task exists and is not deleted
+            $q_task = $db->query("SELECT id, project_id, deleted, assigned_to, collaborators FROM rise_tasks WHERE id = ?", array($task_id));
+            $task_row = ($q_task && is_object($q_task)) ? $q_task->getRow() : null;
+            if (!$task_row || (int)$task_row->deleted !== 0) {
+                return null;
+            }
 
-        // 1. Check rise_cc_task_links
-        if (cc_has_task_links_table()) {
-            $link_row = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id))->getRow();
-            if ($link_row) {
-                if (!empty($link_row->item_id)) {
-                    $item = model("App\Models\Cc_items_model")->get_active((int)$link_row->item_id);
-                    if ($item) {
-                        $cal = model("App\Models\Cc_calendars_model")->get_active($item->calendar_id);
-                        if ($cal) {
-                            $type_str = !empty($link_row->content_type) ? (string)$link_row->content_type : cc_get_item_display_type($item, $cal);
-                            $type_color_info = cc_chip_colors($type_str);
-                            $type_pill_style = cc_pill_style($type_str);
+            // 1. Check rise_cc_task_links
+            if (cc_has_task_links_table()) {
+                $q_link = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id));
+                $link_row = ($q_link && is_object($q_link)) ? $q_link->getRow() : null;
+                if ($link_row) {
+                    if (!empty($link_row->item_id)) {
+                        $item = model("App\Models\Cc_items_model")->get_active((int)$link_row->item_id);
+                        if ($item) {
+                            $cal = model("App\Models\Cc_calendars_model")->get_active($item->calendar_id);
+                            if ($cal) {
+                                $type_str = !empty($link_row->content_type) ? (string)$link_row->content_type : cc_get_item_display_type($item, $cal);
+                                $type_color_info = cc_chip_colors($type_str);
+                                $type_pill_style = cc_pill_style($type_str);
 
-                            $status_str = (string)$item->status;
-                            $status_color_info = cc_chip_colors($status_str);
-                            $status_pill_style = cc_pill_style($status_str);
+                                $status_str = (string)($item->status ?? '');
+                                $status_color_info = cc_chip_colors($status_str);
+                                $status_pill_style = cc_pill_style($status_str);
 
-                            $status_options = array();
-                            try {
-                                $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
+                                $status_options = array();
+                                try {
+                                    $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
+                                    if (is_array($cols)) {
+                                        foreach ($cols as $c) {
+                                            if (isset($c->field_key) && $c->field_key === "status" && !empty($c->options_list) && is_array($c->options_list)) {
+                                                $status_options = $c->options_list;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                } catch (\Throwable $e) {}
+
+                                $formatted_date = (string)($item->publish_date ?? '');
+                                if ($formatted_date && strtotime($formatted_date)) {
+                                    $formatted_date = date("j M Y", strtotime($formatted_date));
+                                }
+                                return (object) array(
+                                    "task_id" => $task_id,
+                                    "is_linked" => true,
+                                    "is_manual" => false,
+                                    "item_id" => (int)$item->id,
+                                    "content_type" => $type_str,
+                                    "type_color" => $type_color_info[0] ?? '#6b7280',
+                                    "type_pill_style" => $type_pill_style,
+                                    "status" => $status_str,
+                                    "status_color" => $status_color_info[0] ?? '#9ca3af',
+                                    "status_pill_style" => $status_pill_style,
+                                    "status_options" => $status_options,
+                                    "calendar_id" => (int)$cal->id,
+                                    "calendar_name" => (string)($cal->name ?? ''),
+                                    "publish_date" => (string)($item->publish_date ?? ''),
+                                    "formatted_date" => $formatted_date,
+                                    "title" => (string)($item->title ?? ''),
+                                    "link_url" => get_uri("content_calendar?calendar=" . (int)$cal->id . "&date=" . urlencode((string)($item->publish_date ?? '')) . "&item=" . (int)$item->id)
+                                );
+                            }
+                        }
+                        // Linked item or calendar was deleted or missing -> render nothing
+                        return null;
+                    } else if (!empty($link_row->content_type)) {
+                        $type_str = (string)$link_row->content_type;
+                        $type_color_info = cc_chip_colors($type_str);
+                        $type_pill_style = cc_pill_style($type_str);
+                        return (object) array(
+                            "task_id" => $task_id,
+                            "is_linked" => false,
+                            "is_manual" => true,
+                            "content_type" => $type_str,
+                            "type_color" => $type_color_info[0] ?? '#6b7280',
+                            "type_pill_style" => $type_pill_style
+                        );
+                    }
+                    return null;
+                }
+            }
+
+            // 2. Fallback to rise_cc_items.task_id if rise_cc_task_links row not present
+            if (cc_has_task_column()) {
+                $q_item = $db->query("SELECT id, calendar_id, publish_date, title, content_type, status, values_json FROM rise_cc_items WHERE task_id = ? AND deleted = 0", array($task_id));
+                $item_row = ($q_item && is_object($q_item)) ? $q_item->getRow() : null;
+                if ($item_row) {
+                    $cal = model("App\Models\Cc_calendars_model")->get_active($item_row->calendar_id);
+                    if ($cal) {
+                        $type_str = cc_get_item_display_type($item_row, $cal);
+                        $type_color_info = cc_chip_colors($type_str);
+                        $type_pill_style = cc_pill_style($type_str);
+
+                        $status_str = (string)($item_row->status ?? '');
+                        $status_color_info = cc_chip_colors($status_str);
+                        $status_pill_style = cc_pill_style($status_str);
+
+                        $status_options = array();
+                        try {
+                            $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
+                            if (is_array($cols)) {
                                 foreach ($cols as $c) {
-                                    if ($c->field_key === "status" && !empty($c->options_list)) {
+                                    if (isset($c->field_key) && $c->field_key === "status" && !empty($c->options_list) && is_array($c->options_list)) {
                                         $status_options = $c->options_list;
                                         break;
                                     }
                                 }
-                            } catch (\Throwable $e) {}
-
-                            $formatted_date = $item->publish_date;
-                            if ($item->publish_date && strtotime($item->publish_date)) {
-                                $formatted_date = date("j M Y", strtotime($item->publish_date));
                             }
-                            return (object) array(
-                                "task_id" => $task_id,
-                                "is_linked" => true,
-                                "is_manual" => false,
-                                "item_id" => (int)$item->id,
-                                "content_type" => $type_str,
-                                "type_color" => $type_color_info[0],
-                                "type_pill_style" => $type_pill_style,
-                                "status" => $status_str,
-                                "status_color" => $status_color_info[0],
-                                "status_pill_style" => $status_pill_style,
-                                "status_options" => $status_options,
-                                "calendar_id" => (int)$cal->id,
-                                "calendar_name" => $cal->name,
-                                "publish_date" => $item->publish_date,
-                                "formatted_date" => $formatted_date,
-                                "title" => $item->title,
-                                "link_url" => get_uri("content_calendar?calendar=" . $cal->id . "&date=" . $item->publish_date . "&item=" . $item->id)
-                            );
+                        } catch (\Throwable $e) {}
+
+                        $formatted_date = (string)($item_row->publish_date ?? '');
+                        if ($formatted_date && strtotime($formatted_date)) {
+                            $formatted_date = date("j M Y", strtotime($formatted_date));
                         }
+                        return (object) array(
+                            "task_id" => $task_id,
+                            "is_linked" => true,
+                            "is_manual" => false,
+                            "item_id" => (int)$item_row->id,
+                            "content_type" => $type_str,
+                            "type_color" => $type_color_info[0] ?? '#6b7280',
+                            "type_pill_style" => $type_pill_style,
+                            "status" => $status_str,
+                            "status_color" => $status_color_info[0] ?? '#9ca3af',
+                            "status_pill_style" => $status_pill_style,
+                            "status_options" => $status_options,
+                            "calendar_id" => (int)$cal->id,
+                            "calendar_name" => (string)($cal->name ?? ''),
+                            "publish_date" => (string)($item_row->publish_date ?? ''),
+                            "formatted_date" => $formatted_date,
+                            "title" => (string)($item_row->title ?? ''),
+                            "link_url" => get_uri("content_calendar?calendar=" . (int)$cal->id . "&date=" . urlencode((string)($item_row->publish_date ?? '')) . "&item=" . (int)$item_row->id)
+                        );
                     }
-                } else if (!empty($link_row->content_type)) {
-                    $type_str = (string)$link_row->content_type;
-                    $type_color_info = cc_chip_colors($type_str);
-                    $type_pill_style = cc_pill_style($type_str);
-                    return (object) array(
-                        "task_id" => $task_id,
-                        "is_linked" => false,
-                        "is_manual" => true,
-                        "content_type" => $type_str,
-                        "type_color" => $type_color_info[0],
-                        "type_pill_style" => $type_pill_style
-                    );
                 }
             }
+
+            return null;
+        } catch (\Throwable $e) {
+            log_message('error', 'cc_get_task_link_info error: ' . $e->getMessage());
+            return null;
         }
-
-        // 2. Fallback to rise_cc_items.task_id if rise_cc_task_links row not present
-        if (cc_has_task_column()) {
-            $item_row = $db->query("SELECT id, calendar_id, publish_date, title, type, content_type, status, values_json FROM rise_cc_items WHERE task_id = ? AND deleted = 0", array($task_id))->getRow();
-            if ($item_row) {
-                $cal = model("App\Models\Cc_calendars_model")->get_active($item_row->calendar_id);
-                if ($cal) {
-                    $type_str = cc_get_item_display_type($item_row, $cal);
-                    $type_color_info = cc_chip_colors($type_str);
-                    $type_pill_style = cc_pill_style($type_str);
-
-                    $status_str = (string)$item_row->status;
-                    $status_color_info = cc_chip_colors($status_str);
-                    $status_pill_style = cc_pill_style($status_str);
-
-                    $status_options = array();
-                    try {
-                        $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
-                        foreach ($cols as $c) {
-                            if ($c->field_key === "status" && !empty($c->options_list)) {
-                                $status_options = $c->options_list;
-                                break;
-                            }
-                        }
-                    } catch (\Throwable $e) {}
-
-                    $formatted_date = $item_row->publish_date;
-                    if ($item_row->publish_date && strtotime($item_row->publish_date)) {
-                        $formatted_date = date("j M Y", strtotime($item_row->publish_date));
-                    }
-                    return (object) array(
-                        "task_id" => $task_id,
-                        "is_linked" => true,
-                        "is_manual" => false,
-                        "item_id" => (int)$item_row->id,
-                        "content_type" => $type_str,
-                        "type_color" => $type_color_info[0],
-                        "type_pill_style" => $type_pill_style,
-                        "status" => $status_str,
-                        "status_color" => $status_color_info[0],
-                        "status_pill_style" => $status_pill_style,
-                        "status_options" => $status_options,
-                        "calendar_id" => (int)$cal->id,
-                        "calendar_name" => $cal->name,
-                        "publish_date" => $item_row->publish_date,
-                        "formatted_date" => $formatted_date,
-                        "title" => $item_row->title,
-                        "link_url" => get_uri("content_calendar?calendar=" . $cal->id . "&date=" . $item_row->publish_date . "&item=" . $item_row->id)
-                    );
-                }
-            }
-        }
-
-        return null;
     }
 
 }

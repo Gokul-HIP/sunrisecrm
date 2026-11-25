@@ -12,9 +12,13 @@
             <?php } ?>
 
             <?php
-            helper('content_calendar');
-            if (function_exists('cc_can') && cc_can('view')) {
-                echo view("content_calendar/tasks/task_modal_section", array("model_info" => $model_info, "add_type" => $add_type, "project_id" => $project_id));
+            try {
+                helper('content_calendar');
+                if (function_exists('cc_can') && cc_can('view')) {
+                    echo view("content_calendar/tasks/task_modal_section", array("model_info" => $model_info, "add_type" => $add_type, "project_id" => $project_id));
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Content calendar task modal error: ' . $e->getMessage());
             }
             ?>
 

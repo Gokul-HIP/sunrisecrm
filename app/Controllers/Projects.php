@@ -4995,22 +4995,26 @@ class Projects extends Security_Controller {
 
             // Content Calendar task link hook
             $link_warning = "";
-            helper('content_calendar');
-            if (!$id && $this->request->getPost('cc_link_switch')) {
-                $link_res = cc_link_task_to_item($save_id, $this->request->getPost('cc_item_id'), $this->login_user);
-                if (empty($link_res['success'])) {
-                    log_message('error', 'Content link failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
-                    $link_warning = "Task saved, but the content link failed";
-                }
-            } else if ($this->request->getPost('cc_manual_content_type') !== null) {
-                $existing_link = cc_get_task_link_info($save_id);
-                if (!$existing_link || !$existing_link->is_linked) {
-                    $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
-                    $link_res = cc_save_manual_task_type($save_id, $manual_type, $this->login_user);
+            try {
+                helper('content_calendar');
+                if (!$id && $this->request->getPost('cc_link_switch')) {
+                    $link_res = cc_link_task_to_item($save_id, $this->request->getPost('cc_item_id'), $this->login_user);
                     if (empty($link_res['success'])) {
-                        log_message('error', 'Manual content type failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
+                        log_message('error', 'Content link failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
+                        $link_warning = "Task saved, but the content link failed";
+                    }
+                } else if ($this->request->getPost('cc_manual_content_type') !== null) {
+                    $existing_link = cc_get_task_link_info($save_id);
+                    if (!$existing_link || empty($existing_link->is_linked)) {
+                        $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
+                        $link_res = cc_save_manual_task_type($save_id, $manual_type, $this->login_user);
+                        if (empty($link_res['success'])) {
+                            log_message('error', 'Manual content type failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
+                        }
                     }
                 }
+            } catch (\Throwable $e) {
+                log_message('error', 'Content Calendar task link hook error: ' . $e->getMessage());
             }
 
             $success_message = $link_warning ? $link_warning : app_lang('record_saved');

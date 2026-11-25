@@ -1,17 +1,27 @@
 <?php
 helper('content_calendar');
-$task_id = !empty($model_info->id) ? (int)$model_info->id : 0;
+$task_id = (isset($model_info) && is_object($model_info) && !empty($model_info->id)) ? (int)$model_info->id : 0;
 if (!$task_id) {
     return;
 }
 $link_info = cc_get_task_link_info($task_id);
-if (!$link_info) {
+if (!$link_info || (empty($link_info->is_linked) && empty($link_info->content_type))) {
     return;
 }
 
-$user = $login_user ?? (isset($this->login_user) ? $this->login_user : null);
-$user_id = $user ? (int)$user->id : 0;
-$is_admin = !empty($user->is_admin);
+$user = isset($login_user) ? $login_user : (function_exists('get_login_user') ? get_login_user() : null);
+if (!$user && class_exists('App\Models\Users_model')) {
+    try {
+        $users_model = model('App\Models\Users_model');
+        $uid = $users_model->login_user_id();
+        if ($uid) {
+            $user = $users_model->get_access_info($uid);
+        }
+    } catch (\Throwable $e) {}
+}
+
+$user_id = ($user && isset($user->id)) ? (int)$user->id : 0;
+$is_admin = ($user && !empty($user->is_admin));
 $has_cc_edit = function_exists('cc_can') && cc_can('edit', $user);
 $is_assignee = (!empty($model_info->assigned_to) && (int)$model_info->assigned_to === $user_id);
 $collab_ids = !empty($model_info->collaborators) ? array_filter(explode(',', (string)$model_info->collaborators)) : array();
@@ -164,26 +174,32 @@ $can_change_status = ($is_admin || $has_cc_edit || $is_assignee || $is_collab);
             <!-- First row: Type pill and Status pill directly under the title -->
             <div class="cc-top-block-pills-row">
                 <?php if (!empty($link_info->content_type)) { ?>
-                    <span class="cc-pill cc-type-pill" style="<?php echo esc($link_info->type_pill_style); ?>">
+                    <span class="cc-pill cc-type-pill" style="<?php echo esc($link_info->type_pill_style ?? ''); ?>">
                         <span class="cc-pill-text"><?php echo esc($link_info->content_type); ?></span>
                     </span>
                 <?php } ?>
 
+                <?php 
+                $status_text = !empty($link_info->status) ? $link_info->status : (cc_lang('cc_no_status') ?: 'No status');
+                $status_style = $link_info->status_pill_style ?? '';
+                $status_opts = (!empty($link_info->status_options) && is_array($link_info->status_options)) ? $link_info->status_options : array();
+                ?>
+
                 <?php if ($can_change_status) { ?>
                     <button type="button" class="cc-pill cc-pill-btn cc-task-status-btn"
                             data-task-id="<?php echo $task_id; ?>"
-                            data-status="<?php echo esc($link_info->status); ?>"
-                            data-options="<?php echo esc(json_encode($link_info->status_options ?: array())); ?>"
-                            style="<?php echo esc($link_info->status_pill_style); ?>"
+                            data-status="<?php echo esc($link_info->status ?? ''); ?>"
+                            data-options="<?php echo esc(json_encode($status_opts)); ?>"
+                            style="<?php echo esc($status_style); ?>"
                             aria-haspopup="listbox" aria-expanded="false" title="<?php echo esc(cc_lang('cc_set_status') ?: 'Change status'); ?>">
-                        <span class="cc-pill-text"><?php echo esc($link_info->status ?: (cc_lang('cc_no_status') ?: 'No status')); ?></span>
+                        <span class="cc-pill-text"><?php echo esc($status_text); ?></span>
                         <svg class="cc-pill-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
                 <?php } else { ?>
-                    <span class="cc-pill" style="<?php echo esc($link_info->status_pill_style); ?>">
-                        <span class="cc-pill-text"><?php echo esc($link_info->status ?: (cc_lang('cc_no_status') ?: 'No status')); ?></span>
+                    <span class="cc-pill" style="<?php echo esc($status_style); ?>">
+                        <span class="cc-pill-text"><?php echo esc($status_text); ?></span>
                     </span>
                 <?php } ?>
             </div>
@@ -191,13 +207,13 @@ $can_change_status = ($is_admin || $has_cc_edit || $is_assignee || $is_collab);
             <!-- Second row: Client • Date • Content title, and Open in Content Calendar button -->
             <div class="cc-top-block-meta-row">
                 <div class="d-flex align-items-center flex-wrap gap-1 font-13 text-secondary">
-                    <span class="strong text-dark"><?php echo esc($link_info->calendar_name); ?></span>
+                    <span class="strong text-dark"><?php echo esc($link_info->calendar_name ?? ''); ?></span>
                     <span class="text-muted mx-1">•</span>
-                    <span><?php echo esc($link_info->formatted_date); ?></span>
+                    <span><?php echo esc($link_info->formatted_date ?? ''); ?></span>
                     <span class="text-muted mx-1">•</span>
-                    <span class="text-dark"><?php echo esc($link_info->title); ?></span>
+                    <span class="text-dark"><?php echo esc($link_info->title ?? ''); ?></span>
                 </div>
-                <a href="<?php echo esc($link_info->link_url); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-default btn-sm cc-btn-open-calendar">
+                <a href="<?php echo esc($link_info->link_url ?? '#'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-default btn-sm cc-btn-open-calendar">
                     <i data-feather="calendar" class="icon-14"></i> Open in Content Calendar
                 </a>
             </div>
@@ -205,7 +221,7 @@ $can_change_status = ($is_admin || $has_cc_edit || $is_assignee || $is_collab);
     <?php } else if (!empty($link_info->content_type)) { ?>
         <!-- Manual task: readable Type pill -->
         <div class="d-flex align-items-center gap-2">
-            <span class="cc-pill cc-type-pill" style="<?php echo esc($link_info->type_pill_style); ?>">
+            <span class="cc-pill cc-type-pill" style="<?php echo esc($link_info->type_pill_style ?? ''); ?>">
                 <span class="cc-pill-text"><?php echo esc($link_info->content_type); ?></span>
             </span>
         </div>

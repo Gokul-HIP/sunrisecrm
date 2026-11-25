@@ -1,9 +1,9 @@
 <?php
 helper('content_calendar');
 
-$task_id = !empty($model_info->id) ? (int) $model_info->id : 0;
+$task_id = (isset($model_info) && is_object($model_info) && !empty($model_info->id)) ? (int) $model_info->id : 0;
 $link_info = $task_id ? cc_get_task_link_info($task_id) : null;
-$all_content_types = cc_get_all_content_types();
+$all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_get_all_content_types() : array();
 ?>
 
 <style>
@@ -189,18 +189,18 @@ $all_content_types = cc_get_all_content_types();
                 <div class="col-md-9">
                     <div class="d-flex align-items-center flex-wrap gap-2 font-13">
                         <?php if (!empty($link_info->content_type)) { ?>
-                            <span class="cc-pill" style="<?php echo esc($link_info->type_pill_style); ?>">
+                            <span class="cc-pill" style="<?php echo esc($link_info->type_pill_style ?? ''); ?>">
                                 <?php echo esc($link_info->content_type); ?>
                             </span>
                         <?php } ?>
                         <?php if (!empty($link_info->status)) { ?>
-                            <span class="cc-pill" style="<?php echo esc($link_info->status_pill_style); ?>">
+                            <span class="cc-pill" style="<?php echo esc($link_info->status_pill_style ?? ''); ?>">
                                 <?php echo esc($link_info->status); ?>
                             </span>
                         <?php } ?>
                         <span class="text-off">•</span>
-                        <a href="<?php echo esc($link_info->link_url); ?>" target="_blank" rel="noopener noreferrer" class="strong text-primary text-decoration-none" title="<?php echo esc(cc_lang('cc_view')); ?>">
-                            <?php echo esc($link_info->calendar_name); ?> • <?php echo esc($link_info->formatted_date); ?> • <?php echo esc($link_info->title); ?>
+                        <a href="<?php echo esc($link_info->link_url ?? '#'); ?>" target="_blank" rel="noopener noreferrer" class="strong text-primary text-decoration-none" title="<?php echo esc(cc_lang('cc_view')); ?>">
+                            <?php echo esc($link_info->calendar_name ?? ''); ?> • <?php echo esc($link_info->formatted_date ?? ''); ?> • <?php echo esc($link_info->title ?? ''); ?>
                         </a>
                         <i data-feather="external-link" class="icon-12 text-muted ms-1"></i>
                     </div>

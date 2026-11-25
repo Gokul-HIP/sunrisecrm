@@ -2531,7 +2531,8 @@ class Content_calendar extends Security_Controller {
 
         // Verify task is linked to an item through rise_cc_task_links
         $db = db_connect('default');
-        $link = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id))->getRow();
+        $q_link = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id));
+        $link = ($q_link && is_object($q_link)) ? $q_link->getRow() : null;
         if (!$link || empty($link->item_id)) {
             $this->_fail("Task is not linked to a content item", array(), 400);
             return;
