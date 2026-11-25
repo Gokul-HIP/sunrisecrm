@@ -180,39 +180,62 @@ $all_content_types = cc_get_all_content_types();
 </style>
 
 <?php if ($task_id) { ?>
-    <!-- Edit mode: Show read-only Content info if linked or manual type set -->
-    <?php if ($link_info) { ?>
+    <!-- Edit mode -->
+    <?php if ($link_info && !empty($link_info->is_linked)) { ?>
+        <!-- Linked task: read-only Content link, type pill, status pill -->
         <div class="form-group mb15 cc-linked-content-group">
             <div class="row align-items-center">
                 <label class="col-md-3 font-13"><?php echo cc_lang('cc_content_calendar'); ?></label>
                 <div class="col-md-9">
-                    <?php if (!empty($link_info->is_linked)) { ?>
-                        <div class="cc-linked-item-pill-wrap d-inline-flex align-items-center gap-1 font-13">
-                            <?php if (!empty($link_info->content_type)) { ?>
-                                <span class="cc-pill me-1" style="background: <?php echo esc($link_info->type_color); ?>22; color: <?php echo esc($link_info->type_color); ?>; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 999px;">
-                                    <?php echo esc($link_info->content_type); ?>
-                                </span>
-                            <?php } ?>
-                            <span class="text-off"><?php echo app_lang('content'); ?>: </span>
-                            <a href="<?php echo esc($link_info->link_url); ?>" target="_blank" rel="noopener noreferrer" class="strong text-primary text-decoration-none" title="<?php echo esc(cc_lang('cc_view')); ?>">
-                                <?php echo esc($link_info->calendar_name); ?> • <?php echo esc($link_info->formatted_date); ?> • <?php echo esc($link_info->title); ?>
-                            </a>
-                            <i data-feather="external-link" class="icon-12 text-muted ms-1"></i>
-                        </div>
-                    <?php } else if (!empty($link_info->content_type)) { ?>
-                        <div class="d-inline-flex align-items-center gap-1 font-13">
-                            <span class="text-off"><?php echo cc_lang('cc_type'); ?>: </span>
-                            <span class="cc-pill" style="background: <?php echo esc($link_info->type_color); ?>22; color: <?php echo esc($link_info->type_color); ?>; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 999px;">
+                    <div class="d-flex align-items-center flex-wrap gap-2 font-13">
+                        <?php if (!empty($link_info->content_type)) { ?>
+                            <span class="cc-pill" style="<?php echo esc($link_info->type_pill_style); ?>">
                                 <?php echo esc($link_info->content_type); ?>
                             </span>
-                        </div>
-                    <?php } ?>
+                        <?php } ?>
+                        <?php if (!empty($link_info->status)) { ?>
+                            <span class="cc-pill" style="<?php echo esc($link_info->status_pill_style); ?>">
+                                <?php echo esc($link_info->status); ?>
+                            </span>
+                        <?php } ?>
+                        <span class="text-off">•</span>
+                        <a href="<?php echo esc($link_info->link_url); ?>" target="_blank" rel="noopener noreferrer" class="strong text-primary text-decoration-none" title="<?php echo esc(cc_lang('cc_view')); ?>">
+                            <?php echo esc($link_info->calendar_name); ?> • <?php echo esc($link_info->formatted_date); ?> • <?php echo esc($link_info->title); ?>
+                        </a>
+                        <i data-feather="external-link" class="icon-12 text-muted ms-1"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <script type="text/javascript">
             if (window.feather) { feather.replace(); }
         </script>
+    <?php } else { ?>
+        <!-- Manual task: editable Content type select dropdown -->
+        <?php if (!empty($all_content_types)) { ?>
+            <div class="form-group mb15" id="cc_manual_content_type_row">
+                <div class="row align-items-center">
+                    <label for="cc_manual_content_type" class="col-md-3 font-13"><?php echo cc_lang('cc_content_type'); ?></label>
+                    <div class="col-md-9">
+                        <select id="cc_manual_content_type" name="cc_manual_content_type" class="form-control" style="width: 100%;">
+                            <option value="">- <?php echo cc_lang('cc_type'); ?> (optional) -</option>
+                            <?php
+                            $cur_type = ($link_info && !empty($link_info->content_type)) ? $link_info->content_type : "";
+                            foreach ($all_content_types as $ctype) {
+                                $selected = ($ctype === $cur_type) ? 'selected="selected"' : '';
+                            ?>
+                                <option value="<?php echo esc($ctype); ?>" <?php echo $selected; ?>><?php echo esc($ctype); ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+                if ($("#cc_manual_content_type").length) {
+                    $("#cc_manual_content_type").select2();
+                }
+            </script>
+        <?php } ?>
     <?php } ?>
 <?php } else { ?>
     <!-- Add mode: Content Calendar Link & Manual Content Type Section -->
@@ -651,10 +674,12 @@ $all_content_types = cc_get_all_content_types();
                             var radioHtml = "<input type='radio' name='cc_item_choice' class='cc-item-radio' value='" + item.id + "'>";
                             var pillsHtml = "<div class='cc-card-pills-row'>";
                             if (item.type) {
-                                pillsHtml += "<span class='cc-pill' style='background:" + item.type_color + "22;color:" + item.type_color + ";'>" + escapeHtml(item.type) + "</span>";
+                                var tStyle = item.type_style ? item.type_style : ("background:" + item.type_color + "22;color:" + item.type_color + ";");
+                                pillsHtml += "<span class='cc-pill' style='" + escapeHtml(tStyle) + "'>" + escapeHtml(item.type) + "</span>";
                             }
                             if (item.status) {
-                                pillsHtml += "<span class='cc-pill' style='background:" + item.status_color + "22;color:" + item.status_color + ";'>" + escapeHtml(item.status) + "</span>";
+                                var sStyle = item.status_style ? item.status_style : ("background:" + item.status_color + "22;color:" + item.status_color + ";");
+                                pillsHtml += "<span class='cc-pill' style='" + escapeHtml(sStyle) + "'>" + escapeHtml(item.status) + "</span>";
                             }
                             if (item.has_task) {
                                 pillsHtml += "<span class='cc-task-exists-tag'>Task #" + item.task_id + " exists</span>";

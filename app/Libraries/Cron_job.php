@@ -26,9 +26,15 @@ class Cron_job {
      * Phase 15 tracker is optional. Phase 16 cron must run cleanly without
      * Cron_performance_tracker.php / Phase 15 tables present.
      */
-    private function track_cron_job($job, $trigger_source, $callback) {
+    private function track_cron_job($job, $trigger_source, $callback, $gate_checker = null) {
         if (class_exists('\App\Libraries\Cron_performance_tracker')) {
-            return \App\Libraries\Cron_performance_tracker::track_job($job, $trigger_source, $callback);
+            return \App\Libraries\Cron_performance_tracker::track_job($job, $trigger_source, $callback, $gate_checker);
+        }
+        if ($gate_checker !== null) {
+            $gate_result = $gate_checker();
+            if (is_array($gate_result) && isset($gate_result['open']) && !$gate_result['open']) {
+                return null;
+            }
         }
         return $callback();
     }
@@ -109,6 +115,16 @@ class Cron_job {
             });
         } catch (\Exception $e) {
             $this->cron_debug("Close inactive tickets failed: " . $e->getMessage(), "cron_run", "error");
+        }
+
+        try {
+            $this->track_cron_job("content_calendar_special_days", $trigger_source, function() {
+                return $this->process_content_calendar_special_days();
+            }, function() {
+                return $this->check_content_calendar_special_days_gate();
+            });
+        } catch (\Throwable $e) {
+            $this->cron_debug("Content calendar special days job failed: " . $e->getMessage(), "cron_run", "error");
         }
 
         return array(
@@ -1055,6 +1071,146 @@ class Cron_job {
                 $this->ci->Events_model->ci_save($data, $reminder->id);
             }
         }
+    }
+
+    private function check_content_calendar_special_days_gate() {
+        $now = new \DateTime("now", new \DateTimeZone("Asia/Kolkata"));
+        $hour = (int) $now->format("G");
+        if (!$this->diagnostic && $hour < 7) {
+            return array(
+                "open" => false,
+                "reason" => "Scheduled for 07:00 IST (current time: " . $now->format("H:i") . " IST)"
+            );
+        }
+        return array("open" => true);
+    }
+
+    public function process_content_calendar_special_days() {
+        $db = db_connect('default');
+
+        // Part E requirement: Code must not crash if the table does not exist yet (skip and log once)
+        try {
+            $table_exists = $db->tableExists($db->prefixTable('cc_special_day_notices'));
+        } catch (\Throwable $e) {
+            $table_exists = false;
+        }
+        if (!$table_exists) {
+            $this->cron_debug("rise_cc_special_day_notices table does not exist. Please run migration.", "cron_run", "warning");
+            return array("created" => 0, "status" => "SKIPPED", "reason" => "Table rise_cc_special_day_notices missing");
+        }
+
+        $now_kol = new \DateTime("now", new \DateTimeZone("Asia/Kolkata"));
+        $today_date = $now_kol->format("Y-m-d");
+
+        // Read today's special days from rise_cc_special_days (calendars not deleted)
+        // Uses index idx_cc_special_days_date (Part B.6)
+        $sd_table = $db->prefixTable('cc_special_days');
+        $cal_table = $db->prefixTable('cc_calendars');
+
+        $sql = "SELECT DISTINCT d.label 
+                FROM `$sd_table` d 
+                JOIN `$cal_table` c ON c.id = d.calendar_id 
+                WHERE d.special_date = ? AND c.deleted = 0";
+        $query = $db->query($sql, array($today_date));
+        $rows = $query ? $query->getResult() : array();
+
+        if (empty($rows)) {
+            return array("created" => 0, "status" => "OK", "reason" => "No special days for today ($today_date)");
+        }
+
+        // Distinct normalised labels: trimmed, case-insensitive, whitespace collapsed; ignore weekday-only or empty
+        $weekdays = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun');
+        $distinct_labels = array();
+        foreach ($rows as $row) {
+            $raw_label = isset($row->label) ? (string) $row->label : "";
+            $cleaned = trim(preg_replace('/\s+/', ' ', $raw_label));
+            if ($cleaned === "") {
+                continue;
+            }
+            $key = strtolower($cleaned);
+            if (in_array($key, $weekdays, true)) {
+                continue;
+            }
+            if (!isset($distinct_labels[$key])) {
+                $distinct_labels[$key] = $cleaned;
+            }
+        }
+
+        if (empty($distinct_labels)) {
+            return array("created" => 0, "status" => "OK", "reason" => "No eligible special day labels for today");
+        }
+
+        // Check dedupe table rise_cc_special_day_notices
+        $notices_table = $db->prefixTable('cc_special_day_notices');
+        $notified_keys = array();
+        $notices_query = $db->query("SELECT label_key FROM `$notices_table` WHERE notice_date = ?", array($today_date));
+        if ($notices_query) {
+            foreach ($notices_query->getResult() as $n_row) {
+                $notified_keys[strtolower(trim($n_row->label_key))] = true;
+            }
+        }
+
+        $new_labels = array();
+        foreach ($distinct_labels as $key => $display_label) {
+            if (!isset($notified_keys[$key])) {
+                $new_labels[$key] = $display_label;
+            }
+        }
+
+        if (empty($new_labels)) {
+            return array("created" => 0, "status" => "SKIPPED", "reason" => "All special days for today have already been notified");
+        }
+
+        // Notify every ACTIVE staff user (not clients, not deleted or inactive users)
+        $users_table = $db->prefixTable('users');
+        $users_query = $db->query("SELECT id FROM `$users_table` WHERE user_type = 'staff' AND status = 'active' AND deleted = 0");
+        $active_staff_ids = array();
+        if ($users_query) {
+            foreach ($users_query->getResult() as $u_row) {
+                $active_staff_ids[] = (int) $u_row->id;
+            }
+        }
+
+        if (empty($active_staff_ids)) {
+            return array("created" => 0, "status" => "SKIPPED", "reason" => "No active staff users found to notify");
+        }
+
+        // Format: "Today: Children's Day, World Immunization Week" (at most 5 names then "+N more")
+        $label_values = array_values($new_labels);
+        $first_5 = array_slice($label_values, 0, 5);
+        $remaining_count = count($label_values) - 5;
+        $description = "Today: " . implode(", ", $first_5);
+        if ($remaining_count > 0) {
+            $description .= ", +" . $remaining_count . " more";
+        }
+
+        $now_utc = get_current_utc_time();
+        $notify_to_str = implode(",", $active_staff_ids);
+
+        // Insert into rise_notifications
+        $notifications_table = $db->prefixTable('notifications');
+        $db->query("INSERT INTO `$notifications_table` 
+            (`user_id`, `description`, `created_at`, `notify_to`, `read_by`, `event`, `deleted`) 
+            VALUES (0, ?, ?, ?, '', 'content_calendar_special_days', 0)",
+            array($description, $now_utc, $notify_to_str)
+        );
+
+        // Record in dedupe table rise_cc_special_day_notices
+        $now_ist = $now_kol->format("Y-m-d H:i:s");
+        $recipients_count = count($active_staff_ids);
+        foreach ($new_labels as $key => $display_label) {
+            $db->query("INSERT INTO `$notices_table` (`notice_date`, `label_key`, `label`, `notified_at`, `recipients`) 
+                        VALUES (?, ?, ?, ?, ?) 
+                        ON DUPLICATE KEY UPDATE `notified_at` = VALUES(`notified_at`), `recipients` = VALUES(`recipients`)",
+                array($today_date, $key, $display_label, $now_ist, $recipients_count)
+            );
+        }
+
+        return array(
+            "created" => 1,
+            "status" => "OK",
+            "reason" => "Notified " . $recipients_count . " staff: " . implode(", ", $first_5)
+        );
     }
 
 }

@@ -32,6 +32,29 @@ $cards = array(
                 </div>
             </div>
 
+            <div class="card mb20">
+                <div class="card-header">
+                    <h4><?php echo esc(cc_lang("cc_special_days")); ?></h4>
+                </div>
+                <div class="card-body">
+                    <?php
+                    $show_banner_val = get_setting("show_special_day_banner_on_dashboard");
+                    $banner_checked = ($show_banner_val === "" || $show_banner_val === null || $show_banner_val == "1");
+                    ?>
+                    <?php echo form_open(get_uri("settings/save_content_calendar_special_days_setting"), array("id" => "cc-special-days-setting-form", "class" => "general-form", "role" => "form")); ?>
+                    <div class="form-group row align-items-center mb0">
+                        <label for="show_special_day_banner_on_dashboard" class="col-md-5 col-form-label"><?php echo esc(cc_lang("cc_show_special_day_banner_on_dashboard")); ?></label>
+                        <div class="col-md-7 d-flex align-items-center">
+                            <div class="form-check form-switch me-3">
+                                <input type="checkbox" name="show_special_day_banner_on_dashboard" value="1" id="show_special_day_banner_on_dashboard" class="form-check-input" <?php echo $banner_checked ? "checked" : ""; ?> />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm"><span data-feather="check-circle" class="icon-16"></span> <?php echo app_lang("save"); ?></button>
+                        </div>
+                    </div>
+                    <?php echo form_close(); ?>
+                </div>
+            </div>
+
             <div class="row">
                 <?php foreach ($cards as $key => $card) { ?>
                     <div class="col-lg-6 mb20">
@@ -100,6 +123,13 @@ $cards = array(
             count = count ? count.length : 0;
             $card.find(".cc-access-count").text(count + " " + selectedLabel);
         }
+
+        $("#cc-special-days-setting-form").appForm({
+            isModal: false,
+            onSuccess: function (result) {
+                appAlert.success(result.message, {duration: 10000});
+            }
+        });
 
         $(".cc-access-card").each(function () {
             var $card = $(this);

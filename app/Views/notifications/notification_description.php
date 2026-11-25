@@ -89,6 +89,10 @@ if ($notification->post_id && $notification->posts_title) {
     echo "<div>" . app_lang("comment") . ": " . $notification->posts_title . "</div>";
 }
 
+if ($notification->event === "content_calendar_special_days" && $notification->description) {
+    echo "<div>" . esc($notification->description) . "</div>";
+}
+
 //show data from hook
 try {
     $notification_descriptions = array();

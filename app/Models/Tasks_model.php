@@ -1099,13 +1099,23 @@ class Tasks_model extends Crud_model {
     }
 
     function count_my_open_tasks($user_id) {
+        if (!defined('MY_OPEN_TASKS_EXCLUDE_STATUS')) {
+            define('MY_OPEN_TASKS_EXCLUDE_STATUS', 'In review');
+        }
+        $exclude_status_title = trim((string) MY_OPEN_TASKS_EXCLUDE_STATUS);
+
         $tasks_table = $this->db->prefixTable('tasks');
         $projects_table = $this->db->prefixTable('projects');
+        $task_status_table = $this->db->prefixTable('task_status');
 
         $sql = "SELECT COUNT($tasks_table.id) AS total
         FROM $tasks_table
-        WHERE $tasks_table.deleted=0 AND ($tasks_table.assigned_to=$user_id OR FIND_IN_SET('$user_id', $tasks_table.collaborators)) AND $tasks_table.status_id !=3
-        AND $tasks_table.project_id IN(
+        LEFT JOIN $task_status_table ON $task_status_table.id = $tasks_table.status_id
+        WHERE $tasks_table.deleted=0 
+          AND ($tasks_table.assigned_to=$user_id OR FIND_IN_SET('$user_id', $tasks_table.collaborators)) 
+          AND $tasks_table.status_id != 3
+          AND (LOWER(TRIM($task_status_table.title)) != LOWER(" . $this->db->escape($exclude_status_title) . ") OR $task_status_table.title IS NULL)
+          AND $tasks_table.project_id IN(
             SELECT $projects_table.id
             FROM $projects_table
             WHERE $projects_table.deleted=0 AND FIND_IN_SET($projects_table.status,'open')

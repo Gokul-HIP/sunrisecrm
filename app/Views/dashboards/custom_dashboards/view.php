@@ -18,6 +18,19 @@
 
     <?php
     if ($widget_columns) {
+        if (isset($login_user) && $login_user->user_type === "staff") {
+            helper("content_calendar");
+            $show_banner_setting = get_setting("show_special_day_banner_on_dashboard");
+            if ($show_banner_setting === "" || $show_banner_setting === null || $show_banner_setting == "1") {
+                $today_special_days = cc_get_today_special_days();
+                if (!empty($today_special_days)) {
+                    echo view("content_calendar/special_day_banner", array(
+                        "special_days" => $today_special_days,
+                        "login_user_id" => $login_user->id
+                    ));
+                }
+            }
+        }
         echo $widget_columns;
     } else {
         echo view("dashboards/custom_dashboards/no_widgets");

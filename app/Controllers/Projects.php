@@ -4751,7 +4751,7 @@ class Projects extends Security_Controller {
                 echo json_encode(array("success" => false, 'message' => $cc_val_err));
                 return false;
             }
-        } else if (!$id && !$this->request->getPost('cc_link_switch')) {
+        } else if ($this->request->getPost('cc_manual_content_type') !== null) {
             $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
             if ($manual_type !== '') {
                 helper('content_calendar');
@@ -5002,9 +5002,10 @@ class Projects extends Security_Controller {
                     log_message('error', 'Content link failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));
                     $link_warning = "Task saved, but the content link failed";
                 }
-            } else if (!$id && !$this->request->getPost('cc_link_switch')) {
-                $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
-                if ($manual_type !== '') {
+            } else if ($this->request->getPost('cc_manual_content_type') !== null) {
+                $existing_link = cc_get_task_link_info($save_id);
+                if (!$existing_link || !$existing_link->is_linked) {
+                    $manual_type = trim((string) $this->request->getPost('cc_manual_content_type'));
                     $link_res = cc_save_manual_task_type($save_id, $manual_type, $this->login_user);
                     if (empty($link_res['success'])) {
                         log_message('error', 'Manual content type failed for task #' . $save_id . ': ' . get_array_value($link_res, 'message'));

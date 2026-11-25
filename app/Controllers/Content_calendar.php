@@ -2471,20 +2471,24 @@ class Content_calendar extends Security_Controller {
             $description_html = $desc_info["html"];
             $description = $desc_info["text"];
 
-            $type_str = !empty($item->type) ? (string) $item->type : (!empty($item->content_type) ? (string) $item->content_type : "");
+            $type_str = cc_get_item_display_type($item, $calendar);
             $status_str = (string) $item->status;
             $type_colors = cc_chip_colors($type_str);
             $status_colors = cc_chip_colors($status_str);
             $type_color = $type_colors[0];
             $status_color = $status_colors[0];
+            $type_style = cc_pill_style($type_str);
+            $status_style = cc_pill_style($status_str);
 
             $items_list[] = array(
                 "id" => (int) $item->id,
                 "title" => $item->title,
                 "type" => $type_str,
                 "type_color" => $type_color,
+                "type_style" => $type_style,
                 "status" => $status_str,
                 "status_color" => $status_color,
+                "status_style" => $status_style,
                 "has_task" => $has_active_task,
                 "task_id" => $task_id,
                 "description" => $description,
@@ -2500,6 +2504,115 @@ class Content_calendar extends Security_Controller {
             "date" => $date,
             "items" => $items_list,
             "project_suggestion" => $project_suggestion
+        ));
+    }
+
+    /**
+     * Set content item status from task details.
+     * Accessible by: Admin, users with CC edit, task assignee, task collaborators.
+     * Syncs directly to the content item without altering RISE task status.
+     */
+    function task_set_status() {
+        $this->_require_post();
+
+        $task_id = (int) $this->request->getPost("task_id");
+        $status = trim(str_replace(array("\r\n", "\r"), "\n", (string) $this->request->getPost("status")));
+
+        if ($task_id < 1) {
+            $this->_fail("Invalid task ID", array(), 400);
+            return;
+        }
+
+        $task = model("App\Models\Tasks_model")->get_one($task_id);
+        if (!$task || !$task->id || !empty($task->deleted)) {
+            $this->_fail("Task not found", array(), 404);
+            return;
+        }
+
+        // Verify task is linked to an item through rise_cc_task_links
+        $db = db_connect('default');
+        $link = $db->query("SELECT * FROM rise_cc_task_links WHERE task_id = ?", array($task_id))->getRow();
+        if (!$link || empty($link->item_id)) {
+            $this->_fail("Task is not linked to a content item", array(), 400);
+            return;
+        }
+
+        $item_id = (int) $link->item_id;
+        $item = $this->Cc_items_model->get_active($item_id);
+        if (!$item) {
+            $this->_fail("Content item not found", array(), 404);
+            return;
+        }
+
+        // Permissions: Admin, CC edit, Assignee, Collaborator
+        $user = $this->login_user;
+        $user_id = $user ? (int)$user->id : 0;
+        $is_admin = !empty($user->is_admin);
+        $has_cc_edit = function_exists('cc_can') && cc_can('edit', $user);
+        $is_assignee = ((int)$task->assigned_to === $user_id);
+        $collabs = array_filter(explode(',', (string)$task->collaborators));
+        $is_collab = in_array((string)$user_id, $collabs, true);
+
+        if (!($is_admin || $has_cc_edit || $is_assignee || $is_collab)) {
+            $this->response->setStatusCode(403);
+            echo json_encode(array("success" => false, "message" => "Forbidden"));
+            return;
+        }
+
+        // Validate status against that calendar's Status options
+        $calendar_id = (int) $item->calendar_id;
+        $columns = $this->Cc_columns_model->get_for_calendar($calendar_id, true);
+        $status_col = null;
+        foreach ($columns as $c) {
+            if ($c->field_key === "status") {
+                $status_col = $c;
+                break;
+            }
+        }
+
+        if ($status_col) {
+            if ($status_col->input_type === "select" || $status_col->input_type === "multi") {
+                if ($status === "") {
+                    // Empty option allowed
+                } else if (!in_array($status, $status_col->options_list, true)) {
+                    $this->_fail("Invalid status option", array(), 400);
+                    return;
+                }
+            } else {
+                if ($this->_str_len($status) > 60) {
+                    $this->_fail("Status too long", array(), 400);
+                    return;
+                }
+            }
+        } else {
+            if ($this->_str_len($status) > 60) {
+                $this->_fail("Status too long", array(), 400);
+                return;
+            }
+        }
+
+        // Update ONLY the status of that item
+        $now = cc_now();
+        $data = array(
+            "status" => $status,
+            "updated_by" => $user_id,
+            "updated_at" => $now
+        );
+        $this->Cc_items_model->save_item($data, $item_id);
+
+        $colors = cc_chip_colors($status);
+        $style = cc_pill_style($status);
+
+        $this->_json(array(
+            "success" => true,
+            "task_id" => $task_id,
+            "item_id" => $item_id,
+            "status" => $status,
+            "color" => $colors[0],
+            "bg_color" => $colors[0],
+            "text_color" => $colors[1],
+            "style" => $style,
+            "message" => cc_lang("cc_saved") ?: "Saved"
         ));
     }
 

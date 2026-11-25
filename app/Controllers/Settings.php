@@ -424,6 +424,13 @@ class Settings extends Security_Controller {
         }
     }
 
+    function save_content_calendar_special_days_setting() {
+        $this->access_only_admin();
+        $show_banner = $this->request->getPost("show_special_day_banner_on_dashboard") ? "1" : "0";
+        $this->Settings_model->save_setting("show_special_day_banner_on_dashboard", $show_banner);
+        echo json_encode(array("success" => true, 'message' => app_lang('settings_updated')));
+    }
+
     function notifications() {
         $category_suggestions = array(
             array("id" => "", "text" => "- " . app_lang('category') . " -"),

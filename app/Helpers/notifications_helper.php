@@ -217,7 +217,28 @@ if (!function_exists('get_notification_config')) {
             return array("url" => $url);
         };
 
+        $cc_special_day_link = function ($options) {
+            $date = "";
+            if (isset($options->created_at) && $options->created_at) {
+                try {
+                    $dt = new \DateTime($options->created_at, new \DateTimeZone("UTC"));
+                    $dt->setTimezone(new \DateTimeZone("Asia/Kolkata"));
+                    $date = $dt->format("Y-m-d");
+                } catch (\Throwable $e) {
+                    $date = substr((string) $options->created_at, 0, 10);
+                }
+            }
+            if (!$date) {
+                $date = get_today_date();
+            }
+            return array("url" => get_uri("content_calendar?date=" . $date));
+        };
+
         $events = array(
+            "content_calendar_special_days" => array(
+                "notify_to" => array(),
+                "info" => $cc_special_day_link
+            ),
             "project_created" => array(
                 "notify_to" => array("client_primary_contact", "client_all_contacts", "team_members", "team"),
                 "info" => $project_link

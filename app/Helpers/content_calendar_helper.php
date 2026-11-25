@@ -295,6 +295,187 @@ if (!function_exists('cc_chip_colors')) {
 
 }
 
+if (!function_exists('cc_pill_style')) {
+
+    /**
+     * Generates an inline CSS style string for a pill with guaranteed WCAG >= 4.5:1 contrast.
+     *
+     * @param string $name Option name or text
+     * @param string|null $custom_bg Optional background hex color
+     * @param string|null $custom_fg Optional text hex color
+     * @return string CSS style attribute string
+     */
+    function cc_pill_style($name, $custom_bg = null, $custom_fg = null) {
+        $name = trim((string)$name);
+        if ($name === "" && empty($custom_bg)) {
+            return "background: #f3f4f6; color: #374151; font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 999px; line-height: 1.4; display: inline-flex; align-items: center;";
+        }
+
+        $bg = $custom_bg;
+        $fg = $custom_fg;
+        if (empty($bg) || empty($fg)) {
+            $pair = cc_chip_colors($name);
+            if (empty($bg)) $bg = $pair[0];
+            if (empty($fg)) $fg = $pair[1];
+        }
+
+        // Contrast check
+        $calc_contrast = function($hex1, $hex2) {
+            $to_lin = function($c) {
+                $c = $c / 255.0;
+                return ($c <= 0.04045) ? ($c / 12.92) : pow(($c + 0.055) / 1.055, 2.4);
+            };
+            $lum = function($hex) use ($to_lin) {
+                $hex = ltrim($hex, '#');
+                if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+                return 0.2126 * $to_lin($r) + 0.7152 * $to_lin($g) + 0.0722 * $to_lin($b);
+            };
+            $l1 = $lum($hex1);
+            $l2 = $lum($hex2);
+            return (max($l1, $l2) + 0.05) / (min($l1, $l2) + 0.05);
+        };
+
+        try {
+            $contrast = $calc_contrast($bg, $fg);
+            if ($contrast < 4.5) {
+                $dark_c = $calc_contrast($bg, '#0f172a');
+                $light_c = $calc_contrast($bg, '#ffffff');
+                $fg = ($dark_c >= 4.5 && $dark_c >= $light_c) ? '#0f172a' : (($light_c >= 4.5) ? '#ffffff' : (($dark_c >= 4.5) ? '#0f172a' : (($dark_c > $light_c) ? '#0f172a' : '#ffffff')));
+            }
+        } catch (\Throwable $e) {
+            $fg = '#1e293b';
+        }
+
+        return "background: " . esc($bg) . "; color: " . esc($fg) . "; font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 999px; line-height: 1.4; display: inline-flex; align-items: center;";
+    }
+
+}
+
+if (!function_exists('cc_get_item_display_type')) {
+
+    /**
+     * Determines the display content type of an item:
+     * - Returns the core Content type if not empty;
+     * - Otherwise returns the value of the text column of that calendar whose key
+     *   starts with content_type or name matches /content\s*type/i (preferring the core one);
+     * - Otherwise empty string.
+     *
+     * @param object|array $item
+     * @param object|array|int|null $calendar
+     * @param string|null &$matched_col_key Optional out-param for the column field_key that provided the type
+     * @return string
+     */
+    function cc_get_item_display_type($item, $calendar = null, &$matched_col_key = null) {
+        $matched_col_key = null;
+        if (!$item) {
+            return "";
+        }
+
+        // 1. Core Content type if not empty
+        $core_type = "";
+        if (is_object($item)) {
+            $core_type = !empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : "");
+        } else if (is_array($item)) {
+            $core_type = !empty($item['type']) ? (string)$item['type'] : (!empty($item['content_type']) ? (string)$item['content_type'] : "");
+        }
+        $core_type = trim($core_type);
+        if ($core_type !== "") {
+            $matched_col_key = "type";
+            return $core_type;
+        }
+
+        // 2. Extract values array
+        $values = array();
+        if (is_object($item)) {
+            if (isset($item->values) && is_array($item->values)) {
+                $values = $item->values;
+            } else if (!empty($item->values_json)) {
+                $values = json_decode($item->values_json, true) ?: array();
+            }
+        } else if (is_array($item)) {
+            if (isset($item['values']) && is_array($item['values'])) {
+                $values = $item['values'];
+            } else if (!empty($item['values_json'])) {
+                $values = json_decode($item['values_json'], true) ?: array();
+            }
+        }
+
+        if (empty($values)) {
+            return "";
+        }
+
+        // 3. Resolve calendar_id
+        $calendar_id = 0;
+        if (is_numeric($calendar) && (int)$calendar > 0) {
+            $calendar_id = (int)$calendar;
+        } else if (is_object($calendar) && !empty($calendar->id)) {
+            $calendar_id = (int)$calendar->id;
+        } else if (is_array($calendar) && !empty($calendar['id'])) {
+            $calendar_id = (int)$calendar['id'];
+        } else if (is_object($item) && !empty($item->calendar_id)) {
+            $calendar_id = (int)$item->calendar_id;
+        } else if (is_array($item) && !empty($item['calendar_id'])) {
+            $calendar_id = (int)$item['calendar_id'];
+        }
+
+        if ($calendar_id < 1) {
+            foreach ($values as $k => $v) {
+                if (preg_match('/^content_type/i', $k) || preg_match('/content\s*type/i', $k)) {
+                    $val = trim(is_array($v) ? implode(", ", $v) : (string)$v);
+                    if ($val !== "") {
+                        $matched_col_key = $k;
+                        return $val;
+                    }
+                }
+            }
+            return "";
+        }
+
+        // Fetch calendar columns
+        try {
+            $columns = model("App\Models\Cc_columns_model")->get_for_calendar($calendar_id, true);
+        } catch (\Throwable $e) {
+            $columns = array();
+        }
+
+        // First pass: core column (if any text/other)
+        foreach ($columns as $col) {
+            $k = $col->field_key;
+            $lbl = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $k);
+            if (!empty($col->is_core) && (preg_match('/^content_type/i', $k) || preg_match('/content\s*type/i', $lbl))) {
+                if (isset($values[$k])) {
+                    $val = trim(is_array($values[$k]) ? implode(", ", $values[$k]) : (string)$values[$k]);
+                    if ($val !== "") {
+                        $matched_col_key = $k;
+                        return $val;
+                    }
+                }
+            }
+        }
+
+        // Second pass: non-core columns
+        foreach ($columns as $col) {
+            $k = $col->field_key;
+            $lbl = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $k);
+            if (empty($col->is_core) && (preg_match('/^content_type/i', $k) || preg_match('/content\s*type/i', $lbl))) {
+                if (isset($values[$k])) {
+                    $val = trim(is_array($values[$k]) ? implode(", ", $values[$k]) : (string)$values[$k]);
+                    if ($val !== "") {
+                        $matched_col_key = $k;
+                        return $val;
+                    }
+                }
+            }
+        }
+
+        return "";
+    }
+
+}
+
 if (!function_exists('cc_title_key')) {
 
     /**
@@ -586,7 +767,7 @@ if (!function_exists('cc_get_task_link_info')) {
         $db = db_connect('default');
 
         // Verify task exists and is not deleted
-        $task_row = $db->query("SELECT id, project_id, deleted FROM rise_tasks WHERE id = ?", array($task_id))->getRow();
+        $task_row = $db->query("SELECT id, project_id, deleted, assigned_to, collaborators FROM rise_tasks WHERE id = ?", array($task_id))->getRow();
         if (!$task_row || (int)$task_row->deleted !== 0) {
             return null;
         }
@@ -600,8 +781,25 @@ if (!function_exists('cc_get_task_link_info')) {
                     if ($item) {
                         $cal = model("App\Models\Cc_calendars_model")->get_active($item->calendar_id);
                         if ($cal) {
-                            $type_str = !empty($link_row->content_type) ? $link_row->content_type : (!empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : ""));
+                            $type_str = !empty($link_row->content_type) ? (string)$link_row->content_type : cc_get_item_display_type($item, $cal);
                             $type_color_info = cc_chip_colors($type_str);
+                            $type_pill_style = cc_pill_style($type_str);
+
+                            $status_str = (string)$item->status;
+                            $status_color_info = cc_chip_colors($status_str);
+                            $status_pill_style = cc_pill_style($status_str);
+
+                            $status_options = array();
+                            try {
+                                $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
+                                foreach ($cols as $c) {
+                                    if ($c->field_key === "status" && !empty($c->options_list)) {
+                                        $status_options = $c->options_list;
+                                        break;
+                                    }
+                                }
+                            } catch (\Throwable $e) {}
+
                             $formatted_date = $item->publish_date;
                             if ($item->publish_date && strtotime($item->publish_date)) {
                                 $formatted_date = date("j M Y", strtotime($item->publish_date));
@@ -613,6 +811,11 @@ if (!function_exists('cc_get_task_link_info')) {
                                 "item_id" => (int)$item->id,
                                 "content_type" => $type_str,
                                 "type_color" => $type_color_info[0],
+                                "type_pill_style" => $type_pill_style,
+                                "status" => $status_str,
+                                "status_color" => $status_color_info[0],
+                                "status_pill_style" => $status_pill_style,
+                                "status_options" => $status_options,
                                 "calendar_id" => (int)$cal->id,
                                 "calendar_name" => $cal->name,
                                 "publish_date" => $item->publish_date,
@@ -625,12 +828,14 @@ if (!function_exists('cc_get_task_link_info')) {
                 } else if (!empty($link_row->content_type)) {
                     $type_str = (string)$link_row->content_type;
                     $type_color_info = cc_chip_colors($type_str);
+                    $type_pill_style = cc_pill_style($type_str);
                     return (object) array(
                         "task_id" => $task_id,
                         "is_linked" => false,
                         "is_manual" => true,
                         "content_type" => $type_str,
-                        "type_color" => $type_color_info[0]
+                        "type_color" => $type_color_info[0],
+                        "type_pill_style" => $type_pill_style
                     );
                 }
             }
@@ -638,12 +843,29 @@ if (!function_exists('cc_get_task_link_info')) {
 
         // 2. Fallback to rise_cc_items.task_id if rise_cc_task_links row not present
         if (cc_has_task_column()) {
-            $item_row = $db->query("SELECT id, calendar_id, publish_date, title, type, content_type FROM rise_cc_items WHERE task_id = ? AND deleted = 0", array($task_id))->getRow();
+            $item_row = $db->query("SELECT id, calendar_id, publish_date, title, type, content_type, status, values_json FROM rise_cc_items WHERE task_id = ? AND deleted = 0", array($task_id))->getRow();
             if ($item_row) {
                 $cal = model("App\Models\Cc_calendars_model")->get_active($item_row->calendar_id);
                 if ($cal) {
-                    $type_str = !empty($item_row->type) ? (string)$item_row->type : (!empty($item_row->content_type) ? (string)$item_row->content_type : "");
+                    $type_str = cc_get_item_display_type($item_row, $cal);
                     $type_color_info = cc_chip_colors($type_str);
+                    $type_pill_style = cc_pill_style($type_str);
+
+                    $status_str = (string)$item_row->status;
+                    $status_color_info = cc_chip_colors($status_str);
+                    $status_pill_style = cc_pill_style($status_str);
+
+                    $status_options = array();
+                    try {
+                        $cols = model("App\Models\Cc_columns_model")->get_for_calendar($cal->id, true);
+                        foreach ($cols as $c) {
+                            if ($c->field_key === "status" && !empty($c->options_list)) {
+                                $status_options = $c->options_list;
+                                break;
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+
                     $formatted_date = $item_row->publish_date;
                     if ($item_row->publish_date && strtotime($item_row->publish_date)) {
                         $formatted_date = date("j M Y", strtotime($item_row->publish_date));
@@ -655,6 +877,11 @@ if (!function_exists('cc_get_task_link_info')) {
                         "item_id" => (int)$item_row->id,
                         "content_type" => $type_str,
                         "type_color" => $type_color_info[0],
+                        "type_pill_style" => $type_pill_style,
+                        "status" => $status_str,
+                        "status_color" => $status_color_info[0],
+                        "status_pill_style" => $status_pill_style,
+                        "status_options" => $status_options,
                         "calendar_id" => (int)$cal->id,
                         "calendar_name" => $cal->name,
                         "publish_date" => $item_row->publish_date,
@@ -676,18 +903,24 @@ if (!function_exists('cc_save_manual_task_type')) {
     function cc_save_manual_task_type($task_id, $content_type, $user = null) {
         $task_id = (int)$task_id;
         $content_type = trim((string)$content_type);
-        if ($task_id < 1 || $content_type === '') {
-            return array("success" => false, "message" => "Invalid task ID or content type");
-        }
-
-        $valid_types = cc_get_all_content_types();
-        if (!in_array($content_type, $valid_types, true)) {
-            return array("success" => false, "message" => "Content type not in valid list");
+        if ($task_id < 1) {
+            return array("success" => false, "message" => "Invalid task ID");
         }
 
         if (cc_has_task_links_table()) {
             try {
                 $db = db_connect('default');
+                if ($content_type === '') {
+                    // Empty option chosen -> delete link row if manual (item_id IS NULL or 0)
+                    $db->query("DELETE FROM rise_cc_task_links WHERE task_id = ? AND (item_id IS NULL OR item_id = 0)", array($task_id));
+                    return array("success" => true);
+                }
+
+                $valid_types = cc_get_all_content_types();
+                if (!in_array($content_type, $valid_types, true)) {
+                    return array("success" => false, "message" => "Content type not in valid list");
+                }
+
                 $user_id = $user && !empty($user->id) ? (int)$user->id : 1;
                 $db->query("INSERT INTO rise_cc_task_links (task_id, item_id, content_type, created_by, created_at)
                             VALUES (?, NULL, ?, ?, ?)
@@ -730,23 +963,27 @@ if (!function_exists('cc_format_content_description_html')) {
         $html_parts[] = "<p><strong>Date:</strong> {$date_escaped}</p>";
         $text_parts[] = "Date: " . $formatted_date;
 
-        // 4. Content type
-        $type = !empty($item->type) ? (string)$item->type : (!empty($item->content_type) ? (string)$item->content_type : "");
-        if ($type !== "") {
-            $type_escaped = esc($type);
-            $html_parts[] = "<p><strong>Content type:</strong> {$type_escaped}</p>";
-            $text_parts[] = "Content type: " . $type;
-        }
-
-        // 5. Columns in client column order
+        // 4. Columns in client column order (skipping title, date, status, and any content-type column as type is in top block)
         $values = is_array($item->values ?? null) ? $item->values : (isset($item->values_json) ? json_decode($item->values_json, true) : array());
         if (!is_array($values)) $values = array();
 
+        $seen_cols = array();
         foreach ($columns as $col) {
             $k = $col->field_key;
+            $label = !empty($col->label) ? $col->label : (!empty($col->name) ? $col->name : $col->field_key);
+
             if ($k === "title" || $k === "date" || $k === "type" || $k === "status") {
                 continue;
             }
+            if (preg_match('/^content_type/i', $k) || preg_match('/content\s*type/i', $label)) {
+                continue;
+            }
+
+            $norm_key = strtolower(trim($k));
+            if (isset($seen_cols[$norm_key])) {
+                continue;
+            }
+            $seen_cols[$norm_key] = true;
 
             $raw_val = "";
             if (isset($values[$k])) {
@@ -896,5 +1133,60 @@ if (!function_exists('cc_link_task_to_item')) {
             return array("success" => false, "message" => $e->getMessage());
         }
     }
+}
 
+if (!function_exists('cc_get_today_special_days')) {
+    /**
+     * Get distinct special day labels for today in Asia/Kolkata timezone.
+     * Uses index idx_cc_special_days_date on rise_cc_special_days.
+     * Static cached per request.
+     *
+     * @return array List of string labels
+     */
+    function cc_get_today_special_days() {
+        static $cached_days = null;
+        if ($cached_days !== null) {
+            return $cached_days;
+        }
+
+        $now_kol = new \DateTime("now", new \DateTimeZone("Asia/Kolkata"));
+        $today_date = $now_kol->format("Y-m-d");
+
+        $db = db_connect('default');
+        $sd_table = $db->prefixTable('cc_special_days');
+        $cal_table = $db->prefixTable('cc_calendars');
+
+        $sql = "SELECT DISTINCT d.label 
+                FROM `$sd_table` d 
+                JOIN `$cal_table` c ON c.id = d.calendar_id 
+                WHERE d.special_date = ? AND c.deleted = 0";
+
+        try {
+            $query = $db->query($sql, array($today_date));
+            $rows = $query ? $query->getResult() : array();
+        } catch (\Throwable $e) {
+            $cached_days = array();
+            return $cached_days;
+        }
+
+        $weekdays = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun');
+        $distinct = array();
+        foreach ($rows as $row) {
+            $label = isset($row->label) ? (string) $row->label : "";
+            $cleaned = trim(preg_replace('/\s+/', ' ', $label));
+            if ($cleaned === "") {
+                continue;
+            }
+            $key = strtolower($cleaned);
+            if (in_array($key, $weekdays, true)) {
+                continue;
+            }
+            if (!isset($distinct[$key])) {
+                $distinct[$key] = $cleaned;
+            }
+        }
+
+        $cached_days = array_values($distinct);
+        return $cached_days;
+    }
 }

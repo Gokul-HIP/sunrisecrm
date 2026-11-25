@@ -20,7 +20,8 @@ class Cron_performance_tracker {
         "run_imap" => "#AA4499", // Magenta
         "get_google_calendar_events" => "#332288", // Indigo
         "close_inactive_tickets" => "#661100", // Dark Red
-        "hourly_cleanup" => "#666666" // Grey
+        "hourly_cleanup" => "#666666", // Grey
+        "content_calendar_special_days" => "#E05D5D" // Coral Red
     );
 
     public static $job_labels = array(
@@ -39,7 +40,8 @@ class Cron_performance_tracker {
         "run_imap" => "IMAP Email Piping",
         "get_google_calendar_events" => "Google Calendar Sync",
         "close_inactive_tickets" => "Auto-Close Inactive Tickets",
-        "hourly_cleanup" => "Log Retention Cleanup"
+        "hourly_cleanup" => "Log Retention Cleanup",
+        "content_calendar_special_days" => "Content Calendar Special Days"
     );
 
     public static $job_schedules = array(
@@ -58,7 +60,8 @@ class Cron_performance_tracker {
         "run_imap" => array("schedule" => "Every 10 min", "interval_sec" => 600),
         "get_google_calendar_events" => array("schedule" => "Every 5 min", "interval_sec" => 300),
         "close_inactive_tickets" => array("schedule" => "Daily", "interval_sec" => 86400),
-        "hourly_cleanup" => array("schedule" => "Hourly", "interval_sec" => 3600)
+        "hourly_cleanup" => array("schedule" => "Hourly", "interval_sec" => 3600),
+        "content_calendar_special_days" => array("schedule" => "Daily 07:00", "interval_sec" => 86400)
     );
 
     /**
@@ -87,6 +90,7 @@ class Cron_performance_tracker {
 
         $items = 0;
         $status = 'ok';
+        $gate_reason = null;
         $error_msg = null;
         $result = null;
 
@@ -96,6 +100,12 @@ class Cron_performance_tracker {
                 $items = $result;
             } else if (is_array($result)) {
                 $items = isset($result['created']) ? (int) $result['created'] : (isset($result['found']) ? (int) $result['found'] : 0);
+                if (isset($result['status'])) {
+                    $status = strtolower($result['status']) === 'skipped' ? 'skipped_by_gate' : (strtolower($result['status']) === 'error' ? 'failed' : strtolower($result['status']));
+                }
+                if (isset($result['reason'])) {
+                    $gate_reason = $result['reason'];
+                }
             }
         } catch (\Throwable $e) {
             $status = 'failed';
@@ -103,7 +113,7 @@ class Cron_performance_tracker {
         }
 
         $duration_ms = round((microtime(true) - $start_time) * 1000, 2);
-        self::log_run($job, $trigger_source, $started_utc, $duration_ms, $status, null, $items, memory_get_peak_usage(), $error_msg);
+        self::log_run($job, $trigger_source, $started_utc, $duration_ms, $status, $gate_reason, $items, memory_get_peak_usage(), $error_msg);
 
         if ($status === 'failed' && isset($e)) {
             throw $e;
@@ -148,6 +158,18 @@ class Cron_performance_tracker {
         $status_map = array();
         foreach (self::$job_labels as $job_key => $label) {
             $sched_info = isset(self::$job_schedules[$job_key]) ? self::$job_schedules[$job_key] : array("schedule" => "Unknown", "interval_sec" => 3600);
+            $initial_next = "Pending initial run";
+            if ($job_key === 'content_calendar_special_days') {
+                $now_kol = new \DateTime('now', new \DateTimeZone('Asia/Kolkata'));
+                $target_today = new \DateTime('today 07:00:00', new \DateTimeZone('Asia/Kolkata'));
+                if ($now_kol < $target_today) {
+                    $initial_next = $target_today->format('Y-m-d H:i:s') . ' IST';
+                } else {
+                    $tomorrow = clone $target_today;
+                    $tomorrow->modify('+1 day');
+                    $initial_next = $tomorrow->format('Y-m-d H:i:s') . ' IST';
+                }
+            }
             $status_map[$job_key] = array(
                 "job" => $job_key,
                 "label" => $label,
@@ -155,7 +177,7 @@ class Cron_performance_tracker {
                 "color" => self::$job_colors[$job_key],
                 "last_run_utc" => null,
                 "last_run_ist" => "Never",
-                "next_expected_run_ist" => "Pending initial run",
+                "next_expected_run_ist" => $initial_next,
                 "time_ago" => "Never",
                 "duration_ms" => 0,
                 "status" => "never_run",
@@ -210,13 +232,25 @@ class Cron_performance_tracker {
                     $last_run_ist = $ist_dt->format('Y-m-d H:i:s') . ' IST';
 
                     // Next expected run calculation
-                    $next_epoch = $epoch + $sched_info["interval_sec"];
-                    if ($next_epoch <= $now_utc) {
-                        $next_expected_run_ist = "Due now";
+                    if ($job === 'content_calendar_special_days') {
+                        $now_kol = new \DateTime('now', new \DateTimeZone('Asia/Kolkata'));
+                        $target_today = new \DateTime('today 07:00:00', new \DateTimeZone('Asia/Kolkata'));
+                        if ($now_kol < $target_today) {
+                            $next_expected_run_ist = $target_today->format('Y-m-d H:i:s') . ' IST';
+                        } else {
+                            $tomorrow = clone $target_today;
+                            $tomorrow->modify('+1 day');
+                            $next_expected_run_ist = $tomorrow->format('Y-m-d H:i:s') . ' IST';
+                        }
                     } else {
-                        $next_dt = new \DateTime('@' . $next_epoch);
-                        $next_dt->setTimezone(new \DateTimeZone('Asia/Kolkata'));
-                        $next_expected_run_ist = $next_dt->format('H:i:s') . ' IST';
+                        $next_epoch = $epoch + $sched_info["interval_sec"];
+                        if ($next_epoch <= $now_utc) {
+                            $next_expected_run_ist = "Due now";
+                        } else {
+                            $next_dt = new \DateTime('@' . $next_epoch);
+                            $next_dt->setTimezone(new \DateTimeZone('Asia/Kolkata'));
+                            $next_expected_run_ist = $next_dt->format('H:i:s') . ' IST';
+                        }
                     }
 
                     $status_map[$job]["last_run_utc"] = $row->started_at;
