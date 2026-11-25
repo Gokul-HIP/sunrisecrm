@@ -1137,20 +1137,21 @@ if (!function_exists('cc_link_task_to_item')) {
 
 if (!function_exists('cc_get_today_special_days')) {
     /**
-     * Get distinct special day labels for today in Asia/Kolkata timezone.
+     * Get distinct individual special day items for today (or a specific date) in Asia/Kolkata timezone.
+     * Extracts all distinct special days across calendars, splitting combined labels (e.g. "Doctors Day / CA Day")
+     * and deduplicating them cleanly.
      * Uses index idx_cc_special_days_date on rise_cc_special_days.
      * Static cached per request.
      *
+     * @param string|null $custom_date Optional Y-m-d date
      * @return array List of string labels
      */
-    function cc_get_today_special_days() {
-        static $cached_days = null;
-        if ($cached_days !== null) {
-            return $cached_days;
+    function cc_get_today_special_days($custom_date = null) {
+        static $cached_days = array();
+        $target_date = $custom_date ? $custom_date : (new \DateTime("now", new \DateTimeZone("Asia/Kolkata")))->format("Y-m-d");
+        if (isset($cached_days[$target_date])) {
+            return $cached_days[$target_date];
         }
-
-        $now_kol = new \DateTime("now", new \DateTimeZone("Asia/Kolkata"));
-        $today_date = $now_kol->format("Y-m-d");
 
         $db = db_connect('default');
         $sd_table = $db->prefixTable('cc_special_days');
@@ -1162,31 +1163,59 @@ if (!function_exists('cc_get_today_special_days')) {
                 WHERE d.special_date = ? AND c.deleted = 0";
 
         try {
-            $query = $db->query($sql, array($today_date));
+            $query = $db->query($sql, array($target_date));
             $rows = $query ? $query->getResult() : array();
         } catch (\Throwable $e) {
-            $cached_days = array();
-            return $cached_days;
+            $cached_days[$target_date] = array();
+            return $cached_days[$target_date];
         }
 
         $weekdays = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun');
+        $junk = array('regular design', 'regualr design', 'video', 'doc video', 'offer', 'special day', 'parent awareness', 'video or packacge');
         $distinct = array();
+
         foreach ($rows as $row) {
-            $label = isset($row->label) ? (string) $row->label : "";
-            $cleaned = trim(preg_replace('/\s+/', ' ', $label));
-            if ($cleaned === "") {
+            $raw_label = isset($row->label) ? (string) $row->label : "";
+            if (trim($raw_label) === "") {
                 continue;
             }
-            $key = strtolower($cleaned);
-            if (in_array($key, $weekdays, true)) {
-                continue;
-            }
-            if (!isset($distinct[$key])) {
-                $distinct[$key] = $cleaned;
+
+            // Split by slash, newline, semicolon, double pipe, or " & "
+            $parts = preg_split('/[\/;\r\n]+|\|\||\s+&\s+/', $raw_label);
+            foreach ($parts as $part) {
+                // Also split if there's a comma followed by a capital letter or Kannada letter
+                $subparts = preg_split('/,\s*(?=[A-Z\p{L}])/u', $part);
+                foreach ($subparts as $sub) {
+                    // Strip leading numbering/dates like "16 October – " or "1 – " or "16 - " or "ಆಗಸ್ಟ್ 21 — "
+                    $clean = preg_replace('/^\s*(\d{1,2}\s+[a-zA-Z]+\s*[\-–—]|\d{1,2}\s*[\-–—]|[^\s]+\s*\d{1,2}\s*[\-–—])\s*/u', '', $sub);
+                    // Strip trailing annotations like (May 5), (video...), (Doc), (Kannada), (Doc video)
+                    $clean = preg_replace('/\s*\((video|packacge|doc|kannada)[^)]*\)/iu', '', $clean);
+                    $clean = preg_replace('/\s*\(Doc\s*video\)/iu', '', $clean);
+                    $clean = trim(preg_replace('/\s+/', ' ', $clean));
+                    $clean = trim($clean, ",.-–—/ ");
+
+                    if ($clean === "" || mb_strlen($clean) < 3) {
+                        continue;
+                    }
+
+                    $lower = strtolower($clean);
+                    if (in_array($lower, $weekdays, true) || in_array($lower, $junk, true)) {
+                        continue;
+                    }
+
+                    // Normalize key for deduplication (strip punctuation/apostrophes)
+                    $norm_key = preg_replace('/[^\p{L}\p{N}]/u', '', $lower);
+                    if ($norm_key === "") {
+                        $norm_key = $lower;
+                    }
+                    if (!isset($distinct[$norm_key])) {
+                        $distinct[$norm_key] = $clean;
+                    }
+                }
             }
         }
 
-        $cached_days = array_values($distinct);
-        return $cached_days;
+        $cached_days[$target_date] = array_values($distinct);
+        return $cached_days[$target_date];
     }
 }

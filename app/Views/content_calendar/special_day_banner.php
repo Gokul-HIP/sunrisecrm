@@ -2,8 +2,9 @@
 /**
  * Content Calendar Special Day Dashboard Banner.
  *
- * Replaces the first widget row on staff dashboards when today has at least one distinct special day
+ * Appears above the first widget row on staff dashboards when today has at least one distinct special day
  * and the dashboard banner setting is enabled.
+ * If no special day, the normal dashboard cards remain in their default top position.
  */
 $bg_desktop = ROOTPATH . "assets/images/content_calendar/special_day_bg.jpg";
 $bg_mobile = ROOTPATH . "assets/images/content_calendar/special_day_bg_mobile.jpg";
@@ -14,14 +15,15 @@ $has_mobile_img = file_exists($bg_mobile);
     <div class="col-12">
         <div class="card cc-special-day-banner-card position-relative overflow-hidden" id="cc-special-day-banner-card">
             <canvas id="cc-confetti-canvas"></canvas>
-            <div class="cc-banner-inner d-flex align-items-center justify-content-between p20">
+            <div class="cc-banner-inner d-flex align-items-center justify-content-between p15 ps20 pe20">
                 <div class="cc-banner-left pe-3">
                     <div class="cc-banner-prefix text-white-50 text-uppercase small fw-bold mb-1">Today is</div>
                     <h3 class="cc-banner-title text-white mb-0 fw-bold"><span id="cc-special-day-text"></span><span id="cc-typewriter-cursor" class="cc-blinking-cursor">|</span></h3>
                 </div>
                 <div class="cc-banner-controls d-flex align-items-center flex-shrink-0 ms-auto">
-                    <button type="button" class="btn btn-sm btn-outline-light me-2" id="cc-banner-show-cards"><i data-feather="grid" class="icon-14 me-1"></i> <?php echo app_lang("cc_show_my_cards", "Show my cards"); ?></button>
-                    <button type="button" class="btn-close btn-close-white" id="cc-banner-close-btn" aria-label="Close" title="Close banner"></button>
+                    <button type="button" class="btn btn-sm text-white cc-banner-close-btn" id="cc-banner-close-btn" aria-label="Close" title="Close">
+                        <i data-feather="x" class="icon-18"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -33,7 +35,7 @@ $has_mobile_img = file_exists($bg_mobile);
     border-radius: var(--bs-card-border-radius, 4px);
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     border: none;
-    min-height: 110px;
+    min-height: 85px;
     position: relative;
     overflow: hidden;
     color: #ffffff;
@@ -61,18 +63,18 @@ $has_mobile_img = file_exists($bg_mobile);
 .cc-banner-inner {
     position: relative;
     z-index: 2;
-    min-height: 110px;
+    min-height: 85px;
 }
 
 .cc-banner-prefix {
-    font-size: 13px;
+    font-size: 12px;
     letter-spacing: 0.75px;
     opacity: 0.9;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .cc-banner-title {
-    font-size: 24px;
+    font-size: 21px;
     line-height: 1.3;
     letter-spacing: -0.2px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.7);
@@ -102,32 +104,30 @@ $has_mobile_img = file_exists($bg_mobile);
     z-index: 5;
 }
 
-#cc-banner-show-cards {
-    border-color: rgba(255, 255, 255, 0.7);
+.cc-banner-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: #ffffff;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 20px;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(4px);
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-#cc-banner-show-cards:hover {
-    background: #ffffff;
-    color: #212529;
-    border-color: #ffffff;
+.cc-banner-close-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    transform: scale(1.08);
 }
 
-#cc-banner-close-btn {
-    opacity: 0.75;
-    transition: opacity 0.2s;
-    font-size: 11px;
-}
-
-#cc-banner-close-btn:hover {
-    opacity: 1;
+.cc-banner-close-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 @media (max-width: 576px) {
@@ -136,35 +136,38 @@ $has_mobile_img = file_exists($bg_mobile);
         height: auto;
     }
     .cc-banner-inner {
-        flex-direction: column;
-        align-items: flex-start !important;
-        padding: 16px;
+        padding: 12px 16px;
     }
     .cc-banner-title {
-        font-size: 18px;
-        margin-bottom: 12px;
+        font-size: 16px;
     }
-    .cc-banner-controls {
-        width: 100%;
-        margin-left: 0 !important;
-        margin-top: 10px;
-        justify-content: space-between;
+    .cc-banner-prefix {
+        font-size: 11px;
     }
 }
 </style>
 
 <script id="cc-special-day-banner-js">
 (function () {
-    var AUTO_RESTORE_SECONDS = 20;
     var specialDays = <?php echo json_encode(array_values($special_days)); ?> || [];
     var userId = <?php echo (int) $login_user_id; ?>;
     var todayDate = "<?php echo (new \DateTime('now', new \DateTimeZone('Asia/Kolkata')))->format('Y-m-d'); ?>";
-    var dismissKey = "cc_sd_dismissed_" + userId + "_" + todayDate;
+    var specialDaysSig = "<?php echo md5(implode('|', $special_days)); ?>";
+    var dismissKey = "cc_sd_closed_" + userId + "_" + todayDate + "_" + specialDaysSig;
 
-    // 1. Check dismissal in localStorage
+    // Check if user closed this specific special day banner for today
     try {
         if (localStorage.getItem(dismissKey) === "1") {
-            return; // Dismissed earlier today, keep normal cards visible
+            return;
+        }
+    } catch (e) {}
+
+    // Clean up older dismiss keys for other dates
+    try {
+        for (var k in localStorage) {
+            if (k && k.indexOf("cc_sd_closed_" + userId + "_") === 0 && k.indexOf(todayDate) === -1) {
+                localStorage.removeItem(k);
+            }
         }
     } catch (e) {}
 
@@ -173,115 +176,91 @@ $has_mobile_img = file_exists($bg_mobile);
     }
 
     $(document).ready(function () {
-        var $firstRow = $(".dashboards-row:first");
         var $bannerRow = $("#cc-special-day-banner-row");
         var $textEl = $("#cc-special-day-text");
         var $cursor = $("#cc-typewriter-cursor");
         var isDismissed = false;
-        var restoreTimer = null;
 
-        if (!$firstRow.length || !$bannerRow.length) {
+        if (!$bannerRow.length) {
             return;
         }
 
-        // Measure first row height to match exact height on desktop
-        var firstRowHeight = $firstRow.outerHeight();
-        if (firstRowHeight && $(window).width() > 768) {
-            $("#cc-special-day-banner-card").css("min-height", firstRowHeight + "px");
-            $(".cc-banner-inner").css("min-height", firstRowHeight + "px");
-        }
-
-        // Hide normal first row and show banner
-        $firstRow.hide();
+        // Display the banner above the normal widgets row
         $bannerRow.show();
         if (window.feather) feather.replace();
 
-        function restoreCards(manual) {
+        // Close button handler: smoothly slide up and remove from DOM
+        function closeBanner() {
             if (isDismissed) return;
             isDismissed = true;
-            if (restoreTimer) clearTimeout(restoreTimer);
-
-            if (manual) {
-                try {
-                    localStorage.setItem(dismissKey, "1");
-                } catch (e) {}
-            }
+            try {
+                localStorage.setItem(dismissKey, "1");
+            } catch (e) {}
 
             $bannerRow.slideUp(250, function () {
                 $bannerRow.remove();
-                $firstRow.slideDown(250, function () {
-                    if (window.feather) feather.replace();
-                });
             });
         }
 
-        $("#cc-banner-show-cards").on("click", function () {
-            restoreCards(true);
-        });
-
         $("#cc-banner-close-btn").on("click", function () {
-            restoreCards(true);
+            closeBanner();
         });
 
-        // Auto-restore after 20s
-        restoreTimer = setTimeout(function () {
-            restoreCards(false);
-        }, AUTO_RESTORE_SECONDS * 1000);
-
-        // Reduced motion check
-        var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-        if (prefersReducedMotion) {
-            // Static text, no animation, no confetti
-            $cursor.hide();
-            $textEl.text(specialDays.join(", "));
-            return;
-        }
-
-        // Typewriter animation
+        // Typewriter animation: loops continuously for multiple or single special days
         var dayIdx = 0;
         var charIdx = 0;
         var isDeleting = false;
-        var typeSpeed = 55;
-        var eraseSpeed = 30;
-        var pauseAtEnd = 2200;
-        var pauseBeforeType = 350;
+        var typeSpeed = 50;          // ms per character when typing
+        var deleteSpeed = 25;        // ms per character when deleting
+        var pauseAtEnd = 2400;       // ms to pause when word is fully typed
+        var pauseBeforeRetype = 350; // ms to pause after word is deleted before typing next
 
-        function typeLoop() {
+        function typeStep() {
             if (isDismissed) return;
+            if (!specialDays || !specialDays.length) return;
+
             var currentWord = specialDays[dayIdx];
+            // Split into Unicode characters (safe for Kannada and multi-byte characters)
+            var chars = Array.from(currentWord);
 
             if (!isDeleting) {
                 charIdx++;
-                $textEl.text(currentWord.substring(0, charIdx));
-                if (charIdx >= currentWord.length) {
-                    if (specialDays.length > 1) {
-                        isDeleting = true;
-                        setTimeout(typeLoop, pauseAtEnd);
-                    }
+                $textEl.text(chars.slice(0, charIdx).join(""));
+
+                if (charIdx >= chars.length) {
+                    // Fully typed! Pause then start erasing
+                    isDeleting = true;
+                    setTimeout(typeStep, pauseAtEnd);
                     return;
                 }
-                setTimeout(typeLoop, typeSpeed);
+                setTimeout(typeStep, typeSpeed);
             } else {
                 charIdx--;
-                $textEl.text(currentWord.substring(0, charIdx));
+                $textEl.text(chars.slice(0, charIdx).join(""));
+
                 if (charIdx <= 0) {
+                    // Fully erased! Advance to next word (or loop back) and pause briefly
                     isDeleting = false;
+                    charIdx = 0;
                     dayIdx = (dayIdx + 1) % specialDays.length;
-                    setTimeout(typeLoop, pauseBeforeType);
+                    setTimeout(typeStep, pauseBeforeRetype);
                     return;
                 }
-                setTimeout(typeLoop, eraseSpeed);
+                setTimeout(typeStep, deleteSpeed);
             }
         }
 
-        typeLoop();
+        // Start typing after a short delay so banner is rendered and visible
+        setTimeout(typeStep, 300);
 
         // Confetti burst ("pop blast")
-        // Light: at most ~60 particles, ~1.5 seconds, canvas removed afterwards
-        try {
-            runConfettiBurst();
-        } catch (e) {}
+        // Light: at most ~55 particles, ~1.5 seconds, canvas removed afterwards
+        var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!prefersReducedMotion) {
+            try {
+                runConfettiBurst();
+            } catch (e) {}
+        }
 
         function runConfettiBurst() {
             var canvas = document.getElementById("cc-confetti-canvas");
