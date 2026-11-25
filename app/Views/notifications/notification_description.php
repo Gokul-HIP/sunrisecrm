@@ -90,7 +90,7 @@ if ($notification->post_id && $notification->posts_title) {
 }
 
 if ($notification->event === "content_calendar_special_days" && $notification->description) {
-    echo "<div>" . esc($notification->description) . "</div>";
+    echo "<div>" . sprintf(app_lang("cc_special_day_today", "Special day today: %s"), esc($notification->description)) . "</div>";
 }
 
 //show data from hook

@@ -87,10 +87,18 @@ if (count($notifications)) {
                         </div>
                         <div class="m0 text-break">
                             <?php
-                            echo sprintf(app_lang("notification_" . $notification->event), "<strong>" . $notification->to_user_name . "</strong>");
+                            if ($notification->event === "content_calendar_special_days") {
+                                $names = trim((string) $notification->description);
+                                if (mb_strlen($names) > 120) {
+                                    $names = mb_substr($names, 0, 117) . "...";
+                                }
+                                echo sprintf(app_lang("cc_special_day_today", "Special day today: %s"), esc($names));
+                            } else {
+                                echo sprintf(app_lang("notification_" . $notification->event), "<strong>" . $notification->to_user_name . "</strong>");
 
-                            //replace anchor tags with text to fix tagging error
-                            echo preg_replace('#<a.*?>(.*?)</a>#i', '\1', view("notifications/notification_description", array("notification" => $notification, "changes_array" => $changes_array)));
+                                //replace anchor tags with text to fix tagging error
+                                echo preg_replace('#<a.*?>(.*?)</a>#i', '\1', view("notifications/notification_description", array("notification" => $notification, "changes_array" => $changes_array)));
+                            }
                             ?>
                         </div>
                     </div>

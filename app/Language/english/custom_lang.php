@@ -468,6 +468,7 @@ $lang["cc_set_status"] = "Change status";
 $lang["cc_no_status"] = "No status";
 $lang["notification_content_calendar_special_days"] = "Special Day";
 $lang["cc_special_days"] = "Special days";
+$lang["cc_special_day_today"] = "Special day today: %s";
 $lang["cc_show_special_day_banner_on_dashboard"] = "Show special day banner on the dashboard";
 $lang["cc_show_my_cards"] = "Show my cards";
 

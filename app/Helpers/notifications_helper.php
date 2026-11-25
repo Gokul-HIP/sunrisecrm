@@ -984,7 +984,17 @@ if (!function_exists('send_push_notifications')) {
 
             //get notification message
             $message = app_lang("notification_" . $event);
-            if ($notification_id) {
+            $special_day_title = "";
+            if ($event === "content_calendar_special_days") {
+                $special_day_title = app_lang("notification_content_calendar_special_days", "Special Day");
+                if ($notification_id) {
+                    $n_info = $ci->Notifications_model->get_one($notification_id);
+                    $names = trim((string) $n_info->description);
+                    if ($names) {
+                        $message = $names;
+                    }
+                }
+            } else if ($notification_id) {
                 $to_user_name = $ci->Notifications_model->get_to_user_name($notification_id);
                 if ($to_user_name) {
                     $message = sprintf(app_lang("notification_" . $event), $to_user_name);
@@ -1003,7 +1013,7 @@ if (!function_exists('send_push_notifications')) {
 
             $data = array(
                 "message" => $message,
-                "title" => $user_id ? $user_info->first_name . " " . $user_info->last_name : get_setting('app_title'),
+                "title" => $special_day_title ? $special_day_title : ($user_id ? $user_info->first_name . " " . $user_info->last_name : get_setting('app_title')),
                 "icon" => get_avatar($user_id ? $user_info->image : "system_bot"),
                 "notification_id" => $notification_id,
                 "url_attributes" => $url_attributes

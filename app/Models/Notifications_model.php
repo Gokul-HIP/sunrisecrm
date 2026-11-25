@@ -1159,6 +1159,7 @@ class Notifications_model extends Crud_model {
         }
 
         $sql = "SELECT $notifications_table.id, $notifications_table.event, $notifications_table.user_id,
+                $notifications_table.description,
                 $notifications_table.to_user_id, $notifications_table.task_id, $notifications_table.project_id,
                 $notifications_table.project_comment_id, $notifications_table.ticket_id,
                 $notifications_table.ticket_comment_id, $notifications_table.leave_id,
@@ -1221,6 +1222,10 @@ class Notifications_model extends Crud_model {
                     $stage_text = "in 2 hours";
                 }
                 $message = $proj_prefix . "Reminder: Task deadline is approaching {$stage_text}.";
+            } else if ($row->event === "content_calendar_special_days") {
+                $title = app_lang("notification_content_calendar_special_days", "Special Day");
+                $names = trim((string) $row->description);
+                $message = $names ? $names : $title;
             } else {
                 $message = app_lang("notification_" . $row->event);
                 if ($row->to_user_name) {

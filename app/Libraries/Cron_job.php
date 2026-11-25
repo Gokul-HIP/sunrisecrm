@@ -1102,42 +1102,12 @@ class Cron_job {
         $now_kol = new \DateTime("now", new \DateTimeZone("Asia/Kolkata"));
         $today_date = $now_kol->format("Y-m-d");
 
-        // Read today's special days from rise_cc_special_days (calendars not deleted)
-        // Uses index idx_cc_special_days_date (Part B.6)
-        $sd_table = $db->prefixTable('cc_special_days');
-        $cal_table = $db->prefixTable('cc_calendars');
+        // 1) Build the list of today's special days with the same cc_get_today_special_days() helper the banner uses
+        helper(['content_calendar', 'date_time']);
+        $today_special_days = cc_get_today_special_days($today_date);
 
-        $sql = "SELECT DISTINCT d.label 
-                FROM `$sd_table` d 
-                JOIN `$cal_table` c ON c.id = d.calendar_id 
-                WHERE d.special_date = ? AND c.deleted = 0";
-        $query = $db->query($sql, array($today_date));
-        $rows = $query ? $query->getResult() : array();
-
-        if (empty($rows)) {
+        if (empty($today_special_days)) {
             return array("created" => 0, "status" => "OK", "reason" => "No special days for today ($today_date)");
-        }
-
-        // Distinct normalised labels: trimmed, case-insensitive, whitespace collapsed; ignore weekday-only or empty
-        $weekdays = array('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun');
-        $distinct_labels = array();
-        foreach ($rows as $row) {
-            $raw_label = isset($row->label) ? (string) $row->label : "";
-            $cleaned = trim(preg_replace('/\s+/', ' ', $raw_label));
-            if ($cleaned === "") {
-                continue;
-            }
-            $key = strtolower($cleaned);
-            if (in_array($key, $weekdays, true)) {
-                continue;
-            }
-            if (!isset($distinct_labels[$key])) {
-                $distinct_labels[$key] = $cleaned;
-            }
-        }
-
-        if (empty($distinct_labels)) {
-            return array("created" => 0, "status" => "OK", "reason" => "No eligible special day labels for today");
         }
 
         // Check dedupe table rise_cc_special_day_notices
@@ -1151,8 +1121,12 @@ class Cron_job {
         }
 
         $new_labels = array();
-        foreach ($distinct_labels as $key => $display_label) {
-            if (!isset($notified_keys[$key])) {
+        foreach ($today_special_days as $display_label) {
+            $key = preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower(trim($display_label)));
+            if ($key === "") {
+                $key = strtolower(trim($display_label));
+            }
+            if (!isset($notified_keys[$key]) && !isset($notified_keys[strtolower(trim($display_label))])) {
                 $new_labels[$key] = $display_label;
             }
         }
@@ -1175,16 +1149,10 @@ class Cron_job {
             return array("created" => 0, "status" => "SKIPPED", "reason" => "No active staff users found to notify");
         }
 
-        // Format: "Today: Children's Day, World Immunization Week" (at most 5 names then "+N more")
-        $label_values = array_values($new_labels);
-        $first_5 = array_slice($label_values, 0, 5);
-        $remaining_count = count($label_values) - 5;
-        $description = "Today: " . implode(", ", $first_5);
-        if ($remaining_count > 0) {
-            $description .= ", +" . $remaining_count . " more";
-        }
+        // Format: joined by ", ", for example: "National Doctor's Day, CA Day, World Music Day"
+        $description = implode(", ", array_values($new_labels));
 
-        $now_utc = get_current_utc_time();
+        $now_utc = function_exists('get_current_utc_time') ? get_current_utc_time() : gmdate('Y-m-d H:i:s');
         $notify_to_str = implode(",", $active_staff_ids);
 
         // Insert into rise_notifications
@@ -1209,7 +1177,7 @@ class Cron_job {
         return array(
             "created" => 1,
             "status" => "OK",
-            "reason" => "Notified " . $recipients_count . " staff: " . implode(", ", $first_5)
+            "reason" => "Notified " . $recipients_count . " staff: " . $description
         );
     }
 
