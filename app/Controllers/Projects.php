@@ -5824,7 +5824,10 @@ class Projects extends Security_Controller {
         $ids = array();
         foreach ($list_data as $data) {
             if (isset($data->id) && $data->id) {
-                $ids[] = (int) $data->id;
+                // If task already has a valid created_at in rise_tasks, no need to query activity logs
+                if (empty($data->created_at) || !is_date_exists($data->created_at) || $data->created_at == "0000-00-00 00:00:00") {
+                    $ids[] = (int) $data->id;
+                }
             }
         }
 
@@ -5987,9 +5990,18 @@ class Projects extends Security_Controller {
         $created_date = (is_date_exists($data->created_date)) ? format_to_date($data->created_date, false) : "-";
 
         $created_time = "-";
-        $act_created_at = isset($this->task_created_times_by_id[$data->id]) ? $this->task_created_times_by_id[$data->id] : null;
-        if (!empty($act_created_at) && is_date_exists($act_created_at) && $act_created_at != "0000-00-00 00:00:00") {
-            $created_time = format_to_time($act_created_at);
+        $resolved_created_at = null;
+        if (!empty($data->created_at) && is_date_exists($data->created_at) && $data->created_at != "0000-00-00 00:00:00") {
+            $resolved_created_at = $data->created_at;
+        } elseif (isset($this->task_created_times_by_id[$data->id])) {
+            $act_created_at = $this->task_created_times_by_id[$data->id];
+            if (!empty($act_created_at) && is_date_exists($act_created_at) && $act_created_at != "0000-00-00 00:00:00") {
+                $resolved_created_at = $act_created_at;
+            }
+        }
+
+        if ($resolved_created_at) {
+            $created_time = format_to_time($resolved_created_at);
         }
 
         $created_at = "<div class='task-created-cell'>"

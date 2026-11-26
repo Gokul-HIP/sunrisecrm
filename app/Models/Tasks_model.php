@@ -5,6 +5,8 @@ namespace App\Models;
 class Tasks_model extends Crud_model {
 
     protected $table = null;
+    /** @var bool|null Cached existence check of created_at column on tasks table */
+    private static $has_created_at_column = null;
 
     function __construct() {
         $this->table = 'tasks';
@@ -12,9 +14,38 @@ class Tasks_model extends Crud_model {
         parent::init_activity_log("task", "title", "project", "project_id");
     }
 
+    /**
+     * Check if rise_tasks table has the created_at column (cached per request).
+     * Uses CodeIgniter 4 fieldExists (SHOW COLUMNS, no INFORMATION_SCHEMA).
+     */
+    public function has_created_at_column() {
+        if (self::$has_created_at_column === null) {
+            self::$has_created_at_column = $this->db->fieldExists('created_at', $this->table);
+        }
+        return self::$has_created_at_column;
+    }
+
     function ci_save(&$data = array(), $id = 0) {
         $id = (int) $id;
         $is_update = ($id > 0);
+
+        if ($is_update) {
+            // Editing an existing task must never change created_at.
+            if (array_key_exists("created_at", $data)) {
+                unset($data["created_at"]);
+            }
+        } else {
+            // New task creation: write created_at in current UTC time if column exists
+            if ($this->has_created_at_column()) {
+                if (empty($data["created_at"])) {
+                    $data["created_at"] = get_current_utc_time();
+                }
+            } else {
+                if (array_key_exists("created_at", $data)) {
+                    unset($data["created_at"]);
+                }
+            }
+        }
 
         // Check if any fields relevant to points/awards are being modified
         $point_relevant_fields = array("status_id", "deadline", "end_time", "points", "assigned_to", "collaborators", "deleted");
@@ -1384,6 +1415,10 @@ class Tasks_model extends Crud_model {
             "ticket_id" => isset($data["ticket_id"]) ? (int) $data["ticket_id"] : 0,
             "deleted" => 0
         );
+
+        if ($this->has_created_at_column()) {
+            $insert["created_at"] = get_current_utc_time();
+        }
 
         if (!$this->db_builder->insert($insert)) {
             $error = $this->db->error();
