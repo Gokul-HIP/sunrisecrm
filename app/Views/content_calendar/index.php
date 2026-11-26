@@ -17,7 +17,7 @@ load_css(array(
                         <i data-feather="upload" class="icon-16"></i> <?php echo esc(cc_lang("cc_import")); ?>
                     </button>
                 <?php } ?>
-                <?php if (!empty($perms["add_column"]) || !empty($perms["admin_manage"])) { ?>
+                <?php if (!empty($perms["add_column"]) || !empty($perms["delete_client"]) || !empty($perms["admin_manage"])) { ?>
                     <button type="button" class="cc-btn" id="cc-columns-toggle" aria-expanded="false" aria-controls="cc-designer">
                         <i data-feather="columns" class="icon-16"></i> <?php echo esc(cc_lang("cc_columns")); ?>
                     </button>
@@ -74,7 +74,7 @@ load_css(array(
                 </div>
             </div>
 
-            <?php if (!empty($perms["add_column"]) || !empty($perms["admin_manage"])) { ?>
+            <?php if (!empty($perms["add_column"]) || !empty($perms["delete_client"]) || !empty($perms["admin_manage"])) { ?>
                 <div class="cc-card cc-designer hide" id="cc-designer">
                     <div class="cc-designer-head">
                         <div>
@@ -82,9 +82,11 @@ load_css(array(
                             <div class="cc-muted"><?php echo esc(cc_lang("cc_column_designer_help")); ?></div>
                         </div>
                         <div class="cc-designer-actions">
-                            <button type="button" class="cc-btn" id="cc-copy-columns"><?php echo esc(cc_lang("cc_copy_from_client")); ?></button>
-                            <button type="button" class="cc-btn cc-btn-primary" id="cc-add-column"><i data-feather="plus" class="icon-16"></i> <?php echo esc(cc_lang("cc_add_column")); ?></button>
-                            <?php if (!empty($perms["admin_manage"])) { ?>
+                            <?php if (!empty($perms["add_column"]) || !empty($perms["admin_manage"])) { ?>
+                                <button type="button" class="cc-btn" id="cc-copy-columns"><?php echo esc(cc_lang("cc_copy_from_client")); ?></button>
+                                <button type="button" class="cc-btn cc-btn-primary" id="cc-add-column"><i data-feather="plus" class="icon-16"></i> <?php echo esc(cc_lang("cc_add_column")); ?></button>
+                            <?php } ?>
+                            <?php if (!empty($perms["delete_client"]) || !empty($perms["admin_manage"])) { ?>
                                 <button type="button" class="cc-btn cc-btn-danger-ghost" id="cc-delete-calendar"><?php echo esc(cc_lang("cc_delete_client")); ?></button>
                             <?php } ?>
                         </div>

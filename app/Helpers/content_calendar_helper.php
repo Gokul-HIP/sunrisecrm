@@ -119,7 +119,7 @@ if (!function_exists('cc_permission_keys')) {
      * Keys that can be assigned to staff users in Settings > Content Calendar access.
      */
     function cc_permission_keys() {
-        return array("view", "add", "edit", "delete", "manage_options", "add_client", "add_column");
+        return array("view", "add", "edit", "delete", "manage_options", "add_client", "delete_client", "add_column");
     }
 
 }
@@ -129,10 +129,10 @@ if (!function_exists('cc_can')) {
     /**
      * Check a Content Calendar permission for the logged in user.
      *
-     * Keys: view | add | edit | delete | manage_options | add_client | add_column | admin_manage
+     * Keys: view | add | edit | delete | manage_options | add_client | delete_client | add_column | admin_manage
      *  - admin users always have everything
      *  - any assigned permission key implies view
-     *  - admin_manage (delete client calendar, monthly targets) is admin only
+     *  - admin_manage (monthly targets) is admin only
      *
      * @param string $key
      * @param object|null $user optional user row (id, is_admin, user_type, status, deleted) instead of the logged in user. Used by tests.

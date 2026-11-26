@@ -4256,10 +4256,20 @@
 
         $("#cc-delete-calendar").on("click", function () {
             var calendar = currentCalendar();
-            confirmModal(sprintf1(L("cc_delete_client_confirm"), calendar ? calendar.name : ""), function () {
+            var monthsCount = state.months ? state.months.length : 0;
+            var itemsCount = (state.undatedCount || 0);
+            if (state.months) {
+                $.each(state.months, function (_, m) {
+                    itemsCount += (parseInt(m.count, 10) || 0);
+                });
+            }
+            confirmModal(fmt(L("cc_delete_client_confirm"), calendar ? calendar.name : "", monthsCount, itemsCount), function () {
                 post(urls.delete_calendar, {calendar_id: state.calendarId}).done(function () {
                     state.calendarId = 0;
                     state.selectedDate = "";
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState(null, "", window.location.pathname);
+                    }
                     toast(L("cc_deleted"));
                     load({calendar_id: 0, year: 0, month: 0}, false);
                 }).fail(function (err) {

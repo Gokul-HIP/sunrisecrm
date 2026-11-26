@@ -14,7 +14,7 @@ class Cc_permissions_model extends Crud_model {
     }
 
     function get_valid_keys() {
-        return array("view", "add", "edit", "delete", "manage_options", "add_client", "add_column");
+        return array("view", "add", "edit", "delete", "manage_options", "add_client", "delete_client", "add_column");
     }
 
     /**

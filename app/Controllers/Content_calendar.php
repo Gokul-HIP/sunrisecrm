@@ -123,6 +123,7 @@ class Content_calendar extends Security_Controller {
             "delete" => cc_can("delete"),
             "manage_options" => cc_can("manage_options"),
             "add_client" => cc_can("add_client"),
+            "delete_client" => cc_can("delete_client"),
             "add_column" => cc_can("add_column"),
             "admin_manage" => cc_can("admin_manage"),
             "can_see_tasks" => ($this->login_user->is_admin || $this->login_user->user_type === "staff" || get_setting("client_can_view_tasks"))
@@ -1282,7 +1283,7 @@ class Content_calendar extends Security_Controller {
 
     function delete_calendar() {
         $this->_require_post();
-        $this->_require_can("admin_manage");
+        $this->_require_can("delete_client");
 
         $calendar = $this->_get_calendar_or_fail((int) $this->request->getPost("calendar_id"));
         $this->Cc_calendars_model->soft_delete($calendar->id);

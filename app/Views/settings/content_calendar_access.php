@@ -6,6 +6,7 @@ $cards = array(
     "delete" => array("title" => "cc_perm_delete", "help" => "cc_perm_delete_help"),
     "manage_options" => array("title" => "cc_perm_manage_options", "help" => "cc_perm_manage_options_help"),
     "add_client" => array("title" => "cc_perm_add_client", "help" => "cc_perm_add_client_help"),
+    "delete_client" => array("title" => "cc_perm_delete_client", "help" => "cc_perm_delete_client_help"),
     "add_column" => array("title" => "cc_perm_add_column", "help" => "cc_perm_add_column_help")
 );
 ?>
@@ -61,7 +62,11 @@ $cards = array(
                         <div class="card cc-access-card h-100" data-key="<?php echo esc($key, 'attr'); ?>">
                             <div class="card-header d-flex align-items-center justify-content-between">
                                 <h4 class="mb0"><?php echo esc(cc_lang($card["title"])); ?></h4>
-                                <span class="badge bg-primary cc-access-count" data-count-for="<?php echo esc($key, 'attr'); ?>">0 <?php echo esc(cc_lang("cc_selected")); ?></span>
+                                <?php
+                                $sel_count = (isset($selected[$key]) && is_array($selected[$key])) ? count($selected[$key]) : 0;
+                                $sel_text = ($sel_count === 1 ? "1 " : $sel_count . " ") . esc(cc_lang("cc_selected"));
+                                ?>
+                                <span class="badge bg-primary cc-access-count" data-count-for="<?php echo esc($key, 'attr'); ?>"><?php echo esc($sel_text); ?></span>
                             </div>
                             <div class="card-body">
                                 <p class="text-off"><?php echo esc(cc_lang($card["help"])); ?></p>
@@ -118,10 +123,29 @@ $cards = array(
             return $row;
         }
 
+        function getSelectedValues($select) {
+            if ($select.data("select2")) {
+                var s2Val = $select.select2("val");
+                if (Array.isArray(s2Val)) {
+                    return s2Val;
+                } else if (s2Val) {
+                    return [s2Val];
+                }
+                return [];
+            }
+            var vals = [];
+            $select.find("option:selected").each(function () {
+                vals.push($(this).val());
+            });
+            return vals;
+        }
+
         function updateCount($card) {
-            var count = $card.find(".cc-access-select").val();
-            count = count ? count.length : 0;
-            $card.find(".cc-access-count").text(count + " " + selectedLabel);
+            var $select = $card.find(".cc-access-select");
+            var values = getSelectedValues($select);
+            var count = values.length;
+            var text = (count === 1 ? "1 " : count + " ") + selectedLabel;
+            $card.find(".cc-access-count").text(text);
         }
 
         $("#cc-special-days-setting-form").appForm({
@@ -154,11 +178,23 @@ $cards = array(
                 $select.find("option").each(function () {
                     all.push($(this).val());
                 });
-                $select.val(all).trigger("change");
+                if ($select.data("select2")) {
+                    $select.select2("val", all);
+                } else {
+                    $select.val(all);
+                }
+                $select.trigger("change");
+                updateCount($card);
             });
 
             $card.find(".cc-access-clear").on("click", function () {
-                $select.val(null).trigger("change");
+                if ($select.data("select2")) {
+                    $select.select2("val", []);
+                } else {
+                    $select.val(null);
+                }
+                $select.trigger("change");
+                updateCount($card);
             });
 
             $card.find(".cc-access-save").on("click", function () {
@@ -167,7 +203,7 @@ $cards = array(
 
                 var postData = {
                     permission_key: $card.data("key"),
-                    user_ids: $select.val() || []
+                    user_ids: getSelectedValues($select)
                 };
 
                 $.ajax({
