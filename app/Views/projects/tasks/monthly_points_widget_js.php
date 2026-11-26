@@ -57,6 +57,7 @@
                     .addClass(colorClass);
             };
 
+            var activePointsXhr = null;
             var loadPoints = function () {
                 var userId = currentUserId();
                 var month = $root.find(".task-points-month-filter").val();
@@ -66,12 +67,19 @@
                     return;
                 }
 
-                $.ajax({
+                if (activePointsXhr && activePointsXhr.readyState !== 4) {
+                    activePointsXhr.abort();
+                }
+
+                activePointsXhr = $.ajax({
                     url: "<?php echo_uri("projects/monthly_task_points"); ?>",
                     type: "GET",
                     dataType: "json",
                     data: {user_id: userId, month: month},
                     success: function (result) {
+                        if (currentUserId() !== userId) {
+                            return; // Stale request from previous user selection
+                        }
                         if (result && result.success) {
                             $root.find(".task-points-month-value").text(result.points);
                             applyPointColor(typeof result.points_raw !== "undefined" ? result.points_raw : result.points);

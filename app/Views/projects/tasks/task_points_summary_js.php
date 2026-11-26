@@ -112,14 +112,25 @@
                 }
             };
 
+            var lastProcessedDraw = 0;
+            var handleXhr = function (settings, json) {
+                if (!json) {
+                    return;
+                }
+                var currentDraw = parseInt(json.draw, 10);
+                if (!isNaN(currentDraw)) {
+                    if (currentDraw < lastProcessedDraw) {
+                        return; // Ignore stale out-of-order response
+                    }
+                    lastProcessedDraw = currentDraw;
+                }
+                applySummary(json);
+            };
+
             $(document).on("xhr.dt", function (event, settings, json) {
                 if (settings && (settings.sTableId === tableId || (settings.nTable && settings.nTable.id === tableId))) {
-                    applySummary(json);
+                    handleXhr(settings, json);
                 }
-            });
-
-            $table.on("xhr.dt", function (event, settings, json) {
-                applySummary(json);
             });
 
             $summary.data("apply-summary", applySummary);

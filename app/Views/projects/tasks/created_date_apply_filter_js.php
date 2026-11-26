@@ -194,8 +194,54 @@
             draftTo = "";
             updateLabels();
 
+            // Clear created date filterParams
             settings.filterParams.created_from = "";
             settings.filterParams.created_to = "";
+
+            // Clear all other filterParams
+            settings.filterParams.specific_user_id = "";
+            settings.filterParams.created_by = "";
+            settings.filterParams.project_id = "";
+            settings.filterParams.milestone_id = "";
+            settings.filterParams.priority_id = "";
+            settings.filterParams.quick_filter = "";
+            settings.filterParams.deadline = "";
+            settings.filterParams.deadline_from = "";
+            settings.filterParams.deadline_to = "";
+
+            // Reset UI controls
+            var $scope = (mode === "filters") ? $("#" + instanceId) : $("#" + instanceId).closest(".dataTables_wrapper");
+            $scope = $scope.add("#tasks-filter-card").add(".tasks-filter-card");
+
+            // Reset Select2 dropdowns
+            $scope.find("[name='specific_user_id'], [name='created_by'], [name='project_id'], [name='milestone_id'], [name='priority_id'], [name='quick_filter']").each(function () {
+                var $el = $(this);
+                if ($el.data("select2")) {
+                    $el.val("").trigger("change.select2");
+                } else {
+                    $el.val("");
+                }
+            });
+
+            // Reset deadline button
+            var $deadlineBtn = $scope.find("[name='deadline']");
+            if ($deadlineBtn.length) {
+                $deadlineBtn.html("- <?php echo app_lang('deadline'); ?> -<span class='ml10 dropdown-toggle'></span>");
+                var $list = $deadlineBtn.closest(".DTTT_container").find(".datepicker-custom-list");
+                if ($list.length) {
+                    $list.find(".list-group-item").removeClass("active");
+                    $list.find(".list-group-item[data-value='']").addClass("active");
+                }
+            }
+
+            // Reset search input if present
+            var $search = $scope.find("input[type=search], .custom-filter-search");
+            if ($search.length) {
+                $search.val("");
+                settings.filterParams.search = "";
+                settings.filterParams.search_by = "";
+            }
+
             syncActiveBadge();
             reloadInstance();
         });

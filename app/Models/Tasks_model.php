@@ -294,38 +294,12 @@ class Tasks_model extends Crud_model {
             $where .= " AND $tasks_table.status_id=$task_status_id";
         }
 
-        $start_date = $this->_get_clean_value($options, "start_date");
-        $deadline = $this->_get_clean_value($options, "deadline");
-        if ($start_date && $deadline) {
-            $for_events = $this->_get_clean_value($options, "for_events");
-            if ($for_events) {
-                $deadline_for_events = $this->_get_clean_value($options, "deadline_for_events");
-                $start_date_for_events = $this->_get_clean_value($options, "start_date_for_events");
-
-                if ($start_date_for_events && $deadline_for_events) {
-                    $where .= " AND ("
-                            . "($tasks_table.deadline IS NOT NULL AND $tasks_table.deadline BETWEEN '$start_date' AND '$deadline')"
-                            . " OR ($milestones_table.due_date BETWEEN '$start_date' AND '$deadline')"
-                            . " OR ($tasks_table.start_date IS NOT NULL AND $tasks_table.start_date BETWEEN '$start_date' AND '$deadline'))";
-                } else if ($start_date_for_events) {
-                    $where .= " AND ($tasks_table.start_date IS NOT NULL AND $tasks_table.start_date BETWEEN '$start_date' AND '$deadline')";
-                } else if ($deadline_for_events) {
-                    $where .= " AND (($tasks_table.deadline IS NOT NULL AND $tasks_table.deadline BETWEEN '$start_date' AND '$deadline') OR $milestones_table.due_date BETWEEN '$start_date' AND '$deadline')";
-                }
-            } else {
-                $where .= " AND ($tasks_table.deadline BETWEEN '$start_date' AND '$deadline') ";
-            }
-        } else if ($deadline) {
-            $now = get_my_local_time("Y-m-d");
-            if ($deadline === "expired") {
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date<'$now', $tasks_table.deadline<'$now')";
-            } else if ($deadline == $now) { //today
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date='$deadline', $tasks_table.deadline='$deadline')";
-            } else { //future deadlines, extract today's
-                $now = add_period_to_date($now, 1);
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$now' AND '$deadline', $tasks_table.deadline BETWEEN '$now' AND '$deadline')";
-            }
+        $created_by = $this->_get_clean_value($options, "created_by");
+        if ($created_by) {
+            $where .= " AND $tasks_table.created_by=$created_by";
         }
+
+        $where .= $this->_build_deadline_where($tasks_table, $milestones_table, $options);
 
         // From–to filter by task created_date (Phase 23: MySQL 8–safe, ignore zero dates)
         $where .= $this->_created_date_filter_where($tasks_table, $options);
@@ -473,6 +447,7 @@ class Tasks_model extends Crud_model {
         $core_from_joins_where = "
         FROM $tasks_table
         LEFT JOIN $users_table ON $users_table.id= $tasks_table.assigned_to
+        LEFT JOIN $users_table AS creators ON creators.id = $tasks_table.created_by
         LEFT JOIN $projects ON $tasks_table.project_id=$projects.id 
         LEFT JOIN $milestones_table ON $tasks_table.milestone_id=$milestones_table.id 
         LEFT JOIN $task_status_table ON $tasks_table.status_id = $task_status_table.id 
@@ -500,6 +475,7 @@ class Tasks_model extends Crud_model {
             $data_from_joins_where = "
         FROM $tasks_table
         LEFT JOIN $users_table ON $users_table.id= $tasks_table.assigned_to
+        LEFT JOIN $users_table AS creators ON creators.id = $tasks_table.created_by
         LEFT JOIN $projects ON $tasks_table.project_id=$projects.id 
         LEFT JOIN $milestones_table ON $tasks_table.milestone_id=$milestones_table.id 
         LEFT JOIN $task_status_table ON $tasks_table.status_id = $task_status_table.id 
@@ -514,6 +490,7 @@ class Tasks_model extends Crud_model {
         }
 
         $sql = "SELECT $tasks_table.*, $task_status_table.key_name AS status_key_name, $task_status_table.title AS status_title,  $task_status_table.color AS status_color, CONCAT($users_table.first_name, ' ',$users_table.last_name) AS assigned_to_user, $users_table.image as assigned_to_avatar, $users_table.user_type,
+                    CONCAT(creators.first_name, ' ', creators.last_name) AS created_by_user_name, creators.deleted AS created_by_user_deleted,
                     $projects.title AS project_title, $milestones_table.title AS milestone_title, IF($tasks_table.deadline IS NULL, $milestones_table.due_date,$tasks_table.deadline) AS deadline,$ticket_table.title AS ticket_title,
                     $collaborator_select
                     $sub_task_count_select
@@ -687,6 +664,82 @@ class Tasks_model extends Crud_model {
         }
 
         return $unique;
+    }
+
+    /**
+     * Build deadline WHERE clause for tasks and kanban lists.
+     * Fixes:
+     * - "in_7_days" / "in_15_days": includes today through target date (inclusive of today).
+     * - "custom" single date: exact match on DATE (no empty BETWEEN past/future).
+     * - "custom" range (deadline_from, deadline_to or from--to string): BETWEEN from AND to.
+     * - Supports both symbolic tokens ("today", "tomorrow", "in_7_days", "in_15_days") and dates.
+     */
+    private function _build_deadline_where($tasks_table, $milestones_table, $options) {
+        $where = "";
+        $start_date = $this->_get_clean_value($options, "start_date");
+        $deadline = $this->_get_clean_value($options, "deadline");
+        $deadline_from = $this->_get_clean_value($options, "deadline_from");
+        $deadline_to = $this->_get_clean_value($options, "deadline_to");
+
+        // Custom range explicitly provided via deadline_from and/or deadline_to
+        if ($deadline_from && $deadline_to) {
+            return " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$deadline_from' AND '$deadline_to', $tasks_table.deadline BETWEEN '$deadline_from' AND '$deadline_to')";
+        } else if ($deadline_from) {
+            return " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date >= '$deadline_from', $tasks_table.deadline >= '$deadline_from')";
+        } else if ($deadline_to) {
+            return " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date <= '$deadline_to', $tasks_table.deadline <= '$deadline_to')";
+        }
+
+        // Combined start_date and deadline range (events/reports)
+        if ($start_date && $deadline) {
+            $for_events = $this->_get_clean_value($options, "for_events");
+            if ($for_events) {
+                $deadline_for_events = $this->_get_clean_value($options, "deadline_for_events");
+                $start_date_for_events = $this->_get_clean_value($options, "start_date_for_events");
+
+                if ($start_date_for_events && $deadline_for_events) {
+                    $where .= " AND ("
+                            . "($tasks_table.deadline IS NOT NULL AND $tasks_table.deadline BETWEEN '$start_date' AND '$deadline')"
+                            . " OR ($milestones_table.due_date BETWEEN '$start_date' AND '$deadline')"
+                            . " OR ($tasks_table.start_date IS NOT NULL AND $tasks_table.start_date BETWEEN '$start_date' AND '$deadline'))";
+                } else if ($start_date_for_events) {
+                    $where .= " AND ($tasks_table.start_date IS NOT NULL AND $tasks_table.start_date BETWEEN '$start_date' AND '$deadline')";
+                } else if ($deadline_for_events) {
+                    $where .= " AND (($tasks_table.deadline IS NOT NULL AND $tasks_table.deadline BETWEEN '$start_date' AND '$deadline') OR $milestones_table.due_date BETWEEN '$start_date' AND '$deadline')";
+                }
+            } else {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$start_date' AND '$deadline', $tasks_table.deadline BETWEEN '$start_date' AND '$deadline')";
+            }
+            return $where;
+        }
+
+        if ($deadline) {
+            $now = get_my_local_time("Y-m-d");
+            $tomorrow = add_period_to_date($now, 1, "days");
+            $in_7_days = add_period_to_date($now, 7, "days");
+            $in_15_days = add_period_to_date($now, 15, "days");
+
+            if ($deadline === "expired") {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date<'$now', $tasks_table.deadline<'$now')";
+            } else if ($deadline === "today" || $deadline === $now) {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date='$now', $tasks_table.deadline='$now')";
+            } else if ($deadline === "tomorrow" || $deadline === $tomorrow) {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date='$tomorrow', $tasks_table.deadline='$tomorrow')";
+            } else if ($deadline === "in_7_days" || $deadline === $in_7_days) {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$now' AND '$in_7_days', $tasks_table.deadline BETWEEN '$now' AND '$in_7_days')";
+            } else if ($deadline === "in_15_days" || $deadline === $in_15_days) {
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$now' AND '$in_15_days', $tasks_table.deadline BETWEEN '$now' AND '$in_15_days')";
+            } else if (strpos($deadline, '--') !== false) {
+                $parts = explode('--', $deadline);
+                $from = trim($parts[0]);
+                $to = isset($parts[1]) ? trim($parts[1]) : $from;
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$from' AND '$to', $tasks_table.deadline BETWEEN '$from' AND '$to')";
+            } else {
+                // Exact single custom date
+                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date='$deadline', $tasks_table.deadline='$deadline')";
+            }
+        }
+        return $where;
     }
 
     /**
@@ -967,18 +1020,12 @@ class Tasks_model extends Crud_model {
             $where .= " AND $tasks_table.milestone_id=$milestone_id";
         }
 
-        $deadline = $this->_get_clean_value($options, "deadline");
-        if ($deadline) {
-            $now = get_my_local_time("Y-m-d");
-            if ($deadline === "expired") {
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date<'$now', $tasks_table.deadline<'$now')";
-            } else if ($deadline == $now) { //today
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date='$deadline', $tasks_table.deadline='$deadline')";
-            } else { //future deadlines, extract today's
-                $now = add_period_to_date($now, 1);
-                $where .= " AND IF($tasks_table.deadline IS NULL, $milestones_table.due_date BETWEEN '$now' AND '$deadline', $tasks_table.deadline BETWEEN '$now' AND '$deadline')";
-            }
+        $created_by = $this->_get_clean_value($options, "created_by");
+        if ($created_by) {
+            $where .= " AND $tasks_table.created_by=$created_by";
         }
+
+        $where .= $this->_build_deadline_where($tasks_table, $milestones_table, $options);
 
         // From–to filter by task created_date (tasks page / kanban; Phase 23 MySQL 8–safe)
         $where .= $this->_created_date_filter_where($tasks_table, $options);

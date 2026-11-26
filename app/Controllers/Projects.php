@@ -14,6 +14,8 @@ class Projects extends Security_Controller {
     protected $open_timers_by_task = array();
     /** @var array<int, object> Phase 20 task rows for timesheet Details (batched) */
     protected $timesheet_tasks_by_id = array();
+    /** @var array<int, string> Earliest task created_at timestamps from activity_logs keyed by task_id */
+    protected $task_created_times_by_id = array();
 
     public function __construct() {
         parent::__construct();
@@ -4015,6 +4017,12 @@ class Projects extends Security_Controller {
         $view_data['tab'] = $tab;
         $view_data['selected_status_id'] = $status_id;
 
+        $created_by_dropdown = array(array("id" => "", "text" => "- " . app_lang("created_by") . " -"));
+        foreach ($assigned_to_list as $key => $value) {
+            $created_by_dropdown[] = array("id" => $key, "text" => $value);
+        }
+        $view_data['created_by_dropdown'] = json_encode($created_by_dropdown);
+
         $view_data['team_members_dropdown'] = json_encode($team_members_dropdown);
         $view_data["custom_field_headers"] = $this->Custom_fields_model->get_custom_field_headers_for_table("tasks", $this->login_user->is_admin, $this->login_user->user_type);
         $view_data["custom_field_filters"] = $this->Custom_fields_model->get_custom_field_filters("tasks", $this->login_user->is_admin, $this->login_user->user_type);
@@ -4053,6 +4061,11 @@ class Projects extends Security_Controller {
         }
 
         $view_data['team_members_dropdown'] = json_encode($team_members_dropdown);
+        $created_by_dropdown = array(array("id" => "", "text" => "- " . app_lang("created_by") . " -"));
+        foreach ($assigned_to_list as $key => $value) {
+            $created_by_dropdown[] = array("id" => $key, "text" => $value);
+        }
+        $view_data['created_by_dropdown'] = json_encode($created_by_dropdown);
         $view_data['priorities_dropdown'] = $this->_get_priorities_dropdown_list();
 
         $view_data['projects_dropdown'] = json_encode($projects_dropdown);
@@ -4132,10 +4145,13 @@ class Projects extends Security_Controller {
 
         $options = array(
             "specific_user_id" => $specific_user_id,
+            "created_by" => $this->request->getPost('created_by'),
             "project_id" => $project_id,
             "milestone_id" => $this->request->getPost('milestone_id'),
             "priority_id" => $this->request->getPost('priority_id'),
             "deadline" => $this->request->getPost('deadline'),
+            "deadline_from" => $this->request->getPost('deadline_from'),
+            "deadline_to" => $this->request->getPost('deadline_to'),
             "created_from" => $this->request->getPost('created_from'),
             "created_to" => $this->request->getPost('created_to'),
             "search" => $this->request->getPost('search'),
@@ -5508,6 +5524,7 @@ class Projects extends Security_Controller {
         }
 
         $this->_load_open_timers_for_task_list($list_data);
+        $this->_load_created_times_for_task_list($list_data);
 
         $result_data = array();
         foreach ($list_data as $data) {
@@ -5549,10 +5566,13 @@ class Projects extends Security_Controller {
 
         $options = array(
             "specific_user_id" => $specific_user_id,
+            "created_by" => $this->request->getPost('created_by'),
             "project_id" => $project_id,
             "milestone_id" => $this->request->getPost('milestone_id'),
             "priority_id" => $this->request->getPost('priority_id'),
             "deadline" => $this->request->getPost('deadline'),
+            "deadline_from" => $this->request->getPost('deadline_from'),
+            "deadline_to" => $this->request->getPost('deadline_to'),
             "created_from" => $this->request->getPost('created_from'),
             "created_to" => $this->request->getPost('created_to'),
             "custom_fields" => $custom_fields,
@@ -5643,6 +5663,7 @@ class Projects extends Security_Controller {
         }
 
         $this->_load_open_timers_for_task_list($list_data);
+        $this->_load_created_times_for_task_list($list_data);
 
         $result_data = array();
         foreach ($list_data as $data) {
@@ -5791,6 +5812,44 @@ class Projects extends Security_Controller {
         }
     }
 
+    /**
+     * Batch-load earliest task created timestamps from rise_activity_logs for visible task ids (one query).
+     */
+    private function _load_created_times_for_task_list($list_data) {
+        $this->task_created_times_by_id = array();
+        if (!is_iterable($list_data)) {
+            return;
+        }
+
+        $ids = array();
+        foreach ($list_data as $data) {
+            if (isset($data->id) && $data->id) {
+                $ids[] = (int) $data->id;
+            }
+        }
+
+        if (!$ids) {
+            return;
+        }
+
+        $db = db_connect('default');
+        $activity_logs_table = $db->prefixTable('activity_logs');
+        $chunks = array_chunk($ids, 1000);
+
+        foreach ($chunks as $chunk) {
+            $ids_string = implode(",", $chunk);
+            $sql = "SELECT log_type_id, MIN(created_at) AS created_at 
+                    FROM $activity_logs_table 
+                    WHERE deleted=0 AND log_type='task' AND action='created' AND log_type_id IN ($ids_string) 
+                    GROUP BY log_type_id";
+            $rows = $db->query($sql)->getResult();
+
+            foreach ($rows as $row) {
+                $this->task_created_times_by_id[$row->log_type_id] = $row->created_at;
+            }
+        }
+    }
+
     /* return a row of task list table */
 
     private function _task_row_data($id) {
@@ -5801,6 +5860,7 @@ class Projects extends Security_Controller {
 
         $this->init_project_permission_checker($data->project_id);
         $this->_load_open_timers_for_task_list(array($data));
+        $this->_load_created_times_for_task_list(array($data));
 
         return $this->_make_task_row($data, $custom_fields);
     }
@@ -5919,10 +5979,24 @@ class Projects extends Security_Controller {
             $start_date = format_to_date($data->start_date, false);
         }
 
-        $created_at = "-";
-        if (is_date_exists($data->created_date)) {
-            $created_at = format_to_date($data->created_date, false);
+        $creator_name = "-";
+        if (!empty($data->created_by_user_name) && empty($data->created_by_user_deleted)) {
+            $creator_name = $data->created_by_user_name;
         }
+
+        $created_date = (is_date_exists($data->created_date)) ? format_to_date($data->created_date, false) : "-";
+
+        $created_time = "-";
+        $act_created_at = isset($this->task_created_times_by_id[$data->id]) ? $this->task_created_times_by_id[$data->id] : null;
+        if (!empty($act_created_at) && is_date_exists($act_created_at) && $act_created_at != "0000-00-00 00:00:00") {
+            $created_time = format_to_time($act_created_at);
+        }
+
+        $created_at = "<div class='task-created-cell'>"
+            . "<div class='text-dark font-weight-bold text-truncate' style='color:#1f2937; font-weight:600;' title='" . htmlspecialchars($creator_name) . "'>" . htmlspecialchars($creator_name) . "</div>\n"
+            . "<div style='color:#374151;'>" . $created_date . "</div>\n"
+            . "<div class='text-dark font-weight-bold' style='color:#1f2937; font-weight:600;'>" . ($created_time ? $created_time : "-") . "</div>"
+            . "</div>";
 
         $gained_points_value = format_task_point_value(get_task_gained_points_value($data));
 
@@ -8447,6 +8521,7 @@ class Projects extends Security_Controller {
         }
 
         $this->_load_open_timers_for_task_list($list_data);
+        $this->_load_created_times_for_task_list($list_data);
 
         $result_data = array();
         foreach ($list_data as $data) {

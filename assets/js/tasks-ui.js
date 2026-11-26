@@ -340,7 +340,7 @@
             return;
         }
 
-        if (!$card.find("[name='project_id'], [name='quick_filter'], [name='specific_user_id'], .custom-filter-search").length) {
+        if (!$card.find("[name='project_id'], [name='quick_filter'], [name='specific_user_id'], [name='created_by'], .custom-filter-search").length) {
             return;
         }
 
@@ -354,6 +354,7 @@
         $rowA.append(boxOf($card.find("[name='priority_id']")));
         $rowA.append(boxOf($card.find("[name='milestone_id']")));
         $rowA.append(boxOf($card.find("[name='specific_user_id']")));
+        $rowA.append(boxOf($card.find("[name='created_by']")));
         $rowA.append(boxOf($card.find("[name='deadline']")));
         $rowA.append(boxOf($card.find(".custom-filter-search")).addClass("tasks-kanban-search"));
 
@@ -434,6 +435,7 @@
         $rowA.append(boxOf($card.find("[name='priority_id']")));
         $rowA.append(boxOf($card.find("[name='milestone_id']")));
         $rowA.append(boxOf($card.find("[name='specific_user_id']")));
+        $rowA.append(boxOf($card.find("[name='created_by']")));
         $rowA.append(boxOf($card.find("[name='deadline']")));
         $rowA.append(boxOf($card.find("[data-name='status_id']").first()));
         if (!$rowA.find(".filter-multi-select").length) {
