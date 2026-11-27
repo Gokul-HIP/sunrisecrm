@@ -58,7 +58,7 @@ class Team_members extends Security_Controller {
     //only admin/permitted users can change other user's info
     //other users can only change his/her own info
     private function can_access_user_settings($user_id) {
-        if ($user_id && ($this->login_user->is_admin || $this->login_user->id === $user_id || get_array_value($this->login_user->permissions, "can_manage_user_role_and_permissions"))) {
+        if ($user_id && ($this->login_user->is_admin || $this->login_user->id === $user_id || get_array_value($this->login_user->permissions, "can_manage_user_role_and_permissions") || $this->can_activate_deactivate_team_members())) {
             return true;
         } else {
             app_redirect("forbidden");
@@ -71,6 +71,8 @@ class Team_members extends Security_Controller {
         }
 
         $view_data["show_contact_info"] = $this->can_view_team_members_contact_info();
+        $view_data["can_delete_team_members"] = $this->can_delete_team_members();
+        $view_data["can_activate_deactivate_team_members"] = $this->can_activate_deactivate_team_members();
 
         $view_data["custom_field_headers"] = $this->Custom_fields_model->get_custom_field_headers_for_table("team_members", $this->login_user->is_admin, $this->login_user->user_type);
         $view_data["custom_field_filters"] = $this->Custom_fields_model->get_custom_field_filters("team_members", $this->login_user->is_admin, $this->login_user->user_type);
@@ -337,19 +339,32 @@ class Team_members extends Security_Controller {
             $row_data[] = $this->template->view("custom_fields/output_" . $field->field_type, array("value" => $data->$cf_id));
         }
 
-        $delete_link = "";
-        if ($this->login_user->is_admin && $this->login_user->id != $data->id) {
-            $delete_link = js_anchor("<i data-feather='x' class='icon-16'></i>", array('title' => app_lang('delete_team_member'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("team_members/delete"), "data-action" => "delete-confirmation"));
+        $options = "";
+
+        // Status change button (active <-> inactive)
+        if ($this->can_activate_deactivate_team_members() && $this->login_user->id != $data->id && (!$data->is_admin || $this->login_user->is_admin)) {
+            if ($data->status === "active") {
+                $options .= js_anchor("<i data-feather='user-x' class='icon-16 text-warning'></i>", array('title' => app_lang('mark_as_inactive'), "class" => "edit change-status-btn", "data-id" => $data->id, "data-status" => "inactive", "data-action-url" => get_uri("team_members/change_status")));
+            } else {
+                $options .= js_anchor("<i data-feather='user-check' class='icon-16 text-success'></i>", array('title' => app_lang('mark_as_active'), "class" => "edit change-status-btn", "data-id" => $data->id, "data-status" => "active", "data-action-url" => get_uri("team_members/change_status")));
+            }
         }
 
-        $row_data[] = $delete_link;
+        // Delete button
+        if ($this->can_delete_team_members() && $this->login_user->id != $data->id && (!$data->is_admin || $this->login_user->is_admin)) {
+            $options .= js_anchor("<i data-feather='x' class='icon-16'></i>", array('title' => app_lang('delete_team_member'), "class" => "delete", "data-id" => $data->id, "data-action-url" => get_uri("team_members/delete"), "data-action" => "delete-confirmation"));
+        }
+
+        $row_data[] = $options;
 
         return $row_data;
     }
 
     //delete a team member
     function delete() {
-        $this->access_only_admin();
+        if (!$this->can_delete_team_members()) {
+            app_redirect("forbidden");
+        }
 
         $this->validate_submitted_data(array(
             "id" => "required|numeric"
@@ -357,10 +372,76 @@ class Team_members extends Security_Controller {
 
         $id = $this->request->getPost('id');
 
-        if ($id != $this->login_user->id && $this->Users_model->delete($id)) {
+        if ($id == $this->login_user->id) {
+            echo json_encode(array("success" => false, 'message' => app_lang('record_cannot_be_deleted')));
+            return;
+        }
+
+        $user_info = $this->Users_model->get_one($id);
+        if (!$user_info || $user_info->user_type !== "staff") {
+            echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
+            return;
+        }
+
+        // Non-admin cannot delete an admin user
+        if ($user_info->is_admin && !$this->login_user->is_admin) {
+            echo json_encode(array("success" => false, 'message' => app_lang('record_cannot_be_deleted')));
+            return;
+        }
+
+        if ($this->Users_model->delete($id)) {
             echo json_encode(array("success" => true, 'message' => app_lang('record_deleted')));
         } else {
             echo json_encode(array("success" => false, 'message' => app_lang('record_cannot_be_deleted')));
+        }
+    }
+
+    //change status of a team member (active <-> inactive)
+    function change_status() {
+        if (!$this->can_activate_deactivate_team_members()) {
+            app_redirect("forbidden");
+        }
+
+        $this->validate_submitted_data(array(
+            "id" => "required|numeric",
+            "status" => "required"
+        ));
+
+        $id = $this->request->getPost('id');
+        $status = $this->request->getPost('status');
+
+        if (!in_array($status, array("active", "inactive"))) {
+            echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
+            return;
+        }
+
+        if ($id == $this->login_user->id) {
+            echo json_encode(array("success" => false, 'message' => app_lang('record_cannot_be_updated')));
+            return;
+        }
+
+        $user_info = $this->Users_model->get_one($id);
+        if (!$user_info || $user_info->user_type !== "staff") {
+            echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
+            return;
+        }
+
+        // Non-admin cannot change an admin user's status
+        if ($user_info->is_admin && !$this->login_user->is_admin) {
+            echo json_encode(array("success" => false, 'message' => app_lang('record_cannot_be_updated')));
+            return;
+        }
+
+        $data = array(
+            "status" => $status,
+            "disable_login" => ($status === "inactive" ? 1 : 0)
+        );
+
+        if ($this->Users_model->ci_save($data, $id)) {
+            $message = ($status === "inactive") ? app_lang('record_marked_as_inactive') : app_lang('record_marked_as_active');
+            echo json_encode(array("success" => true, 'id' => $id, 'message' => $message));
+        } else {
+            echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
         }
     }
 
@@ -722,22 +803,24 @@ class Team_members extends Security_Controller {
         $role = $this->request->getPost('role');
         $user_info = $this->Users_model->get_one($user_id);
 
-        if (!$this->is_own_id($user_id) && ($this->login_user->is_admin || (!$user_info->is_admin && $this->has_role_manage_permission() && !$this->is_admin_role($role)))) {
+        if (!$this->is_own_id($user_id) && (!$user_info->is_admin || $this->login_user->is_admin)) {
             //only admin user/eligible user has permission to update team member's role
             //but admin user/eligible user can't update his/her own role 
             //eligible user can't update admin user's role or can't give admin role to anyone
-            $role_id = $role;
+            if ($role && ($this->login_user->is_admin || ($this->has_role_manage_permission() && !$this->is_admin_role($role)))) {
+                $role_id = $role;
 
-            if ($this->login_user->is_admin && $role === "admin") {
-                $account_data["is_admin"] = 1;
-                $account_data["role_id"] = 0;
-            } else {
-                $account_data["is_admin"] = 0;
-                $account_data["role_id"] = $role_id;
+                if ($this->login_user->is_admin && $role === "admin") {
+                    $account_data["is_admin"] = 1;
+                    $account_data["role_id"] = 0;
+                } else {
+                    $account_data["is_admin"] = 0;
+                    $account_data["role_id"] = $role_id;
+                }
             }
 
-            if ($this->login_user->is_admin) {
-                $account_data['disable_login'] = $this->request->getPost('disable_login');
+            if ($this->login_user->is_admin || $this->can_activate_deactivate_team_members()) {
+                $account_data['disable_login'] = $this->request->getPost('disable_login') ? 1 : 0;
                 $account_data['status'] = $this->request->getPost('status') === "inactive" ? "inactive" : "active";
             }
         }

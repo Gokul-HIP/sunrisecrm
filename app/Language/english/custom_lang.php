@@ -492,4 +492,12 @@ $lang["minutes_min"] = "Minutes MIN";
 $lang["minutes_max"] = "Minutes MAX";
 $lang["keywords"] = "Keywords";
 
+$lang["can_delete_team_members"] = "Can delete team members?";
+$lang["can_activate_deactivate_team_members"] = "Can activate/deactivate team members?";
+$lang["mark_as_active"] = "Mark as active";
+$lang["record_marked_as_inactive"] = "The team member has been marked as inactive.";
+$lang["record_marked_as_active"] = "The team member has been marked as active.";
+$lang["confirm_mark_as_inactive"] = "Are you sure you want to mark this team member as inactive?";
+$lang["confirm_mark_as_active"] = "Are you sure you want to mark this team member as active?";
+
 return $lang;

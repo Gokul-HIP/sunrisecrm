@@ -30,7 +30,7 @@
         }
 
         var visibleDelete = false;
-        if ("<?php echo $login_user->is_admin; ?>") {
+        if ("<?php echo ($login_user->is_admin || $can_delete_team_members || $can_activate_deactivate_team_members); ?>") {
             visibleDelete = true;
         }
 
@@ -50,7 +50,45 @@
             ],
             printColumns: combineCustomFieldsColumns([1, 2, 3, 4], '<?php echo $custom_field_headers; ?>'),
             xlsColumns: combineCustomFieldsColumns([1, 2, 3, 4], '<?php echo $custom_field_headers; ?>')
+        });
 
+        $('body').on('click', '.change-status-btn', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $instance = $(this);
+            var status = $instance.attr("data-status");
+            var title = (status === "inactive") ? "<?php echo app_lang('confirm_mark_as_inactive'); ?>" : "<?php echo app_lang('confirm_mark_as_active'); ?>";
+
+            $instance.appConfirmation({
+                title: title,
+                btnConfirmLabel: "<?php echo app_lang('yes'); ?>",
+                btnCancelLabel: "<?php echo app_lang('no'); ?>",
+                onConfirm: function () {
+                    appLoader.show();
+                    $.ajax({
+                        url: $instance.attr("data-action-url"),
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            id: $instance.attr("data-id"),
+                            status: status
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                $("#team_member-table").appTable({reload: true});
+                                appAlert.success(response.message, {duration: 10000});
+                            } else {
+                                appAlert.error(response.message);
+                            }
+                            appLoader.hide();
+                        },
+                        error: function () {
+                            appAlert.error(appLang.error_occurred);
+                            appLoader.hide();
+                        }
+                    });
+                }
+            });
         });
     });
 </script>    

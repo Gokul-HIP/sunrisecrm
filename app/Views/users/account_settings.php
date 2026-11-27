@@ -95,7 +95,7 @@
                 </div>
             <?php } ?>
 
-            <?php if ($login_user->is_admin && $user_info->id !== $login_user->id) { ?>
+            <?php if (($login_user->is_admin || get_array_value($login_user->permissions, "can_activate_deactivate_team_members")) && $user_info->id !== $login_user->id && (!$user_info->is_admin || $login_user->is_admin)) { ?>
                 <div class="form-group">
                     <div class="row">
                         <label for="disable_login" class="col-md-2"><?php echo app_lang('disable_login'); ?></label>

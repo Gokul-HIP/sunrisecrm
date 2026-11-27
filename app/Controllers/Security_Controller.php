@@ -211,6 +211,28 @@ class Security_Controller extends App_Controller {
         return false;
     }
 
+    protected function can_delete_team_members() {
+        if ($this->login_user->user_type == "staff") {
+            if ($this->login_user->is_admin) {
+                return true;
+            } else if (get_array_value($this->login_user->permissions, "can_delete_team_members") == "1") {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function can_activate_deactivate_team_members() {
+        if ($this->login_user->user_type == "staff") {
+            if ($this->login_user->is_admin) {
+                return true;
+            } else if (get_array_value($this->login_user->permissions, "can_activate_deactivate_team_members") == "1") {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //access team members and clients
     protected function access_only_team_members_or_client() {
         if (!($this->login_user->user_type === "staff" || $this->login_user->user_type === "client")) {

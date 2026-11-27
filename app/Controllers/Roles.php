@@ -103,6 +103,8 @@ class Roles extends Security_Controller {
 
             $view_data['can_view_team_members_contact_info'] = get_array_value($permissions, "can_view_team_members_contact_info");
             $view_data['can_view_team_members_social_links'] = get_array_value($permissions, "can_view_team_members_social_links");
+            $view_data['can_delete_team_members'] = get_array_value($permissions, "can_delete_team_members");
+            $view_data['can_activate_deactivate_team_members'] = get_array_value($permissions, "can_activate_deactivate_team_members");
             $view_data['team_member_update_permission'] = get_array_value($permissions, "team_member_update_permission");
             $view_data['team_member_update_permission_specific'] = get_array_value($permissions, "team_member_update_permission_specific");
 
@@ -244,6 +246,8 @@ class Roles extends Security_Controller {
         $disable_event_sharing = $this->request->getPost('disable_event_sharing');
 
         $hide_team_members_list = $this->request->getPost('hide_team_members_list');
+        $can_delete_team_members = $this->request->getPost('can_delete_team_members');
+        $can_activate_deactivate_team_members = $this->request->getPost('can_activate_deactivate_team_members');
 
         $can_delete_leave_application = $this->request->getPost('can_delete_leave_application');
 
@@ -324,6 +328,8 @@ class Roles extends Security_Controller {
             "can_delete_files" => $can_delete_files,
             "can_view_team_members_contact_info" => $can_view_team_members_contact_info,
             "can_view_team_members_social_links" => $can_view_team_members_social_links,
+            "can_delete_team_members" => $can_delete_team_members,
+            "can_activate_deactivate_team_members" => $can_activate_deactivate_team_members,
             "team_member_update_permission" => $team_member_update_permission,
             "team_member_update_permission_specific" => $team_member_update_permission_specific,
             "timesheet_manage_permission" => $timesheet_manage_permission,

@@ -176,6 +176,20 @@
                     </div>
 
                     <div>
+                        <?php
+                        echo form_checkbox("can_delete_team_members", "1", $can_delete_team_members ? true : false, "id='can_delete_team_members' class='form-check-input'");
+                        ?>
+                        <label for="can_delete_team_members"><?php echo app_lang("can_delete_team_members"); ?></label>
+                    </div>
+
+                    <div>
+                        <?php
+                        echo form_checkbox("can_activate_deactivate_team_members", "1", $can_activate_deactivate_team_members ? true : false, "id='can_activate_deactivate_team_members' class='form-check-input'");
+                        ?>
+                        <label for="can_activate_deactivate_team_members"><?php echo app_lang("can_activate_deactivate_team_members"); ?></label>
+                    </div>
+
+                    <div>
                         <label for="can_update_team_members_general_info_and_social_links"><?php echo app_lang("can_update_team_members_general_info_and_social_links"); ?></label>
                         <div class="ml15">
                             <div>
