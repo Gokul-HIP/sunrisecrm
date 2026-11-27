@@ -262,8 +262,13 @@ if (!function_exists('active_menu')) {
                     $found_controller_active_key = $key;
                 }
 
-                // Phase 19: Employees menu uses name "employees" but controller is team_members
-                if ($menu_name === "employees" && $controller_name === "team_members") {
+                // Employees parent menu matches team_members, attendance, leaves, timeline, announcements
+                if ($menu_name === "employees" && in_array($controller_name, array("team_members", "attendance", "leaves", "timeline", "announcements"))) {
+                    $found_controller_active_key = $key;
+                }
+
+                // Team parent menu matches team_groups controller
+                if ($menu_name === "team" && $controller_name === "team_groups") {
                     $found_controller_active_key = $key;
                 }
 

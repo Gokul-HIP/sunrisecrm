@@ -500,4 +500,33 @@ $lang["record_marked_as_active"] = "The team member has been marked as active.";
 $lang["confirm_mark_as_inactive"] = "Are you sure you want to mark this team member as inactive?";
 $lang["confirm_mark_as_active"] = "Are you sure you want to mark this team member as active?";
 
+$lang["team_groups_manage_access"] = "Who can manage team groups";
+$lang["team_groups_manage_access_help"] = "Can create, edit and delete team groups, and add or remove members. Admins always can.";
+$lang["team_groups"] = "Team groups";
+$lang["create_group"] = "+ Create group";
+$lang["edit_group"] = "Edit group";
+$lang["delete_group"] = "Delete group";
+$lang["group_name"] = "Group name";
+$lang["open_tasks"] = "Open tasks";
+$lang["overdue_tasks"] = "Overdue tasks";
+$lang["points_this_month"] = "Points this month";
+$lang["today_status"] = "Today's status";
+$lang["clocked_in"] = "Clocked in";
+$lang["on_leave"] = "On leave";
+$lang["absent"] = "Absent";
+$lang["view_tasks"] = "View tasks";
+$lang["remove_from_group"] = "Remove from group";
+$lang["confirm_delete_group"] = "Are you sure you want to delete this team group?";
+$lang["confirm_remove_member"] = "Are you sure you want to remove this member from the group?";
+$lang["group_created"] = "The team group has been created.";
+$lang["group_updated"] = "The team group has been updated.";
+$lang["group_deleted"] = "The team group has been deleted.";
+$lang["member_removed_from_group"] = "The member has been removed from the group.";
+
+$lang["members"] = "Members";
+$lang["group_name"] = "Group name";
+$lang["create_group"] = "Create group";
+$lang["edit_group"] = "Edit group";
+$lang["delete_group"] = "Delete group";
+
 return $lang;

@@ -379,6 +379,13 @@ class Settings extends Security_Controller {
             $selected[$key] = $permissions_model->get_user_ids($key);
         }
 
+        $tg_manage = get_setting("team_groups_manage_users");
+        $tg_manage_ids = array();
+        if ($tg_manage) {
+            $tg_manage_ids = array_map('intval', array_filter(explode(',', $tg_manage)));
+        }
+        $selected['team_groups_manage_users'] = $tg_manage_ids;
+
         $view_data["staff"] = $staff;
         $view_data["selected"] = $selected;
         return $this->template->rander("settings/content_calendar_access", $view_data);
@@ -391,6 +398,32 @@ class Settings extends Security_Controller {
         $permissions_model = model("App\Models\Cc_permissions_model");
 
         $permission_key = $this->request->getPost("permission_key");
+        $posted_ids = $this->request->getPost("user_ids");
+        if (!is_array($posted_ids)) {
+            $posted_ids = array();
+        }
+
+        // Handle team_groups_manage_users setting
+        if ($permission_key === "team_groups_manage_users") {
+            $valid_ids = array();
+            $staff_users = $this->Users_model->get_all_where(array("deleted" => 0, "user_type" => "staff", "status" => "active"))->getResult();
+            foreach ($staff_users as $user) {
+                $valid_ids[(int) $user->id] = true;
+            }
+
+            $user_ids = array();
+            foreach ($posted_ids as $user_id) {
+                $user_id = (int) $user_id;
+                if ($user_id && isset($valid_ids[$user_id]) && !in_array($user_id, $user_ids, true)) {
+                    $user_ids[] = $user_id;
+                }
+            }
+
+            $this->Settings_model->save_setting("team_groups_manage_users", implode(',', $user_ids));
+            echo json_encode(array("success" => true, "count" => count($user_ids), "message" => app_lang('settings_updated')));
+            return;
+        }
+
         if (!in_array($permission_key, $permissions_model->get_valid_keys(), true)) {
             echo json_encode(array("success" => false, "message" => cc_lang("cc_error")));
             return;

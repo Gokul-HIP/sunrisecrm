@@ -221,15 +221,7 @@ class Left_menu {
                 }
             }
 
-            // Drop Team parent if customization left it with no visible submenu children
-            foreach ($final_left_menu_items as $k => $item) {
-                if (get_array_value($item, "name") === "team") {
-                    $sub = get_array_value($item, "submenu");
-                    if (!$sub || !is_array($sub) || !count($sub)) {
-                        unset($final_left_menu_items[$k]);
-                    }
-                }
-            }
+            // Do not drop team or employees here; their dynamic submenus are populated below
             $final_left_menu_items = array_values($final_left_menu_items);
         }
 
@@ -301,9 +293,199 @@ class Left_menu {
             }
         }
 
+        if ($this->ci->login_user->user_type == "staff" && $type !== "client_default") {
+            $employees_submenu = $this->_get_employees_submenu();
+            $team_groups_submenu = $this->_get_team_groups_submenu();
+            $can_view_team = (get_array_value($this->ci->login_user->permissions, "hide_team_members_list") != "1");
+
+            $has_employees = false;
+            $has_team = false;
+
+            foreach ($view_data["sidebar_menu"] as $idx => $m) {
+                $m_name = get_array_value($m, "name");
+                if ($m_name === "employees") {
+                    $has_employees = true;
+                    if (count($employees_submenu)) {
+                        $view_data["sidebar_menu"][$idx]["submenu"] = array_values($employees_submenu);
+                    } else {
+                        unset($view_data["sidebar_menu"][$idx]);
+                    }
+                }
+                if ($m_name === "team") {
+                    $has_team = true;
+                    if ($can_view_team && count($team_groups_submenu)) {
+                        $view_data["sidebar_menu"][$idx]["class"] = "user-check";
+                        $view_data["sidebar_menu"][$idx]["submenu"] = array_values($team_groups_submenu);
+                    } else {
+                        unset($view_data["sidebar_menu"][$idx]);
+                    }
+                }
+            }
+
+            if (!$has_employees && count($employees_submenu)) {
+                $new_sidebar = array();
+                $first_emp = reset($employees_submenu);
+                $emp_item = array(
+                    "name" => "employees",
+                    "url" => get_array_value($first_emp, "url") ?: "team_members",
+                    "class" => "users",
+                    "submenu" => array_values($employees_submenu)
+                );
+                $injected = false;
+                foreach ($view_data["sidebar_menu"] as $m) {
+                    $new_sidebar[] = $m;
+                    if (!$injected && get_array_value($m, "name") === "tasks") {
+                        $new_sidebar[] = $emp_item;
+                        $injected = true;
+                    }
+                }
+                if (!$injected) {
+                    // If tasks not found, insert before leads
+                    $temp = array();
+                    foreach ($new_sidebar as $m) {
+                        if (!$injected && get_array_value($m, "name") === "leads") {
+                            $temp[] = $emp_item;
+                            $injected = true;
+                        }
+                        $temp[] = $m;
+                    }
+                    if (!$injected) {
+                        $temp[] = $emp_item;
+                    }
+                    $new_sidebar = $temp;
+                }
+                $view_data["sidebar_menu"] = $new_sidebar;
+                $has_employees = true;
+            }
+
+            if (!$has_team && $can_view_team && count($team_groups_submenu)) {
+                $new_sidebar = array();
+                $injected = false;
+                $first_team = reset($team_groups_submenu);
+                $team_item = array(
+                    "name" => "team",
+                    "url" => get_array_value($first_team, "url") ?: "team_groups",
+                    "class" => "user-check",
+                    "submenu" => array_values($team_groups_submenu)
+                );
+                foreach ($view_data["sidebar_menu"] as $m) {
+                    $new_sidebar[] = $m;
+                    if (!$injected && get_array_value($m, "name") === "employees") {
+                        $new_sidebar[] = $team_item;
+                        $injected = true;
+                    }
+                }
+                if (!$injected) {
+                    $temp = array();
+                    foreach ($new_sidebar as $m) {
+                        $temp[] = $m;
+                        if (!$injected && get_array_value($m, "name") === "tasks") {
+                            $temp[] = $team_item;
+                            $injected = true;
+                        }
+                    }
+                    if (!$injected) {
+                        $temp[] = $team_item;
+                    }
+                    $new_sidebar = $temp;
+                }
+                $view_data["sidebar_menu"] = $new_sidebar;
+            }
+
+            // Deduplicate top-level items so no item appears twice
+            $deduped_sidebar = array();
+            $seen_top_names = array();
+            foreach ($view_data["sidebar_menu"] as $m) {
+                $m_name = get_array_value($m, "name");
+                if ($m_name) {
+                    if (isset($seen_top_names[$m_name])) {
+                        continue;
+                    }
+                    $seen_top_names[$m_name] = true;
+                }
+                $deduped_sidebar[] = $m;
+            }
+            $view_data["sidebar_menu"] = array_values($deduped_sidebar);
+        }
+
         $view_data["is_preview"] = $is_preview;
         $view_data["login_user"] = $this->ci->login_user;
         return view("includes/left_menu", $view_data);
+    }
+
+    private function _get_employees_submenu() {
+        $permissions = $this->ci->login_user->permissions;
+        $access_timecard = get_array_value($permissions, "attendance");
+        $access_leave = get_array_value($permissions, "leave");
+        $access_timeline = ($this->ci->login_user->is_admin || get_array_value($permissions, "timeline_permission") !== "no");
+
+        $employees_submenu = array();
+
+        if (get_array_value($this->ci->login_user->permissions, "hide_team_members_list") != "1") {
+            $employees_submenu["employees"] = array("name" => "employees", "url" => "team_members", "class" => "users");
+        }
+
+        if (get_setting("module_attendance") == "1" && ($this->ci->login_user->is_admin || $access_timecard)) {
+            $employees_submenu["attendance"] = array("name" => "attendance", "url" => "attendance", "class" => "clock");
+        } else if (get_setting("module_attendance") == "1") {
+            $employees_submenu["attendance"] = array("name" => "attendance", "url" => "attendance/attendance_info", "class" => "clock");
+        }
+
+        if (get_setting("module_leave") == "1" && ($this->ci->login_user->is_admin || $access_leave)) {
+            $employees_submenu["leaves"] = array("name" => "leaves", "url" => "leaves", "class" => "log-out");
+        } else if (get_setting("module_leave") == "1") {
+            $employees_submenu["leaves"] = array("name" => "leaves", "url" => "leaves/leave_info", "class" => "log-out");
+        }
+
+        if (get_setting("module_timeline") == "1" && $access_timeline) {
+            $employees_submenu["timeline"] = array("name" => "timeline", "url" => "timeline", "class" => "send");
+        }
+
+        if (get_setting("module_announcement") == "1") {
+            $employees_submenu["announcements"] = array("name" => "announcements", "url" => "announcements", "class" => "bell");
+        }
+
+        return $employees_submenu;
+    }
+
+    private function _get_team_groups_submenu() {
+        $team_submenu = array();
+
+        $login_user = $this->ci->login_user;
+        $is_admin = $login_user ? $login_user->is_admin : false;
+        $manage_users = get_setting("team_groups_manage_users");
+        $manage_arr = $manage_users ? array_filter(array_map('trim', explode(',', $manage_users))) : array();
+        $can_manage_groups = ($is_admin || ($login_user && in_array((string)$login_user->id, $manage_arr, true)));
+
+        if ($can_manage_groups) {
+            $team_submenu["create_group"] = array(
+                "name" => "create_group",
+                "url" => "#",
+                "class" => "plus",
+                "data_act" => "ajax-modal",
+                "data_action_url" => get_uri("team_groups/modal_form"),
+                "data_title" => app_lang("create_group")
+            );
+        }
+
+        try {
+            $groups_model = model("App\Models\Team_groups_model");
+            if ($groups_model && method_exists($groups_model, 'get_all_active_groups')) {
+                $groups = $groups_model->get_all_active_groups();
+                foreach ($groups as $group) {
+                    $team_submenu["group_" . $group->id] = array(
+                        "name" => $group->title,
+                        "url" => "team_groups/view/" . $group->id,
+                        "class" => "minus",
+                        "is_team_group" => true
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            // graceful fallback
+        }
+
+        return $team_submenu;
     }
 
     private function _get_item_array_value($data_array, $left_menu_items) {
@@ -329,55 +511,137 @@ class Left_menu {
     }
 
     /**
-     * Rewrite a saved custom left menu so team_members becomes top-level employees
-     * placed directly above Team, without disturbing other items' order.
+     * Rewrite a saved custom left menu:
+     * - If neither employees nor team is explicitly configured (legacy saved menu),
+     *   remove legacy team / team_members / attendance / leaves / timeline submenus,
+     *   and insert employees and team directly below "tasks" and above "leads".
+     * - If employees was already explicitly placed by the admin, keep that custom placement.
+     * - Prevent any duplicate entries of employees, team, or former team submenus.
      */
     private function _normalize_employees_in_custom_left_menu($items) {
         if (!$items || !is_array($items)) {
             return $items;
         }
 
-        $has_employees = false;
-        $had_team_members = false;
-        $out = array();
+        // Check if employees is already explicitly present as a top-level item in the saved menu
+        $has_saved_employees = false;
         foreach ($items as $item) {
             $name = get_array_value($item, "name");
-            if ($name === "employees") {
-                $has_employees = true;
-                // ensure not marked as submenu
-                unset($item["is_sub_menu"]);
+            $is_sub = get_array_value($item, "is_sub_menu");
+            if ($name === "employees" && !$is_sub) {
+                $has_saved_employees = true;
+                break;
+            }
+        }
+
+        if ($has_saved_employees) {
+            // The admin has explicitly saved "employees" in Settings > Left menu.
+            // Strip any legacy sub-items that belong under employees now.
+            $out = array();
+            $seen_top = array();
+            foreach ($items as $item) {
+                $name = get_array_value($item, "name");
+                $is_sub = get_array_value($item, "is_sub_menu");
+
+                // Legacy sub-items of team/employees shouldn't float as custom sortables
+                if (in_array($name, array("team_members", "attendance", "leaves", "timeline")) && $is_sub) {
+                    continue;
+                }
+                if ($name === "team_members") {
+                    continue;
+                }
+                // Prevent duplicate top-level items
+                if (!$is_sub) {
+                    if (isset($seen_top[$name])) {
+                        continue;
+                    }
+                    $seen_top[$name] = true;
+                }
                 $out[] = $item;
-                continue;
             }
-            if ($name === "team_members") {
-                $had_team_members = true;
-                continue; // drop; re-insert as employees above team
+
+            // If team is missing from the admin's saved menu, insert it right after employees
+            $has_team = false;
+            foreach ($out as $item) {
+                if (get_array_value($item, "name") === "team" && !get_array_value($item, "is_sub_menu")) {
+                    $has_team = true;
+                    break;
+                }
             }
-            $out[] = $item;
-        }
+            if (!$has_team) {
+                $final = array();
+                foreach ($out as $item) {
+                    $final[] = $item;
+                    if (get_array_value($item, "name") === "employees" && !get_array_value($item, "is_sub_menu")) {
+                        $final[] = array("name" => "team");
+                    }
+                }
+                $out = $final;
+            }
 
-        if (!$has_employees && !$had_team_members) {
-            return $items; // layout never had team members — leave alone
-        }
-
-        if ($has_employees && !$had_team_members) {
             return $out;
         }
 
-        $employees_item = array("name" => "employees");
-        $final = array();
-        $inserted = false;
-        foreach ($out as $item) {
-            if (!$inserted && get_array_value($item, "name") === "team" && !get_array_value($item, "is_sub_menu")) {
-                $final[] = $employees_item;
-                $inserted = true;
+        // Legacy saved menu (does NOT have "employees"):
+        // Strip legacy team, team_members, and old team submenus
+        $cleaned = array();
+        $seen = array();
+        foreach ($items as $item) {
+            $name = get_array_value($item, "name");
+            $is_sub = get_array_value($item, "is_sub_menu");
+
+            if (in_array($name, array("team", "team_members")) && !$is_sub) {
+                // Drop legacy team/team_members top-level; will re-insert after tasks
+                continue;
             }
-            $final[] = $item;
+            if (in_array($name, array("team_members", "attendance", "leaves", "timeline")) && $is_sub) {
+                // Drop legacy sub-items
+                continue;
+            }
+            if (!$is_sub) {
+                if (isset($seen[$name])) {
+                    continue;
+                }
+                $seen[$name] = true;
+            }
+            $cleaned[] = $item;
         }
-        if (!$inserted) {
-            $final[] = $employees_item;
+
+        // Insert "employees" and "team" directly below "tasks" and above "leads"
+        $tasks_idx = null;
+        $leads_idx = null;
+        foreach ($cleaned as $k => $item) {
+            if (get_array_value($item, "is_sub_menu")) {
+                continue;
+            }
+            $name = get_array_value($item, "name");
+            if ($name === "tasks") {
+                $tasks_idx = $k;
+            } else if ($name === "leads" && $leads_idx === null) {
+                $leads_idx = $k;
+            }
         }
-        return $final;
+
+        $emp_item = array("name" => "employees");
+        $team_item = array("name" => "team");
+
+        if ($tasks_idx !== null) {
+            // Find insertion point immediately after tasks (and any sub-items of tasks, if any)
+            $insert_at = $tasks_idx + 1;
+            while ($insert_at < count($cleaned) && get_array_value($cleaned[$insert_at], "is_sub_menu")) {
+                $insert_at++;
+            }
+            array_splice($cleaned, $insert_at, 0, array($emp_item, $team_item));
+        } else if ($leads_idx !== null) {
+            // If tasks is not present, insert before leads
+            array_splice($cleaned, $leads_idx, 0, array($emp_item, $team_item));
+        } else {
+            // Fallback: append
+            $cleaned[] = $emp_item;
+            $cleaned[] = $team_item;
+        }
+
+        return $cleaned;
     }
 
     private function _get_sidebar_menu_items($type = "") {
@@ -423,11 +687,13 @@ class Left_menu {
                 $sidebar_menu["content_calendar"] = array("name" => "content_calendar", "url" => "content_calendar", "class" => "layout");
             }
 
+            if (get_setting("module_todo") == "1") {
+                $sidebar_menu["todo"] = array("name" => "todo", "url" => "todo", "class" => "check-square");
+            }
 
             if ($this->ci->login_user->is_admin || $access_client) {
                 $sidebar_menu["clients"] = array("name" => "clients", "url" => "clients", "class" => "briefcase");
             }
-
 
             if ($this->ci->login_user->is_admin || !get_array_value($this->ci->login_user->permissions, "do_not_show_projects")) {
                 $sidebar_menu["projects"] = array("name" => "projects", "url" => "projects/all_projects", "class" => "grid");
@@ -440,6 +706,32 @@ class Left_menu {
                     $sidebar_menu["tasks"] = array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle", "submenu" => $tasks_submenu, "badge" => $in_review_badge ? $in_review_badge : "", "badge_class" => "bg-warning");
                 } else {
                     $sidebar_menu["tasks"] = array("name" => "tasks", "url" => "projects/all_tasks", "class" => "check-circle");
+                }
+            }
+
+            // Employees parent menu (expandable, placed directly below tasks)
+            $employees_submenu = $this->_get_employees_submenu();
+            if (count($employees_submenu)) {
+                $first_emp = reset($employees_submenu);
+                $sidebar_menu["employees"] = array(
+                    "name" => "employees",
+                    "url" => get_array_value($first_emp, "url") ?: "team_members",
+                    "class" => "users",
+                    "submenu" => $employees_submenu
+                );
+            }
+
+            // Team parent menu (expandable: team groups, placed directly below employees)
+            if (get_array_value($this->ci->login_user->permissions, "hide_team_members_list") != "1") {
+                $team_submenu = $this->_get_team_groups_submenu();
+                if (count($team_submenu)) {
+                    $first_team = reset($team_submenu);
+                    $sidebar_menu["team"] = array(
+                        "name" => "team",
+                        "url" => get_array_value($first_team, "url") ?: "team_groups",
+                        "class" => "user-check",
+                        "submenu" => $team_submenu
+                    );
                 }
             }
 
@@ -518,47 +810,8 @@ class Left_menu {
 
 
 
-            // Phase 19: Employees is a top-level item (same route/permissions as former Team members)
-            if (get_array_value($this->ci->login_user->permissions, "hide_team_members_list") != "1") {
-                $sidebar_menu["employees"] = array("name" => "employees", "url" => "team_members", "class" => "users");
-            }
-
-            $team_submenu = array();
-
-            if (get_setting("module_attendance") == "1" && ($this->ci->login_user->is_admin || $access_timecard)) {
-                $team_submenu["attendance"] = array("name" => "attendance", "url" => "attendance", "class" => "clock");
-            } else if (get_setting("module_attendance") == "1") {
-                $team_submenu["attendance"] = array("name" => "attendance", "url" => "attendance/attendance_info", "class" => "clock");
-            }
-
-
-            if (get_setting("module_leave") == "1" && ($this->ci->login_user->is_admin || $access_leave)) {
-                $team_submenu["leaves"] = array("name" => "leaves", "url" => "leaves", "class" => "log-out");
-            } else if (get_setting("module_leave") == "1") {
-                $team_submenu["leaves"] = array("name" => "leaves", "url" => "leaves/leave_info", "class" => "log-out");
-            }
-
-
-
-            if (get_setting("module_timeline") == "1" && $access_timeline) {
-                $team_submenu["timeline"] = array("name" => "timeline", "url" => "timeline", "class" => "send");
-            }
-
-
             if (get_setting("module_announcement") == "1") {
-                $team_submenu["announcements"] = array("name" => "announcements", "url" => "announcements", "class" => "bell");
-            }
-
-
-            // Only show Team when at least one child remains (no empty parent)
-            if (count($team_submenu)) {
-                $first_team = reset($team_submenu);
-                $sidebar_menu["team"] = array(
-                    "name" => "team",
-                    "url" => get_array_value($first_team, "url") ?: "attendance",
-                    "class" => "clock",
-                    "submenu" => $team_submenu
-                );
+                $sidebar_menu["announcements"] = array("name" => "announcements", "url" => "announcements", "class" => "bell");
             }
 
 

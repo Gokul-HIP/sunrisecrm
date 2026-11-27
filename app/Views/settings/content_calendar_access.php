@@ -7,7 +7,8 @@ $cards = array(
     "manage_options" => array("title" => "cc_perm_manage_options", "help" => "cc_perm_manage_options_help"),
     "add_client" => array("title" => "cc_perm_add_client", "help" => "cc_perm_add_client_help"),
     "delete_client" => array("title" => "cc_perm_delete_client", "help" => "cc_perm_delete_client_help"),
-    "add_column" => array("title" => "cc_perm_add_column", "help" => "cc_perm_add_column_help")
+    "add_column" => array("title" => "cc_perm_add_column", "help" => "cc_perm_add_column_help"),
+    "team_groups_manage_users" => array("title" => "team_groups_manage_access", "help" => "team_groups_manage_access_help")
 );
 ?>
 <div id="page-content" class="page-wrapper clearfix">

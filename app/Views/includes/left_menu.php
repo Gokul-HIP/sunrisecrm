@@ -83,6 +83,8 @@
                                 if ($language_key) {
                                     $s_menu_name = app_lang($language_key);
                                 }
+                            } else if (get_array_value($s_menu, "is_team_group")) {
+                                $s_menu_name = get_array_value($s_menu, "name");
                             } else {
                                 $s_menu_name = app_lang($s_menu_name);
                             }
@@ -90,10 +92,26 @@
                             if ($s_menu_name) {
                                 $open_in_new_tab = get_array_value($s_menu, "open_in_new_tab");
                                 $sub_menu_target = ($is_custom_menu_item && $open_in_new_tab) ? "target='_blank'" : "";
+                                $data_act = get_array_value($s_menu, "data_act");
+                                $data_action_url = get_array_value($s_menu, "data_action_url");
+                                $data_title = get_array_value($s_menu, "data_title");
+                                $extra_attr = "";
+                                if ($data_act) {
+                                    $extra_attr = " data-act='$data_act' data-action-url='$data_action_url' data-title='$data_title'";
+                                }
+                                $href = $data_act ? "#" : ($is_custom_menu_item ? $url : get_uri($url));
+                                $s_icon = get_array_value($s_menu, "class") ?: "minus";
+                                $sub_active = "";
+                                if (!$data_act && isset($current_url)) {
+                                    $full_url = get_uri($url);
+                                    if ($full_url === $current_url || $url === $current_url) {
+                                        $sub_active = "active";
+                                    }
+                                }
                                 ?>
-                            <li>
-                                <a <?php echo $sub_menu_target; ?> href="<?php echo $is_custom_menu_item ? $url : get_uri($url); ?>">
-                                    <i data-feather='minus' width='12'></i>
+                            <li class="<?php echo $sub_active; ?>">
+                                <a <?php echo $sub_menu_target . $extra_attr; ?> href="<?php echo $href; ?>">
+                                    <i data-feather='<?php echo $s_icon; ?>' width='12'></i>
                                     <span><?php echo $s_menu_name; ?></span>
                                     <?php
                                     $s_badge = get_array_value($s_menu, "badge");

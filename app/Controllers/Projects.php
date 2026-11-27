@@ -4001,9 +4001,16 @@ class Projects extends Security_Controller {
 
         $team_members_dropdown = array(array("id" => "", "text" => "- " . app_lang("team_member") . " -"));
         $assigned_to_list = $this->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", array("deleted" => 0, "user_type" => "staff"));
+        $filter_user_id = $this->request->getGet('specific_user_id') ?: $this->request->getGet('assigned_to');
         foreach ($assigned_to_list as $key => $value) {
 
-            if (($status_id || $priority_id) && $type != "my_tasks_overview") {
+            if ($filter_user_id) {
+                if ($key == $filter_user_id) {
+                    $team_members_dropdown[] = array("id" => $key, "text" => $value, "isSelected" => true);
+                } else {
+                    $team_members_dropdown[] = array("id" => $key, "text" => $value);
+                }
+            } else if (($status_id || $priority_id) && $type != "my_tasks_overview") {
                 $team_members_dropdown[] = array("id" => $key, "text" => $value);
             } else {
                 if ($key == $this->login_user->id) {

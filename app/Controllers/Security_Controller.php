@@ -233,6 +233,34 @@ class Security_Controller extends App_Controller {
         return false;
     }
 
+    protected function can_manage_team_groups() {
+        if (!$this->login_user || $this->login_user->user_type !== "staff") {
+            return false;
+        }
+        if ($this->login_user->is_admin) {
+            return true;
+        }
+        $allowed_users = get_setting("team_groups_manage_users");
+        if ($allowed_users) {
+            $allowed_arr = array_filter(array_map('trim', explode(',', $allowed_users)));
+            if (in_array((string) $this->login_user->id, $allowed_arr, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function can_view_team_groups() {
+        if (!$this->login_user || $this->login_user->user_type !== "staff") {
+            return false;
+        }
+        // Everyone who can see the Team members list can view groups
+        if (get_array_value($this->login_user->permissions, "hide_team_members_list") == "1") {
+            return false;
+        }
+        return true;
+    }
+
     //access team members and clients
     protected function access_only_team_members_or_client() {
         if (!($this->login_user->user_type === "staff" || $this->login_user->user_type === "client")) {
