@@ -109,6 +109,7 @@ $settings_menu["setup"][] = array("name" => "gdpr", "url" => "settings/gdpr");
 $settings_menu["setup"][] = array("name" => "pages", "url" => "pages");
 
 if ($login_user->is_admin) {
+    $settings_menu["setup"][] = array("name" => "task_points_rules", "url" => "task_rules");
     $settings_menu["plugins"][] = array("name" => "all_plugins", "url" => "Plugins");
 }
 

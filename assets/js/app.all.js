@@ -18603,6 +18603,7 @@ the specific language governing permissions and limitations under the Apache Lic
                 select2.liveRegion.remove();
                 select2.dropdown.remove();
                 element.removeData("select2")
+                    .off(".select2")
                     .off("select2");
                 if (!element.is("input[type='hidden']")) {
                     element
@@ -20076,7 +20077,9 @@ the specific language governing permissions and limitations under the Apache Lic
                         self.updateSelection(selected);
                         self.close();
                         self.setPlaceholder();
-                        self.lastSearchTerm = self.search.val();
+                        if (self.search) {
+                            self.lastSearchTerm = self.search.val();
+                        }
                     }
                 });
             }
@@ -20227,7 +20230,7 @@ the specific language governing permissions and limitations under the Apache Lic
 
         // single
         updateSelection: function (data) {
-
+            if (!this.selection) return;
             var container=this.selection.find(".select2-chosen"), formatted, cssClass;
 
             this.selection.data("select2-data", data);

@@ -20,6 +20,15 @@
             } catch (\Throwable $e) {
                 log_message('error', 'Content calendar task modal error: ' . $e->getMessage());
             }
+
+            try {
+                helper('task_rules');
+                if (isset($login_user) && $login_user->user_type === "staff" && function_exists('task_rules_tables_exist') && task_rules_tables_exist()) {
+                    echo view("tasks/task_rules_modal_section", array("model_info" => $model_info, "add_type" => $add_type));
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Task rules modal error: ' . $e->getMessage());
+            }
             ?>
 
             <div class="form-group">

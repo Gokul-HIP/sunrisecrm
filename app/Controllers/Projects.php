@@ -5033,11 +5033,63 @@ class Projects extends Security_Controller {
                 log_message('error', 'Content Calendar task link hook error: ' . $e->getMessage());
             }
 
+            // Task department and sub-department metadata hook
+            try {
+                helper('task_rules');
+                if (function_exists('task_rules_tables_exist') && task_rules_tables_exist()) {
+                    $task_dept = $this->request->getPost('task_department');
+                    $task_sub_dept = $this->request->getPost('task_sub_department');
+                    $task_rule_id = $this->request->getPost('task_rule_id');
+                    $task_suggested_pts = $this->request->getPost('task_suggested_points');
+
+                    $Task_meta_model = model("App\Models\Task_meta_model");
+                    if ($is_clone && $main_task_id && $task_dept === null) {
+                        $orig_meta = $Task_meta_model->get_by_task_id($main_task_id);
+                        if ($orig_meta && $orig_meta->department) {
+                            $Task_meta_model->save_meta($save_id, array(
+                                'department' => $orig_meta->department,
+                                'sub_department' => $orig_meta->sub_department,
+                                'rule_id' => $orig_meta->rule_id,
+                                'suggested_points' => $orig_meta->suggested_points
+                            ));
+                        }
+                    } else if ($task_dept !== null) {
+                        $Task_meta_model->save_meta($save_id, array(
+                            'department' => $task_dept,
+                            'sub_department' => $task_sub_dept,
+                            'rule_id' => $task_rule_id,
+                            'suggested_points' => $task_suggested_pts
+                        ));
+                    }
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Task rules meta hook error: ' . $e->getMessage());
+            }
+
             $success_message = $link_warning ? $link_warning : app_lang('record_saved');
             echo json_encode(array("success" => true, "data" => $this->_task_row_data($save_id), 'id' => $save_id, 'message' => $success_message, "add_type" => $add_type));
         } else {
             echo json_encode(array("success" => false, 'message' => app_lang('error_occurred')));
         }
+    }
+
+    function match_task_rule() {
+        if ($this->login_user->user_type !== "staff") {
+            echo json_encode(array("success" => false, "message" => app_lang("forbidden")));
+            return false;
+        }
+
+        helper('task_rules');
+        $department = $this->request->getPost('department');
+        $sub_department = $this->request->getPost('sub_department');
+        $title = $this->request->getPost('title');
+        $content_type = $this->request->getPost('content_type');
+        $content_text = $this->request->getPost('content_text');
+        $simulate_time = $this->request->getPost('simulate_time');
+
+        $result = task_rules_match($department, $sub_department, $title, $content_type, $content_text, $simulate_time);
+
+        echo json_encode(array_merge(array("success" => true), $result));
     }
 
     //parent task can't be marked as done if there is any sub task which is not done yet

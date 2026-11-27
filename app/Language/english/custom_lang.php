@@ -474,4 +474,22 @@ $lang["cc_special_day_today"] = "Special day today: %s";
 $lang["cc_show_special_day_banner_on_dashboard"] = "Show special day banner on the dashboard";
 $lang["cc_show_my_cards"] = "Show my cards";
 
+$lang["department"] = "Department";
+$lang["sub_department"] = "Sub-department";
+$lang["task_points_rules"] = "Task points rules";
+$lang["task_points_rule"] = "Task points rule";
+$lang["task_rule_suggested_from"] = "Suggested from: %s - %s pts, about %s";
+$lang["clear_suggestion"] = "Clear suggestion";
+$lang["did_you_mean"] = "Did you mean:";
+$lang["choose_department_to_get_points_and_time"] = "Choose a department to get points and time";
+$lang["add_task_rule"] = "Add rule";
+$lang["edit_task_rule"] = "Edit rule";
+$lang["delete_task_rule"] = "Delete rule";
+$lang["group_name"] = "Group";
+$lang["points_min"] = "Points MIN";
+$lang["points_max"] = "Points MAX";
+$lang["minutes_min"] = "Minutes MIN";
+$lang["minutes_max"] = "Minutes MAX";
+$lang["keywords"] = "Keywords";
+
 return $lang;

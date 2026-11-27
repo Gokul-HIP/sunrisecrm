@@ -185,7 +185,7 @@ foreach ($task_statuses as $status) {
                 //add activated sub task filter class
                 setTimeout(function () {
                     var searchValue = $('#task-table').closest(".dataTables_wrapper").find("input[type=search]").val();
-                    if (searchValue.substring(0, 1) === "#") {
+                    if (searchValue && typeof searchValue === "string" && searchValue.substring(0, 1) === "#") {
                         $('#task-table').find("[main-task-id='" + searchValue + "']").removeClass("filter-sub-task-button").addClass("remove-filter-button sub-task-filter-active");
                     }
                 }, 50);

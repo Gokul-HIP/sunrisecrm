@@ -387,7 +387,10 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
             return $el;
         }
 
+        var lastSuggestedProjectId = null;
+
         function clearProjectNote() {
+            lastSuggestedProjectId = null;
             var $el = getProjectNoteEl();
             if ($el && $el.length) {
                 $el.empty().hide();
@@ -399,9 +402,11 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
             if (!$el || !$el.length) return;
             var colorClass = "text-muted";
             var iconName = "info";
+            var clearBtnHtml = "";
             if (type === "success") {
                 colorClass = "text-success";
                 iconName = "check-circle";
+                clearBtnHtml = " <a href='javascript:void(0);' id='cc-clear-project-suggestion' class='text-muted font-11 ms-2 text-decoration-underline cursor-pointer'>Clear suggestion</a>";
             } else if (type === "warning") {
                 colorClass = "text-warning";
                 iconName = "alert-circle";
@@ -409,9 +414,26 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
                 colorClass = "text-info";
                 iconName = "info";
             }
-            $el.html("<span class='" + colorClass + " d-inline-flex align-items-center gap-1'><i data-feather='" + iconName + "' class='icon-12'></i> " + escapeHtml(message) + "</span>").show();
+            $el.html("<span class='" + colorClass + " d-inline-flex align-items-center gap-1'><i data-feather='" + iconName + "' class='icon-12'></i> " + escapeHtml(message) + "</span>" + clearBtnHtml).show();
             if (window.feather) { feather.replace(); }
         }
+
+        $(document).on("click", "#cc-clear-project-suggestion", function (e) {
+            e.preventDefault();
+            lastSuggestedProjectId = null;
+            clearProjectNote();
+            if ($("#project_id").data("select2")) {
+                $("#project_id").select2("val", "", true);
+            } else {
+                $("#project_id").val("").trigger("change");
+            }
+        });
+
+        $(document).on("change", "#project_id", function () {
+            if (lastSuggestedProjectId && String($(this).val()) !== String(lastSuggestedProjectId)) {
+                clearProjectNote();
+            }
+        });
 
         // Toggle Switch
         $("#cc_link_switch").on("change", function () {
@@ -698,19 +720,22 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
                         if (res.project_suggestion) {
                             var sugg = res.project_suggestion;
                             if (sugg.status === "single" && sugg.project_id) {
+                                lastSuggestedProjectId = sugg.project_id;
                                 setProjectNote("success", sugg.message);
                                 try {
                                     if ($("#project_id").data("select2")) {
-                                        $("#project_id").select2("val", sugg.project_id);
+                                        $("#project_id").select2("val", sugg.project_id, true);
                                     } else {
-                                        $("#project_id").val(sugg.project_id);
+                                        $("#project_id").val(sugg.project_id).trigger("change");
                                     }
                                 } catch (e) {
-                                    $("#project_id").val(sugg.project_id);
+                                    $("#project_id").val(sugg.project_id).trigger("change");
                                 }
                             } else if (sugg.status === "none") {
+                                lastSuggestedProjectId = null;
                                 setProjectNote("warning", sugg.message);
                             } else if (sugg.status === "multiple") {
+                                lastSuggestedProjectId = null;
                                 setProjectNote("info", sugg.message);
                             }
                         }
@@ -752,6 +777,9 @@ $all_content_types = function_exists('cc_get_all_content_types') ? (array) cc_ge
 
             // Fill Description
             fillDescription(item.description_html || item.description, item.description);
+
+            // Notify listeners (e.g. task rules matcher)
+            $(document).trigger("cc_item_selected", item);
         });
 
         function fillDescription(htmlContent, textContent) {
