@@ -46,7 +46,7 @@ class Cron_job {
     }
 
     function init_runtime($options = array()) {
-        $this->today = get_today_date();
+        $this->today = get_array_value($options, "today") ? $options["today"] : get_today_date();
         $this->ci = $this->ci ? $this->ci : new App_Controller();
         $this->current_time = strtotime(get_current_utc_time());
         $this->diagnostic = !empty($options["diagnostic"]);
@@ -92,6 +92,18 @@ class Cron_job {
 
         // 2-hour task deadline reminders are checked pre-gate in Cron controller every minute
         $hourly = $this->call_hourly_jobs($options);
+
+        // Process recurring tasks on every scheduled cron run (5-minute frequency, safe deduplication)
+        try {
+            $recurring_result = $this->track_cron_job("create_recurring_tasks", $trigger_source, function() use ($options) {
+                return $this->create_recurring_tasks($options);
+            });
+            if ($hourly && is_array($hourly)) {
+                $hourly["recurring"] = $recurring_result;
+            }
+        } catch (\Throwable $e) {
+            $this->cron_debug("Recurring tasks failed: " . $e->getMessage(), "recurring_tasks", "error");
+        }
 
         try {
             $this->track_cron_job("run_imap", $trigger_source, function() {
@@ -198,19 +210,6 @@ class Cron_job {
 
 
             try {
-                $result["recurring"] = $this->track_cron_job("create_recurring_tasks", $trigger_source, function() use ($options) {
-                    return $this->create_recurring_tasks($options);
-                });
-            } catch (\Exception $e) {
-                $this->cron_debug("Recurring tasks failed: " . $e->getMessage(), "recurring_tasks", "error");
-                $result["recurring"] = array(
-                    "error" => $e->getMessage(),
-                    "created" => 0,
-                    "failed" => 1
-                );
-            }
-
-            try {
                 $this->track_cron_job("send_task_reminder_notifications", $trigger_source, function() {
                     $this->send_task_reminder_notifications();
                 });
@@ -245,9 +244,8 @@ class Cron_job {
             $this->ci->Settings_model->save_setting("last_hourly_job_time", $this->current_time);
             $this->cron_debug("Hourly jobs finished; saved last_hourly_job_time={$this->current_time}", "hourly_gate", "success");
         } else {
-            $result["skipped_reason"] = "Hourly gate is closed. Recurring-task creation waits until one hour has passed since the last hourly job.";
+            $result["skipped_reason"] = "Hourly gate is closed. Hourly jobs wait until one hour has passed since the last hourly job.";
             $this->cron_debug($result["skipped_reason"], "hourly_gate", "warning");
-            $this->log_cron_run("create_recurring_tasks", $trigger_source, gmdate('Y-m-d H:i:s'), 0, 'skipped_by_gate', $result["skipped_reason"]);
         }
 
         return $result;
@@ -622,13 +620,17 @@ class Cron_job {
             $reasons[] = "next_recurring_date is empty.";
         }
 
+        $parent_date_for_orig = $task->start_date ? $task->start_date : ($task->deadline ? $task->deadline : $task->created_date);
+        $orig_day = $parent_date_for_orig ? (int) date("j", strtotime($parent_date_for_orig)) : null;
+
+        // Only fast-forward if the occurrence is very old (> 30 days) to prevent infinite loops on ancient broken tasks
+        $ancient_threshold = add_period_to_date($this->today, -30, "days");
         $skipped = 0;
-        while ($start_date && $start_date < $this->today) {
+        while ($start_date && $start_date < $ancient_threshold) {
             if ($no_of_cycles >= 1 && $no_of_cycles_completed >= $no_of_cycles) {
                 break;
             }
-            $start_date = add_period_to_date($start_date, $repeat_every, $repeat_type);
-            $no_of_cycles_completed++;
+            $start_date = add_period_to_date($start_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
             $skipped++;
             if ($skipped > 2000) {
                 break;
@@ -637,7 +639,7 @@ class Cron_job {
 
         $parent_start_date = $this->normalize_sql_date($task->start_date ? $task->start_date : $task->created_date);
         if ($start_date && $parent_start_date && $start_date === $parent_start_date) {
-            $start_date = add_period_to_date($start_date, $repeat_every, $repeat_type);
+            $start_date = add_period_to_date($start_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
             $reasons[] = "Clone start date was advanced one interval so it does not copy the parent occurrence.";
         }
 
@@ -652,14 +654,32 @@ class Cron_job {
             $reasons[] = "Calculated clone start date {$start_date} is after the query date {$target_date}.";
         }
 
-        $deadline = $start_date;
-        $parent_deadline = $this->normalize_sql_date($task->deadline);
-        if ($start_date && $parent_start_date && $parent_deadline) {
-            $diff_of_deadline = (int) get_date_difference_in_days($parent_start_date, $parent_deadline);
-            $deadline = add_period_to_date($start_date, $diff_of_deadline, "days");
+        $has_parent_start = !empty($task->start_date) && $this->normalize_sql_date($task->start_date);
+        $has_parent_deadline = !empty($task->deadline) && $this->normalize_sql_date($task->deadline);
+
+        $clone_start_date = null;
+        $clone_deadline = null;
+
+        if ($has_parent_start && $has_parent_deadline) {
+            // Both set: preserve start date, duration, and deadline
+            $clone_start_date = $start_date;
+            $diff_of_deadline = (int) get_date_difference_in_days($parent_start_date, $this->normalize_sql_date($task->deadline));
+            $clone_deadline = add_period_to_date($clone_start_date, $diff_of_deadline, "days");
+        } else if ($has_parent_start && !$has_parent_deadline) {
+            // Start date only: clone has start date, no deadline
+            $clone_start_date = $start_date;
+            $clone_deadline = null;
+        } else if (!$has_parent_start && $has_parent_deadline) {
+            // Deadline only: clone has deadline, no start date
+            $clone_start_date = null;
+            $clone_deadline = $start_date;
+        } else {
+            // Fallback
+            $clone_start_date = $start_date;
+            $clone_deadline = $start_date;
         }
 
-        $next_recurring_date = $start_date ? add_period_to_date($start_date, $repeat_every, $repeat_type) : "";
+        $next_recurring_date = $start_date ? add_period_to_date($start_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day) : "";
 
         return array(
             "parent_task_id" => (int) $task->id,
@@ -670,8 +690,8 @@ class Cron_job {
             "repeat_every" => $repeat_every,
             "repeat_type" => $repeat_type,
             "repeat_interval" => $repeat_every . " " . $repeat_type,
-            "clone_start_date" => $start_date,
-            "clone_deadline" => $deadline,
+            "clone_start_date" => $clone_start_date,
+            "clone_deadline" => $clone_deadline,
             "next_recurring_date_after" => $next_recurring_date,
             "expected_parent_task_id" => (int) $task->id,
             "expected_recurring_task_id" => (int) $task->id,
@@ -736,12 +756,20 @@ class Cron_job {
             return $item;
         }
 
-        $existing = $this->ci->Tasks_model->find_clone_for_occurrence($task->id, $calc["clone_start_date"]);
+        $date_field = $calc["clone_start_date"] ? "start_date" : "deadline";
+        $check_date = $calc["clone_start_date"] ? $calc["clone_start_date"] : $calc["clone_deadline"];
+        $existing = $this->ci->Tasks_model->find_clone_for_occurrence($task->id, $check_date, $date_field);
         if ($existing) {
             $item["status"] = "skipped";
             $item["clone_task_id"] = (int) $existing->id;
-            $item["reason"] = "SKIPPED: A clone already exists for this parent and recurring date. Existing clone #{$existing->id} has start_date {$calc["clone_start_date"]}.";
+            $item["reason"] = "SKIPPED: A clone already exists for this parent and recurring date. Existing clone #{$existing->id} has date {$check_date}.";
             $this->cron_debug($item["reason"], "clone_skip", "warning", array("task_id" => $task->id, "parent_task_id" => $task->id, "clone_task_id" => $existing->id));
+            if ($calc["next_recurring_date_after"]) {
+                $recurring_task_data = array(
+                    "next_recurring_date" => $calc["next_recurring_date_after"]
+                );
+                $this->ci->Tasks_model->save_reminder_date($recurring_task_data, $task->id);
+            }
             if ($this->logger) {
                 $item["verification"] = array(
                     "result" => "WARNING",
@@ -807,6 +835,34 @@ class Cron_job {
 
         $new_task_id = (int) $saved["id"];
         $this->copy_recurring_checklists_and_subtasks($task, $new_task_id, $calc["clone_start_date"]);
+
+        // Copy rise_task_meta (department, sub-department, rule_id, suggested_points)
+        try {
+            $meta = $this->ci->Tasks_model->db->query("SELECT * FROM " . $this->ci->Tasks_model->db->prefixTable('task_meta') . " WHERE task_id = {$task->id} LIMIT 1")->getRow();
+            if ($meta) {
+                $this->ci->Tasks_model->db->query(
+                    "INSERT INTO " . $this->ci->Tasks_model->db->prefixTable('task_meta') . " (task_id, department, sub_department, rule_id, suggested_points, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    array($new_task_id, $meta->department, $meta->sub_department, $meta->rule_id, $meta->suggested_points, get_current_utc_time())
+                );
+            }
+        } catch (\Throwable $ex) {
+            // task_meta is optional
+        }
+
+        // Copy rise_cc_task_links (content calendar link) if table exists
+        try {
+            if ($this->ci->Tasks_model->db->tableExists($this->ci->Tasks_model->db->prefixTable('cc_task_links'))) {
+                $cc_link = $this->ci->Tasks_model->db->query("SELECT * FROM " . $this->ci->Tasks_model->db->prefixTable('cc_task_links') . " WHERE task_id = {$task->id} LIMIT 1")->getRow();
+                if ($cc_link) {
+                    $this->ci->Tasks_model->db->query(
+                        "INSERT INTO " . $this->ci->Tasks_model->db->prefixTable('cc_task_links') . " (task_id, item_id, content_type, created_by, created_at) VALUES (?, ?, ?, ?, ?)",
+                        array($new_task_id, $cc_link->item_id, $cc_link->content_type, (int)$task->created_by, get_current_utc_time())
+                    );
+                }
+            }
+        } catch (\Throwable $ex) {
+            // cc_task_links is optional
+        }
 
         $no_of_cycles_completed = $calc["no_of_cycles_completed"] + 1;
         $next_recurring_date = $calc["next_recurring_date_after"];

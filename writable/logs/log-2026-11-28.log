@@ -1,0 +1,117 @@
+CRITICAL - 2026-11-28 03:04:52 --> DateTimeZone::__construct(): Unknown or bad timezone ()
+in APPPATH\Helpers\date_time_helper.php on line 11.
+ 1 APPPATH\Helpers\date_time_helper.php(11): DateTimeZone->__construct('\\\\WSL.LOCALHOST\\UBUNTU\\home\\gokul\\projects\\crm_sunrise')
+ 2 APPPATH\Helpers\date_time_helper.php(82): get_timezone_offset()
+ 3 APPPATH\Helpers\date_time_helper.php(383): get_my_local_time()
+ 4 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_boot_ci.php(22): get_today_date()
+CRITICAL - 2026-11-28 03:06:35 --> App\Models\Tasks_model::save_reminder_date(): Argument #1 ($data) could not be passed by reference
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_step1_diagnosis.php on line 60.
+
+CRITICAL - 2026-11-28 03:06:59 --> App\Models\Tasks_model::ci_save(): Argument #1 ($data) could not be passed by reference
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_step1_diagnosis.php on line 27.
+
+CRITICAL - 2026-11-28 03:07:25 --> Undefined property: CodeIgniter\Database\MySQLi\Result::$num_rows
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_step1_diagnosis.php on line 111.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_step1_diagnosis.php(111): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined property: CodeIgniter\\Database\\MySQLi\\Result::$num_rows', 'C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\test_step1_diagnosis.php', 111)
+ERROR - 2026-11-28 03:11:31 --> mysqli_sql_exception: Unknown column 'activity_log_id' in 'SET' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('UPDATE `rise_ta...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('UPDATE `rise_ta...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('UPDATE `rise_ta...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_ta...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update(Array, Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(161): App\Models\Crud_model->update_where(Array, Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save(Array, '26101')
+#7 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_date_scenarios.php(50): App\Models\Tasks_model->ci_save(Array, 26101)
+#8 {main}
+CRITICAL - 2026-11-28 03:11:31 --> Unknown column 'activity_log_id' in 'SET'
+in SYSTEMPATH\Database\BaseConnection.php on line 645.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_tasks` SET `deleted` = :deleted:, `activity_log_id` = :activity_log_id:
+WHERE `id` = :id:', [...], false)
+ 2 APPPATH\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update([...], [...])
+ 3 APPPATH\Models\Crud_model.php(161): App\Models\Crud_model->update_where([...], [...])
+ 4 APPPATH\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save([...], '26101')
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_date_scenarios.php(50): App\Models\Tasks_model->ci_save([...], 26101)
+CRITICAL - 2026-11-28 03:26:03 --> Undefined variable $deadline
+in APPPATH\Libraries\Cron_job.php on line 694.
+ 1 APPPATH\Libraries\Cron_job.php(694): CodeIgniter\Debug\Exceptions->errorHandler(2, 'Undefined variable $deadline', 'APPPATH\\Libraries\\Cron_job.php', 694)
+ 2 APPPATH\Libraries\Cron_job.php(715): App\Libraries\Cron_job->calculate_next_clone(Object(stdClass))
+ 3 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_all_scenarios.php(77): App\Libraries\Cron_job->create_clone_from_recurring_task(Object(stdClass))
+CRITICAL - 2026-11-28 03:26:26 --> Cannot modify header information - headers already sent by (output started at C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_all_scenarios.php:53)
+in APPPATH\Helpers\general_helper.php on line 2004.
+ 1 [internal function]: CodeIgniter\Debug\Exceptions->errorHandler(2, 'Cannot modify header information - headers already sent by (output started at C:\\Users\\gokul\\.gemini\\antigravity\\brain\\94da761e-743b-45b1-9d82-394543076db3\\scratch\\run_all_scenarios.php:53)', 'APPPATH\\Helpers\\general_helper.php', 2004)
+ 2 APPPATH\Helpers\general_helper.php(2004): header('Location:http://127.0.0.1/index.php/signin')
+ 3 APPPATH\Controllers\Security_Controller.php(25): app_redirect('signin')
+ 4 APPPATH\Controllers\Projects.php(21): App\Controllers\Security_Controller->__construct()
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_all_scenarios.php(290): App\Controllers\Projects->__construct()
+CRITICAL - 2026-11-28 03:27:20 --> DateTimeZone::__construct(): Unknown or bad timezone ()
+in APPPATH\Helpers\date_time_helper.php on line 11.
+ 1 APPPATH\Helpers\date_time_helper.php(11): DateTimeZone->__construct('\\\\WSL.LOCALHOST\\UBUNTU\\home\\gokul\\projects\\crm_sunrise')
+ 2 APPPATH\Helpers\date_time_helper.php(82): get_timezone_offset()
+ 3 APPPATH\Helpers\date_time_helper.php(383): get_my_local_time()
+ 4 APPPATH\Libraries\Cron_job.php(49): get_today_date()
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_31_calc.php(22): App\Libraries\Cron_job->init_runtime()
+CRITICAL - 2026-11-28 03:27:39 --> Cannot access private property App\Libraries\Cron_job::$today
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_31_calc.php on line 41.
+
+CRITICAL - 2026-11-28 03:29:32 --> Call to a member function getPost() on null
+in APPPATH\Controllers\Projects.php on line 4676.
+ 1 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\run_all_scenarios.php(306): App\Controllers\Projects->save_task()
+ERROR - 2026-11-28 03:29:58 --> mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'ORDER BY rise_tasks.sort DESC LIMIT 1' at line 4 in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('SELECT rise_tas...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('SELECT rise_tas...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('SELECT rise_tas...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Tasks_model.php(1689): CodeIgniter\Database\BaseConnection->query('SELECT rise_tas...')
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Controllers\Projects.php(4734): App\Models\Tasks_model->get_next_sort_value('440', NULL)
+#5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_and_ctrl.php(42): App\Controllers\Projects->save_task()
+#6 {main}
+CRITICAL - 2026-11-28 03:29:58 --> You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'ORDER BY rise_tasks.sort DESC LIMIT 1' at line 4
+in SYSTEMPATH\Database\BaseConnection.php on line 645.
+ 1 APPPATH\Models\Tasks_model.php(1689): CodeIgniter\Database\BaseConnection->query('SELECT rise_tasks.sort
+        FROM rise_tasks
+        WHERE rise_tasks.deleted=0 AND rise_tasks.project_id = 440 AND rise_tasks.status_id = 
+        ORDER BY rise_tasks.sort DESC LIMIT 1')
+ 2 APPPATH\Controllers\Projects.php(4734): App\Models\Tasks_model->get_next_sort_value('440', null)
+ 3 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_and_ctrl.php(42): App\Controllers\Projects->save_task()
+ERROR - 2026-11-28 03:32:08 --> mysqli_sql_exception: Unknown column 'activity_log_id' in 'SET' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('UPDATE `rise_ta...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('UPDATE `rise_ta...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('UPDATE `rise_ta...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_ta...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update(Array, Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(161): App\Models\Crud_model->update_where(Array, Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save(Array, '26133')
+#7 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_loop.php(61): App\Models\Tasks_model->ci_save(Array, 26133)
+#8 {main}
+CRITICAL - 2026-11-28 03:32:08 --> Unknown column 'activity_log_id' in 'SET'
+in SYSTEMPATH\Database\BaseConnection.php on line 645.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_tasks` SET `deleted` = :deleted:, `activity_log_id` = :activity_log_id:
+WHERE `id` = :id:', [...], false)
+ 2 APPPATH\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update([...], [...])
+ 3 APPPATH\Models\Crud_model.php(161): App\Models\Crud_model->update_where([...], [...])
+ 4 APPPATH\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save([...], '26133')
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_loop.php(61): App\Models\Tasks_model->ci_save([...], 26133)
+ERROR - 2026-11-28 03:32:50 --> mysqli_sql_exception: Unknown column 'activity_log_id' in 'SET' in \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php:295
+Stack trace:
+#0 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\MySQLi\Connection.php(295): mysqli->query('UPDATE `rise_ta...', 0)
+#1 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(691): CodeIgniter\Database\MySQLi\Connection->execute('UPDATE `rise_ta...')
+#2 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseConnection.php(605): CodeIgniter\Database\BaseConnection->simpleQuery('UPDATE `rise_ta...')
+#3 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\system\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_ta...', Array, false)
+#4 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update(Array, Array)
+#5 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Crud_model.php(161): App\Models\Crud_model->update_where(Array, Array)
+#6 \\WSL.LOCALHOST\UBUNTU\home\gokul\projects\crm_sunrise\app\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save(Array, '26136')
+#7 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_loop.php(61): App\Models\Tasks_model->ci_save(Array, 26136)
+#8 {main}
+CRITICAL - 2026-11-28 03:32:50 --> Unknown column 'activity_log_id' in 'SET'
+in SYSTEMPATH\Database\BaseConnection.php on line 645.
+ 1 SYSTEMPATH\Database\BaseBuilder.php(2476): CodeIgniter\Database\BaseConnection->query('UPDATE `rise_tasks` SET `deleted` = :deleted:, `activity_log_id` = :activity_log_id:
+WHERE `id` = :id:', [...], false)
+ 2 APPPATH\Models\Crud_model.php(275): CodeIgniter\Database\BaseBuilder->update([...], [...])
+ 3 APPPATH\Models\Crud_model.php(161): App\Models\Crud_model->update_where([...], [...])
+ 4 APPPATH\Models\Tasks_model.php(67): App\Models\Crud_model->ci_save([...], '26136')
+ 5 C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_c3_loop.php(61): App\Models\Tasks_model->ci_save([...], 26136)
+CRITICAL - 2026-11-28 03:37:28 --> App\Models\Tasks_model::save_reminder_date(): Argument #1 ($data) could not be passed by reference
+in C:\Users\gokul\.gemini\antigravity\brain\94da761e-743b-45b1-9d82-394543076db3\scratch\test_s6_debug.php on line 42.
+

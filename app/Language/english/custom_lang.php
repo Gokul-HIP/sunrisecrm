@@ -536,4 +536,12 @@ $lang["older"] = "Older";
 $lang["clear_filters"] = "Clear";
 $lang["brainstorming"] = "Brainstorming";
 
+$lang["cycles_helper_text"] = "Number of new tasks to create after this one. Empty = never stops.";
+$lang["recurring_preview"] = "Schedule preview";
+$lang["recurring_preview_will_create_one"] = "Will create 1 more task: %s";
+$lang["recurring_preview_will_create_n"] = "Will create %s more tasks: %s";
+$lang["recurring_preview_and_n_more"] = "and %s more";
+$lang["recurring_preview_repeats_until_off"] = "Repeats until you turn it off";
+$lang["recurring_preview_select_date"] = "Set a start date or deadline to preview recurring dates.";
+
 return $lang;

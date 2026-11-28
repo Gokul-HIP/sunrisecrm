@@ -410,7 +410,37 @@ if (!function_exists('get_tomorrow_date')) {
  */
 if (!function_exists('add_period_to_date')) {
 
-    function add_period_to_date($date, $no_of = 0, $period_type = "days", $format = "Y-m-d") {
+    function add_period_to_date($date, $no_of = 0, $period_type = "days", $format = "Y-m-d", $target_day = null) {
+        if (!$date) {
+            return "";
+        }
+        $no_of = (int) $no_of;
+        if ($period_type === "months") {
+            $dt = new DateTime($date);
+            $d = $target_day ? (int) $target_day : (int) $dt->format("j");
+            $m = (int) $dt->format("n");
+            $y = (int) $dt->format("Y");
+
+            $total_months = ($y * 12 + ($m - 1)) + $no_of;
+            $target_y = (int) floor($total_months / 12);
+            $target_m = (($total_months % 12) + 12) % 12 + 1;
+            $days_in_target_month = (int) cal_days_in_month(CAL_GREGORIAN, $target_m, $target_y);
+            $final_d = min($d, $days_in_target_month);
+            $dt->setDate($target_y, $target_m, $final_d);
+            return $dt->format($format);
+        } else if ($period_type === "years") {
+            $dt = new DateTime($date);
+            $d = $target_day ? (int) $target_day : (int) $dt->format("j");
+            $m = (int) $dt->format("n");
+            $y = (int) $dt->format("Y");
+
+            $target_y = $y + $no_of;
+            $days_in_target_month = (int) cal_days_in_month(CAL_GREGORIAN, $m, $target_y);
+            $final_d = min($d, $days_in_target_month);
+            $dt->setDate($target_y, $m, $final_d);
+            return $dt->format($format);
+        }
+
         return date($format, strtotime("+$no_of $period_type", strtotime($date ? $date : "")));
     }
 

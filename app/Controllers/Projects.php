@@ -4841,31 +4841,46 @@ class Projects extends Security_Controller {
         $next_recurring_date = "";
 
         if ($recurring && get_setting("enable_recurring_option_for_tasks")) {
-            //set next recurring date for recurring tasks
+            // Validate: when recurring is enabled, require at least start date or deadline
+            if (!$start_date && !$deadline) {
+                echo json_encode(array("success" => false, 'message' => app_lang("field_required") . ": " . app_lang("start_date") . " / " . app_lang("deadline"), 'date_required_error' => true));
+                return false;
+            }
+
+            // Determine date source: prefer start_date, fallback to deadline, then created_date
+            $recurring_start_date = $start_date ? $start_date : ($deadline ? $deadline : get_array_value($data, "created_date"));
+            $orig_day = (int) date("j", strtotime($recurring_start_date));
 
             if ($id) {
                 //update
                 if ($this->request->getPost('next_recurring_date')) { //submitted any recurring date? set it.
                     $next_recurring_date = $this->request->getPost('next_recurring_date');
+                    if ($next_recurring_date && get_today_date() >= $next_recurring_date) {
+                        echo json_encode(array("success" => false, 'message' => app_lang('past_recurring_date_error_message_title_for_tasks'), 'next_recurring_date_error' => app_lang('past_recurring_date_error_message'), "next_recurring_date_value" => $next_recurring_date));
+                        return false;
+                    }
                 } else {
                     //re-calculate the next recurring date, if any recurring fields has changed.
                     $task_info = $this->Tasks_model->get_one($id);
-                    if ($task_info->recurring != $data['recurring'] || $task_info->repeat_every != $data['repeat_every'] || $task_info->repeat_type != $data['repeat_type'] || $task_info->start_date != $data['start_date']) {
-                        $recurring_start_date = $start_date ? $start_date : $task_info->created_date;
-                        $next_recurring_date = add_period_to_date($recurring_start_date, $repeat_every, $repeat_type);
+                    if ($task_info->recurring != $data['recurring'] || $task_info->repeat_every != $data['repeat_every'] || $task_info->repeat_type != $data['repeat_type'] || $task_info->start_date != $data['start_date'] || $task_info->deadline != $data['deadline']) {
+                        $next_recurring_date = add_period_to_date($recurring_start_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
+                        // If calculated date is today or in the past, advance to next future cycle
+                        $advance_guard = 0;
+                        while ($next_recurring_date && get_today_date() >= $next_recurring_date && $advance_guard < 1000) {
+                            $next_recurring_date = add_period_to_date($next_recurring_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
+                            $advance_guard++;
+                        }
                     }
                 }
             } else {
                 //insert new
-                $recurring_start_date = $start_date ? $start_date : get_array_value($data, "created_date");
-                $next_recurring_date = add_period_to_date($recurring_start_date, $repeat_every, $repeat_type);
-            }
-
-
-            //recurring date must have to set a future date
-            if ($next_recurring_date && get_today_date() >= $next_recurring_date) {
-                echo json_encode(array("success" => false, 'message' => app_lang('past_recurring_date_error_message_title_for_tasks'), 'next_recurring_date_error' => app_lang('past_recurring_date_error_message'), "next_recurring_date_value" => $next_recurring_date));
-                return false;
+                $next_recurring_date = add_period_to_date($recurring_start_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
+                // If calculated date is today or in the past, advance to next future cycle
+                $advance_guard = 0;
+                while ($next_recurring_date && get_today_date() >= $next_recurring_date && $advance_guard < 1000) {
+                    $next_recurring_date = add_period_to_date($next_recurring_date, $repeat_every, $repeat_type, "Y-m-d", $orig_day);
+                    $advance_guard++;
+                }
             }
         }
 
@@ -4974,6 +4989,11 @@ class Projects extends Security_Controller {
             if ($next_recurring_date) {
                 $recurring_task_data = array(
                     "next_recurring_date" => $next_recurring_date
+                );
+                $this->Tasks_model->save_reminder_date($recurring_task_data, $save_id);
+            } else if (!$recurring && $id) {
+                $recurring_task_data = array(
+                    "next_recurring_date" => null
                 );
                 $this->Tasks_model->save_reminder_date($recurring_task_data, $save_id);
             }

@@ -313,7 +313,7 @@
                         </div>    
                     </div>    
 
-                    <div class="form-group">
+                    <div class="form-group mb10">
                         <div class="row">
                             <label for="no_of_cycles" class=" col-md-3"><?php echo app_lang('cycles'); ?></label>
                             <div class="col-md-4">
@@ -324,7 +324,7 @@
                                     "type" => "number",
                                     "min" => 1,
                                     "value" => $model_info->no_of_cycles ? $model_info->no_of_cycles : "",
-                                    "class" => "form-control",
+                                    "class" => "form-control recurring_element",
                                     "placeholder" => app_lang('cycles')
                                 ));
                                 ?>
@@ -332,7 +332,26 @@
                             <div class="col-md-5 mt5">
                                 <span class="help" data-bs-toggle="tooltip" title="<?php echo app_lang('recurring_cycle_instructions'); ?>"><i data-feather="help-circle" class="icon-16"></i></span>
                             </div>
-                        </div>  
+                        </div>
+                        <div class="row">
+                            <div class="offset-md-3 col-md-9">
+                                <small class="text-off d-block mt5" id="cycles_helper_text" style="color: #6c757d; font-size: 12px;">
+                                    <?php echo app_lang('cycles_helper_text'); ?>
+                                </small>
+                            </div>
+                        </div>
+                    </div>  
+
+                    <div class="form-group" id="recurring_preview_container">
+                        <div class="row">
+                            <label class="col-md-3"><?php echo app_lang('recurring_preview'); ?></label>
+                            <div class="col-md-9">
+                                <div id="recurring_live_preview" class="p10 rounded" style="background-color: #f0f7ff; border: 1px solid #cce5ff; color: #004085; font-size: 13px; font-weight: 500;">
+                                    <i data-feather="repeat" class="icon-16 me-1 text-primary" style="vertical-align: text-bottom;"></i>
+                                    <span id="recurring_preview_text"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>  
 
                     <div class = "form-group hide" id = "next_recurring_date_container" >
@@ -507,6 +526,12 @@
                         "points": result.message
                     });
                 }
+
+                if (!result.success && result.date_required_error) {
+                    $("#task-form").data("validator").showErrors({
+                        "deadline": result.message
+                    });
+                }
             }
         });
         $("#task-form .select2").select2();
@@ -531,7 +556,125 @@
             } else {
                 $("#recurring_fields").addClass("hide");
             }
+            updateRecurringPreview();
         });
+
+        // Live preview for recurring tasks schedule
+        var recurringLang = {
+            will_create_one: "<?php echo app_lang('recurring_preview_will_create_one'); ?>",
+            will_create_n: "<?php echo app_lang('recurring_preview_will_create_n'); ?>",
+            and_n_more: "<?php echo app_lang('recurring_preview_and_n_more'); ?>",
+            repeats_until_off: "<?php echo app_lang('recurring_preview_repeats_until_off'); ?>",
+            select_date: "<?php echo app_lang('recurring_preview_select_date'); ?>"
+        };
+
+        function addPeriodJs(y, m, d, n, type, tgtDay) {
+            if (type === "days") {
+                var dt = new Date(y, m, d + n);
+                return { y: dt.getFullYear(), m: dt.getMonth(), d: dt.getDate() };
+            } else if (type === "weeks") {
+                var dt = new Date(y, m, d + (n * 7));
+                return { y: dt.getFullYear(), m: dt.getMonth(), d: dt.getDate() };
+            } else if (type === "months") {
+                var origD = tgtDay ? tgtDay : d;
+                var totalM = (y * 12 + m) + n;
+                var tgtY = Math.floor(totalM / 12);
+                var tgtM = ((totalM % 12) + 12) % 12;
+                var daysInM = new Date(tgtY, tgtM + 1, 0).getDate();
+                var finalD = Math.min(origD, daysInM);
+                return { y: tgtY, m: tgtM, d: finalD };
+            } else if (type === "years") {
+                var origD = tgtDay ? tgtDay : d;
+                var tgtY = y + n;
+                var daysInM = new Date(tgtY, m + 1, 0).getDate();
+                var finalD = Math.min(origD, daysInM);
+                return { y: tgtY, m: m, d: finalD };
+            }
+            return { y: y, m: m, d: d };
+        }
+
+        function updateRecurringPreview() {
+            if (!$("#recurring").is(":checked")) {
+                return;
+            }
+
+            var cyclesVal = ($("#no_of_cycles").val() || "").toString().trim();
+            var cycles = parseInt(cyclesVal, 10);
+            var isIndefinite = !cyclesVal || isNaN(cycles) || cycles <= 0;
+
+            if (isIndefinite) {
+                $("#recurring_preview_text").text(recurringLang.repeats_until_off);
+                if (window.feather) feather.replace();
+                return;
+            }
+
+            var rawDate = $("#start_date").val() ? $("#start_date").val().trim() : "";
+            if (!rawDate && $("#deadline").val()) {
+                rawDate = $("#deadline").val().trim();
+            }
+
+            if (!rawDate) {
+                $("#recurring_preview_text").text(recurringLang.select_date);
+                if (window.feather) feather.replace();
+                return;
+            }
+
+            var jsFormat = (typeof getJsDateFormat === "function") ? getJsDateFormat().toUpperCase() : "YYYY-MM-DD";
+            var anchorMoment = moment(rawDate, [jsFormat, "YYYY-MM-DD", "DD-MM-YYYY", "YYYY/MM/DD"]);
+            if (!anchorMoment.isValid()) {
+                $("#recurring_preview_text").text(recurringLang.select_date);
+                if (window.feather) feather.replace();
+                return;
+            }
+
+            var anchorY = anchorMoment.year();
+            var anchorM = anchorMoment.month();
+            var anchorD = anchorMoment.date();
+            var targetDay = anchorD;
+
+            var repeatEvery = parseInt($("#repeat_every").val(), 10);
+            if (isNaN(repeatEvery) || repeatEvery < 1) repeatEvery = 1;
+            var repeatType = $("#repeat_type").val() || "months";
+
+            var formattedDates = [];
+            var maxDatesToShow = Math.min(cycles, 5);
+
+            for (var i = 1; i <= maxDatesToShow; i++) {
+                var step = addPeriodJs(anchorY, anchorM, anchorD, repeatEvery * i, repeatType, targetDay);
+                var stepMoment = moment([step.y, step.m, step.d]);
+                if (repeatType === "years" || step.y !== anchorY) {
+                    formattedDates.push(stepMoment.format("D MMM YYYY"));
+                } else {
+                    formattedDates.push(stepMoment.format("D MMM"));
+                }
+            }
+
+            var datesStr = formattedDates.join(", ");
+            if (cycles > 5) {
+                var remaining = cycles - 5;
+                var moreStr = recurringLang.and_n_more.replace("%s", remaining);
+                datesStr += ", " + moreStr;
+            }
+
+            var previewText = "";
+            if (cycles === 1) {
+                previewText = recurringLang.will_create_one.replace("%s", datesStr);
+            } else {
+                previewText = recurringLang.will_create_n.replace("%s", cycles).replace("%s", datesStr);
+            }
+
+            $("#recurring_preview_text").text(previewText);
+            if (window.feather) feather.replace();
+        }
+
+        $("#recurring, #repeat_every, #repeat_type, #no_of_cycles, #start_date, #deadline").on("change input keyup changeDate", function () {
+            updateRecurringPreview();
+        });
+
+        // Trigger on load
+        setTimeout(function () {
+            updateRecurringPreview();
+        }, 100);
 
         setDatePicker("#next_recurring_date", {
             startDate: moment().add(1, 'days').format("YYYY-MM-DD") //set min date = tomorrow

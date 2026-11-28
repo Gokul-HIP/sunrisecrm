@@ -1342,15 +1342,16 @@ class Tasks_model extends Crud_model {
         return $this->db->query($sql);
     }
 
-    function find_clone_for_occurrence($parent_task_id, $start_date) {
+    function find_clone_for_occurrence($parent_task_id, $start_date, $date_field = "start_date") {
         $tasks_table = $this->db->prefixTable('tasks');
         $parent_task_id = (int) $parent_task_id;
-        $start_date = $this->db->escape($start_date);
+        $date = $this->db->escape($start_date);
+        $column = ($date_field === "deadline") ? "deadline" : "start_date";
 
         $sql = "SELECT * FROM $tasks_table
                 WHERE $tasks_table.deleted=0
                 AND $tasks_table.recurring_task_id=$parent_task_id
-                AND $tasks_table.start_date=$start_date
+                AND $tasks_table.$column=$date
                 ORDER BY $tasks_table.id DESC
                 LIMIT 1";
 
@@ -1392,17 +1393,28 @@ class Tasks_model extends Crud_model {
     }
 
     function insert_recurring_clone($data) {
-        $required = array("title", "project_id", "start_date", "deadline", "parent_task_id", "recurring_task_id", "next_recurring_date");
+        $required = array("title", "project_id", "parent_task_id", "recurring_task_id", "next_recurring_date");
         foreach ($required as $field) {
             if (!isset($data[$field]) || $data[$field] === "" || $data[$field] === null) {
                 throw new \RuntimeException("Clone insert blocked: {$field} is required.");
             }
         }
 
-        foreach (array("start_date", "deadline", "next_recurring_date") as $date_field) {
-            if (!$this->is_valid_sql_date($data[$date_field])) {
-                throw new \RuntimeException("Clone insert blocked: {$date_field} is invalid (" . var_export($data[$date_field], true) . ").");
-            }
+        $has_start = !empty($data["start_date"]) && $this->is_valid_sql_date($data["start_date"]);
+        $has_deadline = !empty($data["deadline"]) && $this->is_valid_sql_date($data["deadline"]);
+
+        if (!$has_start && !$has_deadline) {
+            throw new \RuntimeException("Clone insert blocked: either start_date or deadline must be provided.");
+        }
+
+        if (!empty($data["start_date"]) && !$this->is_valid_sql_date($data["start_date"])) {
+            throw new \RuntimeException("Clone insert blocked: start_date is invalid (" . var_export($data["start_date"], true) . ").");
+        }
+        if (!empty($data["deadline"]) && !$this->is_valid_sql_date($data["deadline"])) {
+            throw new \RuntimeException("Clone insert blocked: deadline is invalid (" . var_export($data["deadline"], true) . ").");
+        }
+        if (!$this->is_valid_sql_date($data["next_recurring_date"])) {
+            throw new \RuntimeException("Clone insert blocked: next_recurring_date is invalid (" . var_export($data["next_recurring_date"], true) . ").");
         }
 
         if ((int) $data["parent_task_id"] < 1 || (int) $data["recurring_task_id"] < 1) {
@@ -1415,14 +1427,14 @@ class Tasks_model extends Crud_model {
             "project_id" => (int) $data["project_id"],
             "milestone_id" => isset($data["milestone_id"]) ? (int) $data["milestone_id"] : 0,
             "assigned_to" => isset($data["assigned_to"]) ? (int) $data["assigned_to"] : 0,
-            "deadline" => $data["deadline"],
+            "deadline" => !empty($data["deadline"]) ? $data["deadline"] : null,
             "end_time" => !empty($data["end_time"]) ? $data["end_time"] : null,
             "labels" => isset($data["labels"]) ? $data["labels"] : "",
             "points" => isset($data["points"]) && $data["points"] ? (int) $data["points"] : 1,
             "status" => "to_do",
             "status_id" => isset($data["status_id"]) ? (int) $data["status_id"] : 1,
             "priority_id" => isset($data["priority_id"]) ? (int) $data["priority_id"] : 0,
-            "start_date" => $data["start_date"],
+            "start_date" => !empty($data["start_date"]) ? $data["start_date"] : null,
             "collaborators" => isset($data["collaborators"]) ? $data["collaborators"] : "",
             "sort" => isset($data["sort"]) ? (int) $data["sort"] : 0,
             "recurring" => 0,
@@ -1465,6 +1477,18 @@ class Tasks_model extends Crud_model {
             throw new \RuntimeException("Clone insert rolled back. " . $verification["message"]);
         }
 
+        // Log creation activity so task list Created at column and audit trail are populated
+        $activity_logs_model = model("App\Models\Activity_logs_model");
+        $log_data = array(
+            "action" => "created",
+            "log_type" => "task",
+            "log_type_title" => $insert["title"],
+            "log_type_id" => $clone_id,
+            "log_for" => "project",
+            "log_for_id" => $insert["project_id"]
+        );
+        $activity_logs_model->ci_save($log_data, true);
+
         return array(
             "id" => $clone_id,
             "insert" => $insert,
@@ -1497,17 +1521,16 @@ class Tasks_model extends Crud_model {
         $add("clone ID differs from parent", (int) $row->id !== $parent_id, "clone={$row->id} parent={$parent_id}");
         $add("parent_task_id equals parent.id", (int) $row->parent_task_id === $parent_id, "parent_task_id={$row->parent_task_id}");
         $add("recurring_task_id equals parent.id", (int) $row->recurring_task_id === $parent_id, "recurring_task_id={$row->recurring_task_id}");
-        $add("start_date is valid", $this->is_valid_sql_date($row->start_date), "start_date=" . var_export($row->start_date, true));
-        $add("deadline is valid", $this->is_valid_sql_date($row->deadline), "deadline=" . var_export($row->deadline, true));
-        $add("next_recurring_date is valid", $this->is_valid_sql_date($row->next_recurring_date), "next_recurring_date=" . var_export($row->next_recurring_date, true));
-        $add("clone is not deleted", (int) $row->deleted === 0, "deleted={$row->deleted}");
-
         if (!empty($expected["start_date"])) {
+            $add("start_date is valid", $this->is_valid_sql_date($row->start_date), "start_date=" . var_export($row->start_date, true));
             $add("start_date matches calculated value", (string) $row->start_date === (string) $expected["start_date"], "expected {$expected["start_date"]}");
         }
         if (!empty($expected["deadline"])) {
+            $add("deadline is valid", $this->is_valid_sql_date($row->deadline), "deadline=" . var_export($row->deadline, true));
             $add("deadline matches calculated value", (string) $row->deadline === (string) $expected["deadline"], "expected {$expected["deadline"]}");
         }
+        $add("next_recurring_date is valid", $this->is_valid_sql_date($row->next_recurring_date), "next_recurring_date=" . var_export($row->next_recurring_date, true));
+        $add("clone is not deleted", (int) $row->deleted === 0, "deleted={$row->deleted}");
 
         $message = $ok
             ? "Clone created and linked correctly."
@@ -1657,6 +1680,8 @@ class Tasks_model extends Crud_model {
     
     function get_next_sort_value($project_id=0, $status_id=1) {
         $tasks_table = $this->db->prefixTable('tasks');
+        $project_id = (int) $project_id;
+        $status_id = $status_id ? (int) $status_id : 1;
 
         $sql = "SELECT $tasks_table.sort
         FROM $tasks_table
