@@ -7,12 +7,15 @@
                 if ($is_admin) {
                     $mine_active = ($filter !== "all") ? "active" : "";
                     $all_active = ($filter === "all") ? "active" : "";
-                    echo '<div class="btn-group" role="group">';
+                    echo '<div class="btn-group me-2" role="group">';
                     echo anchor(get_uri("projects/tasks_in_review/mine"), app_lang("my_review_queue"), array("class" => "btn btn-default $mine_active"));
                     echo anchor(get_uri("projects/tasks_in_review/all"), app_lang("all_review_queue"), array("class" => "btn btn-default $all_active"));
                     echo '</div>';
                 }
                 ?>
+                <button type="button" id="clear-review-filters-top" class="btn btn-default">
+                    <i data-feather="rotate-ccw" class="icon-16"></i> <?php echo app_lang("clear_filters"); ?>
+                </button>
             </div>
         </div>
 
@@ -86,6 +89,12 @@
             source: sourceUrl,
             serverSide: true,
             order: [[0, "desc"]],
+            filterDropdown: [
+                {name: "specific_user_id", class: "w200", options: <?php echo $team_members_dropdown; ?>, searchable: true},
+                {name: "project_id", class: "w200", options: <?php echo $projects_dropdown; ?>},
+                {name: "submitted_filter", class: "w150", options: <?php echo $submitted_dropdown; ?>}
+            ],
+            rangeDatepicker: [{startDate: {name: "from_date", value: ""}, endDate: {name: "to_date", value: ""}, showClearButton: true}],
             columns: [
                 {title: '<?php echo app_lang("id"); ?>', "class": "w10p", order_by: "id"},
                 {title: '<?php echo app_lang("title"); ?>', order_by: "title"},
@@ -97,9 +106,68 @@
                 {title: '<i data-feather="menu" class="icon-16"></i>', "class": "text-center option w150"}
             ],
             onRanderComplete: function () {
-                feather.replace();
+                initFeather();
             }
         });
+
+        // Clear filters functionality
+        var clearFilters = function (e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            var settings = window.InstanceCollection && window.InstanceCollection["tasks-in-review-table"];
+            if (!settings) {
+                return;
+            }
+
+            // Reset filterParams
+            settings.filterParams.specific_user_id = "";
+            settings.filterParams.project_id = "";
+            settings.filterParams.submitted_filter = "";
+            settings.filterParams.from_date = "";
+            settings.filterParams.to_date = "";
+            settings.filterParams.start_date = "";
+            settings.filterParams.end_date = "";
+
+            // Reset UI elements
+            var $wrapper = $("#tasks-in-review-table").closest(".dataTables_wrapper");
+            $wrapper.find("[name='specific_user_id'], [name='project_id'], [name='submitted_filter']").each(function () {
+                var $el = $(this);
+                if ($el.data("select2")) {
+                    $el.val("").trigger("change.select2");
+                } else {
+                    $el.val("");
+                }
+            });
+
+            // Reset datepickers
+            $wrapper.find(".input-daterange input, .datepicker-custom-selector input").val("");
+            $wrapper.find(".datepicker-custom-selector button").each(function () {
+                var defaultText = $(this).attr("title") || "";
+                if (defaultText) {
+                    $(this).html(defaultText + "<span class='ml10 dropdown-toggle'></span>");
+                }
+            });
+
+            // Reset search input if present
+            var $search = $wrapper.find("input[type=search], .custom-filter-search");
+            if ($search.length) {
+                $search.val("");
+                if (settings.search && settings.search.name) {
+                    settings.filterParams[settings.search.name] = "";
+                }
+            }
+
+            // Clear URL query parameters
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+
+            $("#tasks-in-review-table").appTable({reload: true});
+        };
+
+        $(document).on("click", "#clear-review-filters-top, #clear-review-filters-btn", clearFilters);
 
         // Messages upload endpoints + same Dropzone component as Messages feature.
         // Init once per modal show; destroy on hide so Upload File works every open.
@@ -193,7 +261,7 @@
         }
 
         // Open Approve modal (optional award confirm first)
-        $(document).on("click", ".approve-review-task-btn", function () {
+        $(document).on("click", ".approve-task-btn", function () {
             var $btn = $(this);
             var taskId = $btn.data("id");
             if (!taskId || approveSubmitting) return;

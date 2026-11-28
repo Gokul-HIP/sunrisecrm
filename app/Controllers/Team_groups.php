@@ -62,7 +62,10 @@ class Team_groups extends Security_Controller {
             $member_ids[] = (int) $m->id;
         }
 
-        $metrics = $this->_calculate_group_metrics($member_ids, $year, $month_num);
+        // Fetch active task statuses in sort order
+        $task_statuses = $this->Task_status_model->get_details(array("deleted" => 0))->getResult();
+
+        $metrics = $this->_calculate_group_metrics($member_ids, $year, $month_num, $task_statuses);
 
         // Build summary card data
         $summary = array(
@@ -84,6 +87,7 @@ class Team_groups extends Security_Controller {
             "group" => $group,
             "members" => $members,
             "member_ids" => $member_ids,
+            "task_statuses" => $task_statuses,
             "metrics" => $metrics,
             "summary" => $summary,
             "can_manage_groups" => $can_manage_groups,
@@ -99,10 +103,15 @@ class Team_groups extends Security_Controller {
     /**
      * Efficiently calculate counts and points with grouped queries for all members at once.
      */
-    private function _calculate_group_metrics($member_ids, $year, $month_num) {
+    private function _calculate_group_metrics($member_ids, $year, $month_num, $task_statuses = array()) {
         $metrics = array();
         foreach ($member_ids as $uid) {
+            $status_counts = array();
+            foreach ($task_statuses as $st) {
+                $status_counts[$st->id] = 0;
+            }
             $metrics[$uid] = array(
+                "status_counts" => $status_counts,
                 "open_tasks" => 0,
                 "overdue_tasks" => 0,
                 "completed_tasks" => 0,
@@ -123,60 +132,51 @@ class Team_groups extends Security_Controller {
 
         $tasks_table = $db->prefixTable('tasks');
         $projects_table = $db->prefixTable('projects');
-        $task_status_table = $db->prefixTable('task_status');
+        $users_table = $db->prefixTable('users');
         $awards_table = $db->prefixTable('task_point_awards');
         $attendance_table = $db->prefixTable('attendance');
         $leaves_table = $db->prefixTable('leave_applications');
 
-        // 1. Grouped query for Open Tasks and Overdue Tasks
-        // Excludes "In review" matching count_my_open_tasks
-        $exclude_status_title = 'In review';
-        $open_sql = "SELECT 
-                        $tasks_table.assigned_to AS user_id,
-                        COUNT($tasks_table.id) AS open_count,
-                        SUM(CASE WHEN $tasks_table.deadline IS NOT NULL AND $tasks_table.deadline < '$today' THEN 1 ELSE 0 END) AS overdue_count
-                     FROM $tasks_table
-                     LEFT JOIN $task_status_table ON $task_status_table.id = $tasks_table.status_id
-                     WHERE $tasks_table.deleted = 0
-                       AND $tasks_table.assigned_to IN ($id_list)
-                       AND $tasks_table.status_id != 3
-                       AND (LOWER(TRIM($task_status_table.title)) != LOWER(" . $db->escape($exclude_status_title) . ") OR $task_status_table.title IS NULL)
-                       AND $tasks_table.project_id IN (
-                           SELECT $projects_table.id 
-                           FROM $projects_table 
-                           WHERE $projects_table.deleted = 0 AND FIND_IN_SET($projects_table.status, 'open')
-                       )
-                     GROUP BY $tasks_table.assigned_to";
-        try {
-            $open_res = $db->query($open_sql)->getResult();
-            foreach ($open_res as $row) {
-                $uid = (int) $row->user_id;
-                if (isset($metrics[$uid])) {
-                    $metrics[$uid]["open_tasks"] = (int) $row->open_count;
-                    $metrics[$uid]["overdue_tasks"] = (int) $row->overdue_count;
-                }
-            }
-        } catch (\Throwable $e) {}
-
-        // 2. Grouped query for Completed tasks in the selected month
+        // Month date range for Done tasks
         $month_start = sprintf("%04d-%02d-01 00:00:00", $year, $month_num);
         $month_end = date("Y-m-t 23:59:59", strtotime($month_start));
-        $completed_sql = "SELECT 
-                            $tasks_table.assigned_to AS user_id,
-                            COUNT($tasks_table.id) AS completed_count
-                          FROM $tasks_table
-                          WHERE $tasks_table.deleted = 0
-                            AND $tasks_table.assigned_to IN ($id_list)
-                            AND $tasks_table.status_id = 3
-                            AND $tasks_table.status_changed_at >= '$month_start'
-                            AND $tasks_table.status_changed_at <= '$month_end'
-                          GROUP BY $tasks_table.assigned_to";
+
+        $done_status_id = function_exists('get_done_task_status_id') ? (int) get_done_task_status_id() : 3;
+        $in_review_status_id = function_exists('get_in_review_task_status_id') ? (int) get_in_review_task_status_id() : 10;
+
+        // 1. Grouped query for All Task Statuses + Overdue + Month Done
+        // Joined by (assigned_to OR collaborator) and open project status matching Tasks page
+        $tasks_sql = "SELECT 
+                        m.user_id,
+                        t.status_id,
+                        SUM(CASE WHEN t.status_id = $in_review_status_id THEN (CASE WHEN t.submitted_for_review_at IS NOT NULL THEN 1 ELSE 0 END) ELSE 1 END) AS total_count,
+                        SUM(CASE WHEN t.deadline IS NOT NULL AND t.deadline < '$today' AND t.status_id NOT IN ($done_status_id, $in_review_status_id) THEN 1 ELSE 0 END) AS overdue_count,
+                        SUM(CASE WHEN t.status_id = $done_status_id AND t.status_changed_at >= '$month_start' AND t.status_changed_at <= '$month_end' THEN 1 ELSE 0 END) AS done_month_count
+                      FROM (
+                          SELECT id AS user_id FROM $users_table WHERE id IN ($id_list)
+                      ) m
+                      JOIN $tasks_table t ON t.deleted = 0 AND (t.assigned_to = m.user_id OR FIND_IN_SET(m.user_id, t.collaborators))
+                      LEFT JOIN $projects_table p ON p.id = t.project_id
+                      WHERE (p.id IS NULL OR (p.deleted = 0 AND FIND_IN_SET(p.status, 'open')))
+                      GROUP BY m.user_id, t.status_id";
+
         try {
-            $completed_res = $db->query($completed_sql)->getResult();
-            foreach ($completed_res as $row) {
+            $tasks_res = $db->query($tasks_sql)->getResult();
+            foreach ($tasks_res as $row) {
                 $uid = (int) $row->user_id;
-                if (isset($metrics[$uid])) {
-                    $metrics[$uid]["completed_tasks"] = (int) $row->completed_count;
+                $sid = (int) $row->status_id;
+                if (!isset($metrics[$uid])) {
+                    continue;
+                }
+                if ($sid === $done_status_id) {
+                    $metrics[$uid]["status_counts"][$sid] = (int) $row->done_month_count;
+                    $metrics[$uid]["completed_tasks"] = (int) $row->done_month_count;
+                } else {
+                    $metrics[$uid]["status_counts"][$sid] = (int) $row->total_count;
+                }
+                $metrics[$uid]["overdue_tasks"] += (int) $row->overdue_count;
+                if ($sid !== $done_status_id && $sid !== $in_review_status_id) {
+                    $metrics[$uid]["open_tasks"] += (int) $row->total_count;
                 }
             }
         } catch (\Throwable $e) {}

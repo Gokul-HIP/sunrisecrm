@@ -529,4 +529,11 @@ $lang["create_group"] = "Create group";
 $lang["edit_group"] = "Edit group";
 $lang["delete_group"] = "Delete group";
 
+$lang["submitted"] = "Submitted";
+$lang["submitted_filter"] = "Submitted";
+$lang["last_7_days"] = "Last 7 days";
+$lang["older"] = "Older";
+$lang["clear_filters"] = "Clear";
+$lang["brainstorming"] = "Brainstorming";
+
 return $lang;

@@ -369,6 +369,32 @@ class Tasks_model extends Crud_model {
             }
         }
 
+        $submitted_from = $this->_get_clean_value($options, "submitted_from");
+        $submitted_to = $this->_get_clean_value($options, "submitted_to");
+        $submitted_filter = $this->_get_clean_value($options, "submitted_filter");
+        $submitted_col = "DATE(COALESCE($tasks_table.submitted_for_review_at, $tasks_table.status_changed_at))";
+
+        if ($submitted_from && $submitted_to) {
+            $where .= " AND $submitted_col BETWEEN '$submitted_from' AND '$submitted_to'";
+        } else if ($submitted_from) {
+            $where .= " AND $submitted_col >= '$submitted_from'";
+        } else if ($submitted_to) {
+            $where .= " AND $submitted_col <= '$submitted_to'";
+        }
+
+        if ($submitted_filter) {
+            $now = get_my_local_time("Y-m-d");
+            if ($submitted_filter === "today") {
+                $where .= " AND $submitted_col = '$now'";
+            } else if ($submitted_filter === "yesterday") {
+                $where .= " AND $submitted_col = DATE_SUB('$now', INTERVAL 1 DAY)";
+            } else if ($submitted_filter === "last_7_days") {
+                $where .= " AND $submitted_col BETWEEN DATE_SUB('$now', INTERVAL 7 DAY) AND '$now'";
+            } else if ($submitted_filter === "older") {
+                $where .= " AND $submitted_col < DATE_SUB('$now', INTERVAL 7 DAY)";
+            }
+        }
+
         $order = "";
         $sort_by_project = $this->_get_clean_value($options, "sort_by_project");
         if ($sort_by_project) {

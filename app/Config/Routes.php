@@ -35,6 +35,12 @@ $routes->get('/', 'Dashboard::index');
 //this route will move 'about/any-text' to 'domain.com/about/index/any-text'
 $routes->add('about/(:any)', 'About::index/$1');
 
+// Tasks In Review route mapping
+$routes->get('tasks/in_review', 'Projects::tasks_in_review');
+$routes->get('tasks/in_review/(:any)', 'Projects::tasks_in_review/$1');
+$routes->post('tasks/in_review_list_data', 'Projects::tasks_in_review_list_data');
+$routes->post('tasks/in_review_list_data/(:any)', 'Projects::tasks_in_review_list_data/$1');
+
 //add routing for controllers
 $excluded_controllers = array("About", "App_Controller", "Security_Controller");
 $controller_dropdown = array();

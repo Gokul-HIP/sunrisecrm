@@ -145,7 +145,7 @@ foreach ($task_statuses as $status) {
             rangeDatepicker: [],
             singleDatepicker: [{name: "deadline", defaultText: "<?php echo app_lang('deadline') ?>",
                     options: [
-                        {value: "expired", text: "<?php echo app_lang('expired') ?>"},
+                        {value: "expired", text: "<?php echo app_lang('expired') ?>", isSelected: <?php echo (!empty($selected_deadline) && $selected_deadline === "expired") ? "true" : "false"; ?>},
                         {value: moment().format("YYYY-MM-DD"), text: "<?php echo app_lang('today') ?>"},
                         {value: moment().add(1, 'days').format("YYYY-MM-DD"), text: "<?php echo app_lang('tomorrow') ?>"},
                         {value: moment().add(7, 'days').format("YYYY-MM-DD"), text: "<?php echo sprintf(app_lang('in_number_of_days'), 7); ?>"},

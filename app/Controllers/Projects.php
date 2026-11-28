@@ -4021,8 +4021,14 @@ class Projects extends Security_Controller {
             }
         }
 
+        if (!$status_id && $this->request->getGet('status_id')) {
+            $status_id = (int) $this->request->getGet('status_id');
+        }
+        $selected_deadline = $this->request->getGet('deadline');
+
         $view_data['tab'] = $tab;
         $view_data['selected_status_id'] = $status_id;
+        $view_data['selected_deadline'] = $selected_deadline;
 
         $created_by_dropdown = array(array("id" => "", "text" => "- " . app_lang("created_by") . " -"));
         foreach ($assigned_to_list as $key => $value) {
@@ -8569,6 +8575,40 @@ class Projects extends Security_Controller {
         $view_data["is_admin"] = $this->login_user->is_admin;
         $view_data["can_create_tasks"] = $this->can_create_tasks(false);
 
+        // Build Project dropdown
+        $projects = $this->Tasks_model->get_my_projects_dropdown_list($this->login_user->id)->getResult();
+        $projects_dropdown = array(array("id" => "", "text" => "- " . app_lang("project") . " -"));
+        foreach ($projects as $project) {
+            if ($project->project_id && $project->project_title) {
+                $projects_dropdown[] = array("id" => $project->project_id, "text" => $project->project_title);
+            }
+        }
+        $view_data['projects_dropdown'] = json_encode($projects_dropdown);
+
+        // Build Team Members dropdown (Member filter)
+        $filter_user_id = $this->request->getGet('specific_user_id') ?: $this->request->getGet('assigned_to');
+        $team_members_dropdown = array(array("id" => "", "text" => "- " . app_lang("team_member") . " -"));
+        $assigned_to_list = $this->Users_model->get_dropdown_list(array("first_name", "last_name"), "id", array("deleted" => 0, "user_type" => "staff"));
+        foreach ($assigned_to_list as $key => $value) {
+            if ($filter_user_id && $key == $filter_user_id) {
+                $team_members_dropdown[] = array("id" => $key, "text" => $value, "isSelected" => true);
+            } else {
+                $team_members_dropdown[] = array("id" => $key, "text" => $value);
+            }
+        }
+        $view_data['team_members_dropdown'] = json_encode($team_members_dropdown);
+        $view_data['selected_user_id'] = $filter_user_id;
+
+        // Build Quick Submitted dropdown
+        $submitted_dropdown = array(
+            array("id" => "", "text" => "- " . app_lang("submitted_filter") . " -"),
+            array("id" => "today", "text" => app_lang("today")),
+            array("id" => "yesterday", "text" => app_lang("yesterday")),
+            array("id" => "last_7_days", "text" => app_lang("last_7_days")),
+            array("id" => "older", "text" => app_lang("older"))
+        );
+        $view_data['submitted_dropdown'] = json_encode($submitted_dropdown);
+
         return $this->template->rander("projects/tasks/tasks_in_review", $view_data);
     }
 
@@ -8580,6 +8620,30 @@ class Projects extends Security_Controller {
             $options["awaiting_review_all"] = true;
         } else {
             $options["awaiting_review_for_user_id"] = $this->login_user->id;
+        }
+
+        $specific_user_id = $this->request->getPost('specific_user_id') ?: $this->request->getGet('specific_user_id');
+        if ($specific_user_id) {
+            $options["specific_user_id"] = $specific_user_id;
+        }
+
+        $project_id = $this->request->getPost('project_id');
+        if ($project_id) {
+            $options["project_id"] = $project_id;
+        }
+
+        $from_date = $this->request->getPost('from_date') ?: $this->request->getPost('start_date');
+        $to_date = $this->request->getPost('to_date') ?: $this->request->getPost('end_date');
+        if ($from_date) {
+            $options["submitted_from"] = $from_date;
+        }
+        if ($to_date) {
+            $options["submitted_to"] = $to_date;
+        }
+
+        $submitted_filter = $this->request->getPost('submitted_filter');
+        if ($submitted_filter) {
+            $options["submitted_filter"] = $submitted_filter;
         }
 
         $all_options = append_server_side_filtering_commmon_params($options);
@@ -8621,13 +8685,15 @@ class Projects extends Security_Controller {
         $assigned_to = "-";
         if ($data->assigned_to) {
             $image_url = get_avatar($data->assigned_to_avatar);
-            $assigned_to_user = "<span class='avatar avatar-xs mr10'><img src='$image_url' alt='...'></span> $data->assigned_to_user";
+            $assigned_to_user = "<span class='avatar avatar-xs mr10'><img src='$image_url' alt='...'></span> " . ($data->assigned_to_user ?: "-");
             $assigned_to = get_team_member_profile_link($data->assigned_to, $assigned_to_user);
         }
 
         $submitted_at = "-";
         if (!empty($data->submitted_for_review_at) && $data->submitted_for_review_at !== "0000-00-00 00:00:00") {
             $submitted_at = format_to_relative_time($data->submitted_for_review_at);
+        } else if (!empty($data->status_changed_at) && $data->status_changed_at !== "0000-00-00 00:00:00") {
+            $submitted_at = format_to_relative_time($data->status_changed_at);
         }
 
         $deadline_text = "-";
@@ -8661,11 +8727,8 @@ class Projects extends Security_Controller {
         }
 
         $actions = "";
-        $can_action = $this->login_user->is_admin || ((int)$this->login_user->id === (int)$data->created_by);
-        if ($can_action) {
-            $actions .= '<button type="button" class="btn btn-sm btn-success approve-review-task-btn mr5"' . $approve_attrs . '><i data-feather="check" class="icon-14"></i> ' . app_lang("approve") . '</button>';
-            $actions .= '<button type="button" class="btn btn-sm btn-warning text-white request-changes-task-btn" data-id="' . $data->id . '"><i data-feather="refresh-cw" class="icon-14"></i> ' . app_lang("request_changes") . '</button>';
-        }
+        $actions .= '<button type="button" class="btn btn-sm btn-success me-2 approve-task-btn"' . $approve_attrs . '>' . app_lang("approve") . '</button>';
+        $actions .= '<button type="button" class="btn btn-sm btn-warning text-white request-changes-task-btn" data-id="' . $data->id . '">' . app_lang("request_changes") . '</button>';
 
         return array(
             $data->id,

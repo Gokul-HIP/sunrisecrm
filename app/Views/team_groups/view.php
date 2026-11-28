@@ -94,25 +94,34 @@
                 </div>
             </div>
 
-            <!-- Members Table -->
+            <!-- Members Table with Per-Status Columns -->
             <div class="table-responsive">
                 <table id="team-group-members-table" class="table table-striped table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th style="min-width: 200px;"><?php echo app_lang('member'); ?></th>
-                            <th style="min-width: 140px;"><?php echo app_lang('job_title'); ?></th>
-                            <th class="text-center" style="width: 100px;"><?php echo app_lang('open_tasks'); ?></th>
-                            <th class="text-center" style="width: 100px;"><?php echo app_lang('overdue_tasks'); ?></th>
-                            <th class="text-center" style="width: 120px;"><?php echo app_lang('completed'); ?></th>
-                            <th class="text-center" style="width: 120px;"><?php echo app_lang('points'); ?></th>
-                            <th class="text-center" style="width: 130px;"><?php echo app_lang('today_status'); ?></th>
-                            <th class="text-center" style="width: 100px;"><?php echo app_lang('actions'); ?></th>
+                            <th style="min-width: 180px;"><?php echo app_lang('member'); ?></th>
+                            <th style="min-width: 130px;"><?php echo app_lang('job_title'); ?></th>
+                            <?php foreach ($task_statuses as $status) { ?>
+                                <th class="text-center" style="min-width: 80px;">
+                                    <?php 
+                                    if ($status->key_name === "done" || (int)$status->id === 3) {
+                                        echo app_lang('done') . " (" . date("M Y", strtotime($selected_month . "-01")) . ")";
+                                    } else {
+                                        echo $status->key_name ? app_lang($status->key_name) : esc($status->title);
+                                    }
+                                    ?>
+                                </th>
+                            <?php } ?>
+                            <th class="text-center" style="min-width: 80px;"><?php echo app_lang('overdue_tasks'); ?></th>
+                            <th class="text-center" style="min-width: 90px;"><?php echo app_lang('points'); ?></th>
+                            <th class="text-center" style="min-width: 110px;"><?php echo app_lang('today_status'); ?></th>
+                            <th class="text-center" style="min-width: 80px;"><?php echo app_lang('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($members)) { ?>
                             <tr>
-                                <td colspan="8" class="text-center text-off py-4">
+                                <td colspan="<?php echo 6 + count($task_statuses); ?>" class="text-center text-off py-4">
                                     <?php echo app_lang('no_data_found'); ?>
                                 </td>
                             </tr>
@@ -121,6 +130,7 @@
                                 <?php
                                 $m_id = (int) $member->id;
                                 $m_metric = isset($metrics[$m_id]) ? $metrics[$m_id] : array(
+                                    "status_counts" => array(),
                                     "open_tasks" => 0,
                                     "overdue_tasks" => 0,
                                     "completed_tasks" => 0,
@@ -144,22 +154,36 @@
                                     <td>
                                         <?php echo $member->job_title ? esc($member->job_title) : "<span class='text-off'>-</span>"; ?>
                                     </td>
+                                    <?php foreach ($task_statuses as $status) { ?>
+                                        <?php
+                                        $sid = (int) $status->id;
+                                        $count = isset($m_metric['status_counts'][$sid]) ? (int) $m_metric['status_counts'][$sid] : 0;
+                                        if ($status->key_name === "in_review" || $sid === 10) {
+                                            $link = get_uri('tasks/in_review/all?specific_user_id=' . $m_id);
+                                        } else {
+                                            $link = get_uri('projects/all_tasks?specific_user_id=' . $m_id . '&status_id=' . $sid);
+                                        }
+                                        ?>
+                                        <td class="text-center">
+                                            <?php if ($count > 0) { ?>
+                                                <a href="<?php echo $link; ?>" class="badge bg-light text-dark border px-2 py-1 text-decoration-none">
+                                                    <?php echo $count; ?>
+                                                </a>
+                                            <?php } else { ?>
+                                                <a href="<?php echo $link; ?>" class="text-off text-decoration-none">0</a>
+                                            <?php } ?>
+                                        </td>
+                                    <?php } ?>
                                     <td class="text-center">
-                                        <span class="badge bg-light text-dark border px-2 py-1">
-                                            <?php echo $m_metric['open_tasks']; ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if ($m_metric['overdue_tasks'] > 0) { ?>
-                                            <span class="badge bg-danger px-2 py-1"><?php echo $m_metric['overdue_tasks']; ?></span>
+                                        <?php 
+                                        $overdue_link = get_uri('projects/all_tasks?specific_user_id=' . $m_id . '&deadline=expired');
+                                        if ($m_metric['overdue_tasks'] > 0) { ?>
+                                            <a href="<?php echo $overdue_link; ?>" class="badge bg-danger px-2 py-1 text-white text-decoration-none">
+                                                <?php echo $m_metric['overdue_tasks']; ?>
+                                            </a>
                                         <?php } else { ?>
-                                            <span class="text-off">0</span>
+                                            <a href="<?php echo $overdue_link; ?>" class="text-off text-decoration-none">0</a>
                                         <?php } ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-light text-dark border px-2 py-1">
-                                            <?php echo $m_metric['completed_tasks']; ?>
-                                        </span>
                                     </td>
                                     <td class="text-center">
                                         <span class="fw-bold <?php echo $m_metric['points'] > 0 ? 'text-success' : 'text-off'; ?>">
