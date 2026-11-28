@@ -66,9 +66,12 @@ class Cc_months_model extends Crud_model {
      * Seed the previous month and the current month (new calendar).
      */
     function seed_default($calendar_id) {
-        $previous = strtotime(date("Y-m-01") . " -1 month");
-        $this->ensure($calendar_id, (int) date("Y", $previous), (int) date("n", $previous));
-        $this->ensure($calendar_id, (int) date("Y"), (int) date("n"));
+        $year = function_exists('cc_today_year') ? cc_today_year() : (int) date("Y");
+        $month = function_exists('cc_today_month') ? cc_today_month() : (int) date("n");
+        $dt = new \DateTime(sprintf("%04d-%02d-01", $year, $month));
+        $dt->modify("-1 month");
+        $this->ensure($calendar_id, (int) $dt->format("Y"), (int) $dt->format("n"));
+        $this->ensure($calendar_id, $year, $month);
     }
 
     /**
@@ -98,8 +101,8 @@ class Cc_months_model extends Crud_model {
             $year = (int) date("Y", $next);
             $month = (int) date("n", $next);
         } else {
-            $year = (int) date("Y");
-            $month = (int) date("n");
+            $year = function_exists('cc_today_year') ? cc_today_year() : (int) date("Y");
+            $month = function_exists('cc_today_month') ? cc_today_month() : (int) date("n");
         }
 
         $added = $this->ensure($calendar_id, $year, $month);

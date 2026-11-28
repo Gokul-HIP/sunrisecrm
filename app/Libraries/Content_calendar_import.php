@@ -1354,7 +1354,7 @@ class Content_calendar_import {
             return "text";
         }
 
-        $year = (int) date("Y");
+        $year = function_exists('cc_today_year') ? cc_today_year() : (int) date("Y");
         $date_hits = 0;
         $number_hits = 0;
         $link_hits = 0;
@@ -1822,7 +1822,7 @@ class Content_calendar_import {
 
     public function default_config() {
         return array(
-            "header_row" => 0, "year" => (int) date("Y"),
+            "header_row" => 0, "year" => (function_exists('cc_today_year') ? cc_today_year() : (int) date("Y")),
             "carry_blank_date" => false, "skip_duplicates" => true,
             "import_without_date" => true, "fix_swapped_dates" => true,
             "default_status" => "Planned",
@@ -3313,9 +3313,12 @@ class Content_calendar_import {
                 $existing_months[sprintf("%04d-%02d", $row->year, $row->month)] = true;
             }
         } else {
-            $previous = strtotime(date("Y-m-01") . " -1 month");
-            $existing_months[date("Y-m", $previous)] = true;
-            $existing_months[date("Y-m")] = true;
+            $year = function_exists('cc_today_year') ? cc_today_year() : (int) date("Y");
+            $month = function_exists('cc_today_month') ? cc_today_month() : (int) date("n");
+            $dt = new \DateTime(sprintf("%04d-%02d-01", $year, $month));
+            $dt->modify("-1 month");
+            $existing_months[$dt->format("Y-m")] = true;
+            $existing_months[sprintf("%04d-%02d", $year, $month)] = true;
         }
 
         $months_new = array();

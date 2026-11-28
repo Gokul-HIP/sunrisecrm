@@ -5,12 +5,79 @@
  * Every permission check of the module goes through cc_can(), so a rule can be changed in one place.
  */
 
+if (!function_exists('cc_crm_timezone')) {
+
+    /**
+     * Return CRM DateTimeZone (rise_settings timezone, falling back to Asia/Kolkata).
+     */
+    function cc_crm_timezone() {
+        $tz = function_exists('get_setting') ? get_setting("timezone") : "";
+        if (!$tz) {
+            $tz = "Asia/Kolkata";
+        }
+        try {
+            return new \DateTimeZone($tz);
+        } catch (\Throwable $e) {
+            return new \DateTimeZone("Asia/Kolkata");
+        }
+    }
+
+}
+
+if (!function_exists('cc_today_date')) {
+
+    /**
+     * Today's date in CRM timezone (Y-m-d).
+     */
+    function cc_today_date() {
+        return (new \DateTime("now", cc_crm_timezone()))->format("Y-m-d");
+    }
+
+}
+
+if (!function_exists('cc_today_year')) {
+
+    /**
+     * Current year in CRM timezone.
+     */
+    function cc_today_year() {
+        return (int) (new \DateTime("now", cc_crm_timezone()))->format("Y");
+    }
+
+}
+
+if (!function_exists('cc_today_month')) {
+
+    /**
+     * Current month in CRM timezone (1-12).
+     */
+    function cc_today_month() {
+        return (int) (new \DateTime("now", cc_crm_timezone()))->format("n");
+    }
+
+}
+
+if (!function_exists('cc_crm_now')) {
+
+    /**
+     * Current timestamp in CRM timezone.
+     */
+    function cc_crm_now($format = "Y-m-d H:i:s") {
+        return (new \DateTime("now", cc_crm_timezone()))->format($format);
+    }
+
+}
+
 if (!function_exists('cc_now')) {
 
     /**
      * Timestamp used for created_at / updated_at (same pattern as the rest of the repo).
+     * If $crm_timezone is true, returns formatted datetime in CRM timezone.
      */
-    function cc_now() {
+    function cc_now($crm_timezone = false) {
+        if ($crm_timezone) {
+            return cc_crm_now();
+        }
         return get_current_utc_time();
     }
 
@@ -945,7 +1012,7 @@ if (!function_exists('cc_save_manual_task_type')) {
                 $db->query("INSERT INTO rise_cc_task_links (task_id, item_id, content_type, created_by, created_at)
                             VALUES (?, NULL, ?, ?, ?)
                             ON DUPLICATE KEY UPDATE content_type = VALUES(content_type)",
-                           array($task_id, $content_type, $user_id, date("Y-m-d H:i:s")));
+                           array($task_id, $content_type, $user_id, get_current_utc_time()));
                 return array("success" => true);
             } catch (\Throwable $e) {
                 return array("success" => false, "message" => $e->getMessage());
@@ -1011,7 +1078,7 @@ if (!function_exists('cc_link_task_to_item')) {
                 $db->query("INSERT INTO rise_cc_task_links (task_id, item_id, content_type, created_by, created_at)
                             VALUES (?, ?, ?, ?, ?)
                             ON DUPLICATE KEY UPDATE item_id = VALUES(item_id), content_type = VALUES(content_type)",
-                           array($task_id, $item_id, $content_type, $user_id, date("Y-m-d H:i:s")));
+                           array($task_id, $item_id, $content_type, $user_id, get_current_utc_time()));
             } catch (\Throwable $e) {
                 log_message('error', '[ERROR] cc_link_task_to_item task_links insert: ' . $e->getMessage());
             }
@@ -1092,7 +1159,7 @@ if (!function_exists('cc_get_today_special_days')) {
      */
     function cc_get_today_special_days($custom_date = null) {
         static $cached_days = array();
-        $target_date = $custom_date ? $custom_date : (new \DateTime("now", new \DateTimeZone("Asia/Kolkata")))->format("Y-m-d");
+        $target_date = $custom_date ? $custom_date : cc_today_date();
         if (isset($cached_days[$target_date])) {
             return $cached_days[$target_date];
         }

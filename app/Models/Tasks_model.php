@@ -372,7 +372,8 @@ class Tasks_model extends Crud_model {
         $submitted_from = $this->_get_clean_value($options, "submitted_from");
         $submitted_to = $this->_get_clean_value($options, "submitted_to");
         $submitted_filter = $this->_get_clean_value($options, "submitted_filter");
-        $submitted_col = "DATE(COALESCE($tasks_table.submitted_for_review_at, $tasks_table.status_changed_at))";
+        $offset_seconds = function_exists('get_timezone_offset') ? (int) get_timezone_offset() : 0;
+        $submitted_col = "DATE(DATE_ADD(COALESCE($tasks_table.submitted_for_review_at, $tasks_table.status_changed_at), INTERVAL {$offset_seconds} SECOND))";
 
         if ($submitted_from && $submitted_to) {
             $where .= " AND $submitted_col BETWEEN '$submitted_from' AND '$submitted_to'";
@@ -1430,14 +1431,14 @@ class Tasks_model extends Crud_model {
             "no_of_cycles" => isset($data["no_of_cycles"]) ? (int) $data["no_of_cycles"] : 0,
             "recurring_task_id" => (int) $data["recurring_task_id"],
             "no_of_cycles_completed" => 0,
-            "created_date" => $this->is_valid_sql_date(get_today_date()) ? get_today_date() : date("Y-m-d"),
+            "created_date" => $this->is_valid_sql_date(get_today_date()) ? get_today_date() : (function_exists('get_my_local_time') ? get_my_local_time("Y-m-d") : date("Y-m-d")),
             "status_changed_at" => !empty($data["status_changed_at"]) ? $data["status_changed_at"] : get_current_utc_time(),
             "created_by" => isset($data["created_by"]) ? (int) $data["created_by"] : 0,
             "blocking" => isset($data["blocking"]) ? $data["blocking"] : "",
             "blocked_by" => isset($data["blocked_by"]) ? $data["blocked_by"] : "",
             "parent_task_id" => (int) $data["parent_task_id"],
             "next_recurring_date" => $data["next_recurring_date"],
-            "reminder_date" => $this->is_valid_sql_date(get_today_date()) ? get_today_date() : date("Y-m-d"),
+            "reminder_date" => $this->is_valid_sql_date(get_today_date()) ? get_today_date() : (function_exists('get_my_local_time') ? get_my_local_time("Y-m-d") : date("Y-m-d")),
             "ticket_id" => isset($data["ticket_id"]) ? (int) $data["ticket_id"] : 0,
             "deleted" => 0
         );

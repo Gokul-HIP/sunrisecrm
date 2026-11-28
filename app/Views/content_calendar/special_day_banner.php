@@ -151,7 +151,7 @@ $has_mobile_img = file_exists($bg_mobile);
 (function () {
     var specialDays = <?php echo json_encode(array_values($special_days)); ?> || [];
     var userId = <?php echo (int) $login_user_id; ?>;
-    var todayDate = "<?php echo (new \DateTime('now', new \DateTimeZone('Asia/Kolkata')))->format('Y-m-d'); ?>";
+    var todayDate = "<?php echo function_exists('cc_today_date') ? cc_today_date() : (new \DateTime('now', new \DateTimeZone('Asia/Kolkata')))->format('Y-m-d'); ?>";
     var specialDaysSig = "<?php echo md5(implode('|', $special_days)); ?>";
     var dismissKey = "cc_sd_closed_" + userId + "_" + todayDate + "_" + specialDaysSig;
 

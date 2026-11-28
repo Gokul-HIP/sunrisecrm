@@ -429,7 +429,7 @@ class Content_calendar extends Security_Controller {
             $date = (string) $this->request->getGet("date");
             if (!$this->_is_valid_date($date)) {
                 $ym = (string) $this->request->getGet("ym");
-                $date = preg_match('/^\d{4}-\d{2}$/', $ym) && $this->_is_valid_date($ym . "-01") ? $ym . "-01" : date("Y-m-d");
+                $date = preg_match('/^\d{4}-\d{2}$/', $ym) && $this->_is_valid_date($ym . "-01") ? $ym . "-01" : cc_today_date();
             }
 
             $form_values["date"] = $date;
@@ -551,13 +551,13 @@ class Content_calendar extends Security_Controller {
         $response = array(
             "success" => true,
             "perms" => $perms,
-            "today" => date("Y-m-d"),
+            "today" => cc_today_date(),
             "calendars" => $calendars,
             "calendar_id" => 0,
             "columns" => array(),
             "months" => array(),
-            "year" => (int) date("Y"),
-            "month" => (int) date("n"),
+            "year" => cc_today_year(),
+            "month" => cc_today_month(),
             "items" => array(),
             "special_days" => (object) array(),
             "targets" => (object) array(),
@@ -604,8 +604,8 @@ class Content_calendar extends Security_Controller {
         $year = (int) $this->_input("year");
         $month = (int) $this->_input("month");
         if (!$this->_is_valid_year_month($year, $month)) {
-            $year = (int) date("Y");
-            $month = (int) date("n");
+            $year = cc_today_year();
+            $month = cc_today_month();
 
             if (!$this->Cc_months_model->exists($calendar_id, $year, $month)) {
                 if ($perms["add"]) {
@@ -2304,8 +2304,8 @@ class Content_calendar extends Security_Controller {
         }
         $calendar = $this->_get_calendar_or_fail($calendar_id);
 
-        $cur_year = (int) date("Y");
-        $cur_month = (int) date("n");
+        $cur_year = cc_today_year();
+        $cur_month = cc_today_month();
         $cur_ym = sprintf("%04d-%02d", $cur_year, $cur_month);
 
         $month_counts = $this->Cc_items_model->get_month_counts($calendar_id);
@@ -2386,7 +2386,7 @@ class Content_calendar extends Security_Controller {
             $this->_fail("Invalid month");
         }
 
-        $today = date("Y-m-d");
+        $today = cc_today_date();
         $db = db_connect('default');
         cc_use_utf8mb4($db);
 
