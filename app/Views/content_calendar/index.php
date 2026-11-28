@@ -23,7 +23,13 @@ load_css(array(
                     </button>
                 <?php } ?>
                 <?php if ($perms["add"]) { ?>
-                    <a href="#" class="cc-btn cc-btn-primary" id="cc-add-content" role="button">
+                    <?php
+                    $initial_add_url = "#";
+                    if (!empty($initial_calendar_id)) {
+                        $initial_add_url = get_uri("content_calendar/item_form?calendar_id=" . (int)$initial_calendar_id . (!empty($initial_date) ? "&date=" . urlencode($initial_date) : ""));
+                    }
+                    ?>
+                    <a href="<?php echo esc($initial_add_url, 'attr'); ?>" class="cc-btn cc-btn-primary" id="cc-add-content" role="button">
                         <i data-feather="plus" class="icon-16"></i> <?php echo esc(cc_lang("cc_add_content")); ?>
                     </a>
                 <?php } ?>

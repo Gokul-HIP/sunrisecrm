@@ -128,28 +128,82 @@
         return data;
     }
 
+    function fetchFreshCsrf() {
+        var base = (window.AppHelper && AppHelper.baseUrl) ? AppHelper.baseUrl : "";
+        var csrfUrl = (window.CC_CONFIG && CC_CONFIG.urls && CC_CONFIG.urls.csrf_token) || 
+                      (window.CC_ITEM_FORM && CC_ITEM_FORM.csrf_url) || 
+                      (base + "index.php/content_calendar/csrf_token");
+        return $.ajax({
+            url: csrfUrl,
+            type: "GET",
+            dataType: "json",
+            cache: false
+        });
+    }
+
     //POST JSON. Resolves with the result when success is true, rejects with {message, errors, status}.
-    function post(url, data) {
+    function post(url, data, isRetry) {
         var d = $.Deferred();
+        var payload = $.extend({}, csrfData(), data || {});
         $.ajax({
             url: url,
             type: "POST",
             dataType: "json",
-            data: $.extend({}, csrfData(), data || {})
+            data: payload
         }).done(function (result) {
+            if (result && result.csrf_hash && window.AppHelper) {
+                AppHelper.csrfHash = result.csrf_hash;
+            }
             if (result && result.success) {
                 d.resolve(result);
             } else {
                 d.reject({message: (result && result.message) || L("cc_error"), errors: (result && result.errors) || {}, status: 200});
             }
         }).fail(function (xhr) {
+            var hasJsonMessage = !!(xhr.responseJSON && xhr.responseJSON.message);
+            var isCsrfOrSession403 = (xhr.status === 403 && !hasJsonMessage);
+
+            if (isCsrfOrSession403 && !isRetry) {
+                fetchFreshCsrf().done(function (fresh) {
+                    if (fresh && fresh.csrf_hash) {
+                        if (window.AppHelper) {
+                            AppHelper.csrfHash = fresh.csrf_hash;
+                            if (fresh.csrf_token) {
+                                AppHelper.csrfTokenName = fresh.csrf_token;
+                            }
+                        }
+                        var retryPayload = $.extend({}, data || {});
+                        post(url, retryPayload, true).done(function (r) {
+                            d.resolve(r);
+                        }).fail(function (err) {
+                            d.reject(err);
+                        });
+                        return;
+                    }
+                    d.reject({
+                        message: L("cc_session_expired") || "Your session or security token has expired. Please refresh the page.",
+                        errors: {},
+                        status: 403
+                    });
+                }).fail(function () {
+                    d.reject({
+                        message: L("cc_session_expired") || "Your session or security token has expired. Please refresh the page.",
+                        errors: {},
+                        status: 403
+                    });
+                });
+                return;
+            }
+
             var message = L("cc_error");
             var errors = {};
-            if (xhr.responseJSON && xhr.responseJSON.message) {
+            if (hasJsonMessage) {
                 message = xhr.responseJSON.message;
                 errors = xhr.responseJSON.errors || {};
             } else if (xhr.status === 403) {
-                message = L("cc_forbidden");
+                message = L("cc_session_expired") || "Your session or security token has expired. Please refresh the page.";
+            } else if (xhr.status === 401 || (xhr.status === 200 && xhr.responseText && xhr.responseText.indexOf("signin-form") !== -1)) {
+                message = L("cc_session_expired") || "Your session or security token has expired. Please refresh the page.";
             }
 
             d.reject({message: message, errors: errors, status: xhr.status});
@@ -1818,7 +1872,7 @@
                 }
             }).fail(function (xhr) {
                 if (gen === W.gen) {
-                    parseFailed((xhr.responseJSON && xhr.responseJSON.message) || (xhr.status === 403 ? L("cc_forbidden") : L("cc_error")));
+                    parseFailed((xhr.responseJSON && xhr.responseJSON.message) || (xhr.status === 403 ? (L("cc_session_expired") || "Your session has expired. Please refresh the page.") : L("cc_error")));
                 }
             });
         }
@@ -3819,6 +3873,13 @@
         }
 
         /* ---------- events ---------- */
+
+        $app.on("click", "#cc-add-content", function (e) {
+            if ($(this).attr("href") === "#") {
+                e.preventDefault();
+                window.location.href = itemFormUrl(0);
+            }
+        });
 
         $app.on("click", ".cc-tab[data-id]", function () {
             var id = parseInt($(this).data("id"), 10);

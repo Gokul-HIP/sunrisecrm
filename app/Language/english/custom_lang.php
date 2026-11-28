@@ -161,6 +161,7 @@ $lang["cc_deleted"] = "Deleted.";
 $lang["cc_delete_item_confirm"] = "Delete this content?";
 $lang["cc_error"] = "Something went wrong. Please try again.";
 $lang["cc_forbidden"] = "You do not have permission to do this.";
+$lang["cc_session_expired"] = "Your session or security token has expired. Please refresh the page.";
 $lang["cc_invalid_request"] = "Invalid request.";
 $lang["cc_please_fix_errors"] = "Please fix the highlighted fields.";
 $lang["cc_calendar_not_found"] = "Client calendar not found.";

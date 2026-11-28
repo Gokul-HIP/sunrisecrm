@@ -40,6 +40,11 @@ class Content_calendar extends Security_Controller {
             http_response_code($status);
         }
 
+        if (is_array($data) && function_exists('csrf_token') && function_exists('csrf_hash')) {
+            $data["csrf_token"] = csrf_token();
+            $data["csrf_hash"] = csrf_hash();
+        }
+
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data);
         exit();
@@ -306,7 +311,9 @@ class Content_calendar extends Security_Controller {
                 "undated_assign" => get_uri("content_calendar/undated_assign"),
                 "undated_assign_bulk" => get_uri("content_calendar/undated_assign_bulk"),
                 "delete_calendar" => get_uri("content_calendar/delete_calendar"),
-                "task_view_base" => get_uri("projects/task_view/")
+                "task_view_base" => get_uri("projects/task_view/"),
+                "save_item" => get_uri("content_calendar/save_item"),
+                "csrf_token" => get_uri("content_calendar/csrf_token")
             ),
             "perms" => $this->_permission_flags(),
             "lang" => cc_js_lang(),
@@ -328,6 +335,16 @@ class Content_calendar extends Security_Controller {
     //phase 2: Add client is a popup on the calendar page. The old page URL goes back to the calendar.
     function add_client() {
         app_redirect("content_calendar");
+    }
+
+    //return a fresh CSRF token for the active session
+    function csrf_token() {
+        $this->_require_can("view");
+        $this->_json(array(
+            "success" => true,
+            "csrf_token" => csrf_token(),
+            "csrf_hash" => csrf_hash()
+        ));
     }
 
     function save_client() {
@@ -456,6 +473,7 @@ class Content_calendar extends Security_Controller {
             "can_manage_options" => $view_data["can_manage_options"],
             "base_url" => get_file_uri(""),
             "colors" => $view_data["colors"],
+            "csrf_url" => get_uri("content_calendar/csrf_token"),
             "lang" => cc_js_lang()
         );
 
